@@ -31,6 +31,12 @@ export default function Services() {
                         cumplimiento.
                     </p>
                 </article>
+                <article className="bg-white p-6 rounded-[20px] shadow-card border border-[#efe7d8]">
+                    <h3 className="mb-3 text-primary font-heading leading-[1.2]">Nóminas, IMSS e INFONAVIT</h3>
+                    <p className="text-muted">
+                        Administración de nómina, cálculo de impuestos, cumplimiento ante IMSS e INFONAVIT, altas, bajas y obligaciones patronales.
+                    </p>
+                </article>
             </div>
         </section>
     );
