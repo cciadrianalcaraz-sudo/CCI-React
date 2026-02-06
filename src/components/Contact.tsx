@@ -10,7 +10,7 @@ export default function Contact() {
                 <div className="mt-6 grid gap-4">
                     <div>
                         <h4 className="mb-1 font-heading leading-[1.2]">Correo</h4>
-                        <p>contacto@ccicontable.com</p>
+                        <p>cci.adrianalcaraz@gmail.com</p>
                     </div>
                     <div>
                         <h4 className="mb-1 font-heading leading-[1.2]">Horario</h4>
@@ -45,6 +45,17 @@ export default function Contact() {
                     />
                 </label>
 
+<label className="grid gap-2 font-semibold text-primary-dark">
+  Teléfono
+  <input
+    type="tel"
+    name="telefono"
+    placeholder="Ej. 312 123 4567"
+    pattern="[0-9]{10}"
+    className="p-3 px-4 rounded-xl border border-[#d9dfe7] text-[1rem] font-inter focus:outline-none focus:ring-2 focus:ring-primary/40"
+    required
+  />
+</label>        
                 <label className="grid gap-2 font-semibold text-primary-dark">
                     ¿Qué necesitas?
                     <textarea
