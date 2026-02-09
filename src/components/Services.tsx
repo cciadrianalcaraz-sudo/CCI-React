@@ -41,15 +41,26 @@ export default function Services() {
           </button>
 
           {open === 1 && (
-            <ul className="mt-4 space-y-2 text-muted list-disc list-inside">
-              <li>Declaraciones anuales y provisionales (PF y PM)</li>
-              <li>Planeación y estrategia fiscal</li>
-              <li>Asesoría fiscal permanente</li>
-              <li>Regularización ante el SAT</li>
-              <li>Altas, bajas y actualizaciones en el SAT</li>
-              <li>Atención a requerimientos y auditorías</li>
-            </ul>
-          )}
+  <div className="mt-5 grid gap-3">
+    {[
+      "Declaraciones fiscales",
+      "Planeación fiscal estratégica",
+      "Asesoría fiscal continua",
+      "Regularización fiscal",
+      "Gestión de trámites SAT",
+      "Atención a auditorías",
+    ].map((item) => (
+      <div
+        key={item}
+        className="flex items-start gap-3 rounded-xl border border-[#efe7d8] bg-[#faf7f2] px-4 py-3 text-sm text-muted"
+      >
+        <span className="mt-1 h-2 w-2 rounded-full bg-primary shrink-0" />
+        <span>{item}</span>
+      </div>
+    ))}
+  </div>
+)}
+
         </article>
 
         {/* 2. Finanzas */}
@@ -68,15 +79,26 @@ export default function Services() {
             {open === 2 ? "Menos" : "Más"}
           </button>
 
-          {open === 2 && (
-            <ul className="mt-4 space-y-2 text-muted list-disc list-inside">
-              <li>Análisis financiero integral</li>
-              <li>Flujo de efectivo y proyecciones</li>
-              <li>Presupuestos y control financiero</li>
-              <li>Indicadores financieros (KPI)</li>
-              <li>Estructuración de costos y rentabilidad</li>
-            </ul>
-          )}
+         {open === 2 && (
+  <div className="mt-5 grid gap-3">
+    {[
+      "Análisis financiero",
+      "Gestión de flujo de efectivo",
+      "Presupuestos estratégicos",
+      "Indicadores clave (KPI)",
+      "Soporte para decisiones de inversión",
+    ].map((item) => (
+      <div
+        key={item}
+        className="flex items-start gap-3 rounded-xl border border-[#efe7d8] bg-[#faf7f2] px-4 py-3 text-sm text-muted"
+      >
+        <span className="mt-1 h-2 w-2 rounded-full bg-primary shrink-0" />
+        <span>{item}</span>
+      </div>
+    ))}
+  </div>
+)}
+
         </article>
 
         {/* 3. Control Interno */}
@@ -96,14 +118,25 @@ export default function Services() {
           </button>
 
           {open === 3 && (
-            <ul className="mt-4 space-y-2 text-muted list-disc list-inside">
-              <li>Diagnóstico de control interno</li>
-              <li>Mapeo y documentación de procesos</li>
-              <li>Diseño de políticas y procedimientos</li>
-              <li>Segregación de funciones</li>
-              <li>Evaluación y mitigación de riesgos</li>
-            </ul>
-          )}
+  <div className="mt-5 grid gap-3">
+    {[
+      "Diagnóstico de control interno",
+      "Diseño de procesos",
+      "Políticas y procedimientos",
+      "Gestión de riesgos operativos",
+      "Auditoría interna",
+    ].map((item) => (
+      <div
+        key={item}
+        className="flex items-start gap-3 rounded-xl border border-[#efe7d8] bg-[#faf7f2] px-4 py-3 text-sm text-muted"
+      >
+        <span className="mt-1 h-2 w-2 rounded-full bg-primary shrink-0" />
+        <span>{item}</span>
+      </div>
+    ))}
+  </div>
+)}
+
         </article>
 
         {/* 4. Nóminas */}
@@ -123,14 +156,25 @@ export default function Services() {
           </button>
 
           {open === 4 && (
-            <ul className="mt-4 space-y-2 text-muted list-disc list-inside">
-              <li>Cálculo y timbrado de nómina</li>
-              <li>Altas, bajas y modificaciones ante el IMSS</li>
-              <li>Cálculo de cuotas obrero-patronales</li>
-              <li>Gestión de INFONAVIT y SUA</li>
-              <li>Cumplimiento de obligaciones patronales</li>
-            </ul>
-          )}
+  <div className="mt-5 grid gap-3">
+    {[
+      "Gestión de nómina",
+      "IMSS y SUA",
+      "INFONAVIT",
+      "Impuestos laborales",
+      "Atención a requerimientos laborales",
+    ].map((item) => (
+      <div
+        key={item}
+        className="flex items-start gap-3 rounded-xl border border-[#efe7d8] bg-[#faf7f2] px-4 py-3 text-sm text-muted"
+      >
+        <span className="mt-1 h-2 w-2 rounded-full bg-primary shrink-0" />
+        <span>{item}</span>
+      </div>
+    ))}
+  </div>
+)}
+
         </article>
 
       </div>
