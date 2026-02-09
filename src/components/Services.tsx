@@ -158,13 +158,14 @@ export default function Services() {
                 </div>
               ))}
             </div>
-
-            <button
-              type="button"
-              className="mt-auto w-full rounded-xl bg-primary px-6 py-4 text-white font-semibold hover:opacity-90 transition-opacity shadow-lg shadow-primary/20 cursor-pointer"
-            >
-              Agendar asesoría
-            </button>
+            <a
+  href="https://wa.me/5213121682366?text=Hola,%20me%20gustaría%20agendar%20una%20asesoría%20sobre%20servicios%20contables."
+  target="_blank"
+  rel="noopener noreferrer"
+  className="mt-auto w-full rounded-xl bg-primary px-6 py-4 text-white font-semibold text-center hover:opacity-90 transition-opacity shadow-lg shadow-primary/20"
+>
+  Agendar asesoría
+</a>
           </div>
         </div>
       )}
