@@ -1,10 +1,76 @@
 import { useState } from "react";
 
-export default function Services() {
-  const [open, setOpen] = useState<number | null>(null);
+interface Service {
+  id: string;
+  title: string;
+  description: string;
+  items: string[];
+}
 
-  const toggle = (index: number) => {
-    setOpen(open === index ? null : index);
+const services: Service[] = [
+  {
+    id: "fiscal",
+    title: "Gestión y Estrategia Fiscal",
+    description: "Planeación y cumplimiento tributario para reducir riesgos y optimizar cargas.",
+    items: [
+      "Declaraciones fiscales",
+      "Planeación fiscal estratégica",
+      "Asesoría fiscal continua",
+      "Regularización fiscal",
+      "Gestión de trámites SAT",
+      "Atención a auditorías",
+    ],
+  },
+  {
+    id: "finanzas",
+    title: "Gestión Financiera Estratégica",
+    description: "Información clara para decisiones financieras acertadas.",
+    items: [
+      "Análisis financiero",
+      "Gestión de flujo de efectivo",
+      "Presupuestos estratégicos",
+      "Indicadores clave (KPI)",
+      "Soporte para decisiones de inversión",
+    ],
+  },
+  {
+    id: "control-interno",
+    title: "Gobierno Corporativo y Control Interno",
+    description: "Orden, trazabilidad y reducción de riesgos operativos.",
+    items: [
+      "Diagnóstico de control interno",
+      "Diseño de procesos",
+      "Políticas y procedimientos",
+      "Gestión de riesgos operativos",
+      "Auditoría interna",
+    ],
+  },
+  {
+    id: "nominas",
+    title: "Administración de Nómina y Seguridad Social",
+    description: "Cumplimiento laboral, fiscal y de seguridad social.",
+    items: [
+      "Gestión de nómina",
+      "IMSS y SUA",
+      "INFONAVIT",
+      "Impuestos laborales",
+      "Atención a requerimientos laborales",
+    ],
+  },
+];
+
+// ... (imports and interface)
+
+export default function Services() {
+  const [activeService, setActiveService] = useState<Service | null>(null);
+  const [isClosing, setIsClosing] = useState(false);
+
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setActiveService(null);
+      setIsClosing(false);
+    }, 300); // 300ms matches animation duration
   };
 
   return (
@@ -23,161 +89,85 @@ export default function Services() {
       </div>
 
       <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-6">
-
-        {/* 1. Fiscal */}
-        <article className="bg-white p-6 rounded-[20px] shadow-card border border-[#efe7d8]">
-          <h3 className="mb-2 text-primary font-heading leading-[1.2]">
-            Gestión y Estrategia Fiscal
-          </h3>
-          <p className="text-muted mb-3">
-            Planeación y cumplimiento tributario para reducir riesgos y optimizar cargas.
-          </p>
-
-          <button
-            onClick={() => toggle(1)}
-            className="text-sm font-semibold text-accent hover:underline"
+        {services.map((service) => (
+          <article
+            key={service.id}
+            className="bg-white p-6 rounded-[20px] shadow-card border border-[#efe7d8] flex flex-col items-start"
           >
-            {open === 1 ? "Menos" : "Más"}
-          </button>
+            <h3 className="mb-2 text-primary font-heading leading-[1.2]">
+              {service.title}
+            </h3>
+            <p className="text-muted mb-4 flex-grow">
+              {service.description}
+            </p>
 
-          {open === 1 && (
-  <div className="mt-5 grid gap-3">
-    {[
-      "Declaraciones fiscales",
-      "Planeación fiscal estratégica",
-      "Asesoría fiscal continua",
-      "Regularización fiscal",
-      "Gestión de trámites SAT",
-      "Atención a auditorías",
-    ].map((item) => (
-      <div
-        key={item}
-        className="flex items-start gap-3 rounded-xl border border-[#efe7d8] bg-[#faf7f2] px-4 py-3 text-sm text-muted"
-      >
-        <span className="mt-1 h-2 w-2 rounded-full bg-primary shrink-0" />
-        <span>{item}</span>
+            <button
+              type="button"
+              onClick={() => setActiveService(service)}
+              className="mt-auto text-sm font-semibold text-accent hover:underline cursor-pointer"
+            >
+              Ver servicios →
+            </button>
+          </article>
+        ))}
       </div>
-    ))}
-  </div>
-)}
 
-        </article>
+      {activeService && (
+        <div className="fixed inset-0 z-50 flex">
+          {/* Overlay */}
+          <div
+            className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity ${isClosing ? "animate-fade-out" : "animate-fade-in"
+              }`}
+            onClick={handleClose}
+            aria-hidden="true"
+          />
 
-        {/* 2. Finanzas */}
-        <article className="bg-white p-6 rounded-[20px] shadow-card border border-[#efe7d8]">
-          <h3 className="mb-2 text-primary font-heading leading-[1.2]">
-            Gestión Financiera Estratégica
-          </h3>
-          <p className="text-muted mb-3">
-            Información clara para decisiones financieras acertadas.
-          </p>
-
-          <button
-            onClick={() => toggle(2)}
-            className="text-sm font-semibold text-accent hover:underline"
+          {/* Panel */}
+          <div
+            className={`relative ml-auto h-full w-full max-w-md bg-white shadow-2xl p-8 overflow-y-auto flex flex-col ${isClosing ? "animate-slide-out" : "animate-slide-in"
+              }`}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-title"
           >
-            {open === 2 ? "Menos" : "Más"}
-          </button>
+            <button
+              type="button"
+              onClick={handleClose}
+              className="absolute top-6 right-6 text-muted hover:text-primary transition-colors cursor-pointer"
+              aria-label="Cerrar modal"
+            >
+              ✕
+            </button>
 
-         {open === 2 && (
-  <div className="mt-5 grid gap-3">
-    {[
-      "Análisis financiero",
-      "Gestión de flujo de efectivo",
-      "Presupuestos estratégicos",
-      "Indicadores clave (KPI)",
-      "Soporte para decisiones de inversión",
-    ].map((item) => (
-      <div
-        key={item}
-        className="flex items-start gap-3 rounded-xl border border-[#efe7d8] bg-[#faf7f2] px-4 py-3 text-sm text-muted"
-      >
-        <span className="mt-1 h-2 w-2 rounded-full bg-primary shrink-0" />
-        <span>{item}</span>
-      </div>
-    ))}
-  </div>
-)}
+            <h3 id="modal-title" className="text-2xl font-heading text-primary mb-3 pr-8">
+              {activeService.title}
+            </h3>
 
-        </article>
+            <p className="text-muted mb-8 leading-relaxed">
+              {activeService.description}
+            </p>
 
-        {/* 3. Control Interno */}
-        <article className="bg-white p-6 rounded-[20px] shadow-card border border-[#efe7d8]">
-          <h3 className="mb-2 text-primary font-heading leading-[1.2]">
-            Gobierno Corporativo y Control Interno
-          </h3>
-          <p className="text-muted mb-3">
-            Orden, trazabilidad y reducción de riesgos operativos.
-          </p>
+            <div className="grid gap-3 mb-8">
+              {activeService.items.map((item, index) => (
+                <div
+                  key={`${activeService.id}-${index}`}
+                  className="flex items-start gap-3 rounded-xl border border-[#efe7d8] bg-[#faf7f2] px-4 py-3 text-sm transition-colors hover:border-accent/20"
+                >
+                  <span className="mt-1.5 h-2 w-2 rounded-full bg-accent shrink-0" />
+                  <span className="text-gray-700">{item}</span>
+                </div>
+              ))}
+            </div>
 
-          <button
-            onClick={() => toggle(3)}
-            className="text-sm font-semibold text-accent hover:underline"
-          >
-            {open === 3 ? "Menos" : "Más"}
-          </button>
-
-          {open === 3 && (
-  <div className="mt-5 grid gap-3">
-    {[
-      "Diagnóstico de control interno",
-      "Diseño de procesos",
-      "Políticas y procedimientos",
-      "Gestión de riesgos operativos",
-      "Auditoría interna",
-    ].map((item) => (
-      <div
-        key={item}
-        className="flex items-start gap-3 rounded-xl border border-[#efe7d8] bg-[#faf7f2] px-4 py-3 text-sm text-muted"
-      >
-        <span className="mt-1 h-2 w-2 rounded-full bg-primary shrink-0" />
-        <span>{item}</span>
-      </div>
-    ))}
-  </div>
-)}
-
-        </article>
-
-        {/* 4. Nóminas */}
-        <article className="bg-white p-6 rounded-[20px] shadow-card border border-[#efe7d8]">
-          <h3 className="mb-2 text-primary font-heading leading-[1.2]">
-            Administración de Nómina y Seguridad Social
-          </h3>
-          <p className="text-muted mb-3">
-            Cumplimiento laboral, fiscal y de seguridad social.
-          </p>
-
-          <button
-            onClick={() => toggle(4)}
-            className="text-sm font-semibold text-accent hover:underline"
-          >
-            {open === 4 ? "Menos" : "Más"}
-          </button>
-
-          {open === 4 && (
-  <div className="mt-5 grid gap-3">
-    {[
-      "Gestión de nómina",
-      "IMSS y SUA",
-      "INFONAVIT",
-      "Impuestos laborales",
-      "Atención a requerimientos laborales",
-    ].map((item) => (
-      <div
-        key={item}
-        className="flex items-start gap-3 rounded-xl border border-[#efe7d8] bg-[#faf7f2] px-4 py-3 text-sm text-muted"
-      >
-        <span className="mt-1 h-2 w-2 rounded-full bg-primary shrink-0" />
-        <span>{item}</span>
-      </div>
-    ))}
-  </div>
-)}
-
-        </article>
-
-      </div>
+            <button
+              type="button"
+              className="mt-auto w-full rounded-xl bg-primary px-6 py-4 text-white font-semibold hover:opacity-90 transition-opacity shadow-lg shadow-primary/20 cursor-pointer"
+            >
+              Agendar asesoría
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
