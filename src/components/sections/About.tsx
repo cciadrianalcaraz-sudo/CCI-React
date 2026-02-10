@@ -4,10 +4,10 @@ export default function About() {
       id="acerca-de"
       className="relative z-10 px-[8vw] py-32 bg-[#faf7f2]"
     >
-      <div className="max-w-6xl mx-auto grid gap-16 md:grid-cols-2 items-start">
+      <div className="max-w-6xl mx-auto grid gap-16 md:grid-cols-[1.1fr_0.9fr] items-start">
 
         {/* Encabezado */}
-        <div className="max-w-[720px]">
+        <div className="max-w-xl pt-8">
           <p className="uppercase tracking-[0.2rem] text-xs font-semibold text-neutral-500 mb-4">
             Acerca de
           </p>
@@ -24,7 +24,7 @@ export default function About() {
         </div>
 
         {/* Pilares */}
-        <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-1 pt-8">
+        <div className="grid gap-6 pt-12">
 
           <div className="bg-white rounded-2xl p-6 shadow-lg border border-neutral-200">
             <h3 className="font-bold text-lg mb-3">Visión integral</h3>
