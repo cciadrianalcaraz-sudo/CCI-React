@@ -5,7 +5,7 @@ import Button from "../ui/Button";
 
 export default function Hero() {
     return (
-        <header className="bg-gradient-to-br from-[#f3f1ee] via-white to-[#fbf2df] px-[8vw] pb-24 pt-32 md:pt-40">
+        <header className="relative bg-gradient-to-br from-[#f3f1ee] via-white to-[#fbf2df] px-[8vw] pt-32 pb-24 md:pt-40">
             <section className="grid md:grid-cols-2 gap-12 items-center">
                 <div>
                     <p className="uppercase tracking-[0.2rem] text-xs font-semibold text-neutral-500 mb-4">
