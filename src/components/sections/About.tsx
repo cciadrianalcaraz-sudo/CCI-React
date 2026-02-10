@@ -4,7 +4,7 @@ export default function About() {
       id="acerca-de"
       className="relative z-10 px-[8vw] py-32 bg-[#faf7f2]"
     >
-      <div className="max-w-6xl mx-auto grid gap-16 md:grid-cols-[1.1fr_0.9fr] items-start">
+      <div className="grid gap-16 md:grid-cols-[1.1fr_0.9fr] items-start">
 
         {/* Encabezado */}
         <div className="max-w-xl pt-8">
@@ -13,7 +13,7 @@ export default function About() {
           </p>
 
           <h2 className="text-3xl md:text-4xl font-bold mb-4 leading-tight">
-            Más que contadores, aliados estratégicos.
+            Más que contadores, somos tus aliados estratégicos.
           </h2>
 
           <p className="text-neutral-600 leading-relaxed">
