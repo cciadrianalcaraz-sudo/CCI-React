@@ -1,4 +1,5 @@
 import Header from './components/Header';
+import About from './components/sections/About';
 import Services from './components/Services';
 import ValueProposition from './components/ValueProposition';
 import Sectors from './components/Sectors';
@@ -11,6 +12,7 @@ export default function App() {
     <>
       <Header />
       <main>
+        <About />
         <Services />
         <ValueProposition />
         <Sectors />
