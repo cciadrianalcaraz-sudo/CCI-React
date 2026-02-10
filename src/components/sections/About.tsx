@@ -2,9 +2,9 @@ export default function About() {
   return (
     <section
       id="acerca-de"
-      className="px-[8vw] py-24 bg-[#faf7f2]"
+      className="relative z-10 px-[8vw] py-32 bg-[#faf7f2]"
     >
-      <div className="max-w-6xl mx-auto grid gap-16">
+      <div className="max-w-6xl mx-auto grid gap-16 md:grid-cols-2 items-start">
 
         {/* Encabezado */}
         <div className="max-w-[720px]">
@@ -24,7 +24,7 @@ export default function About() {
         </div>
 
         {/* Pilares */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-1 pt-8">
 
           <div className="bg-white rounded-2xl p-6 shadow-lg border border-neutral-200">
             <h3 className="font-bold text-lg mb-3">Visión integral</h3>
