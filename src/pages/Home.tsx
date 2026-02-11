@@ -1,26 +1,19 @@
-
-import Navbar from "../components/layout/Navbar";
-import Hero from "../components/hero/Hero";
-import Services from "../components/sections/Services";
+import Hero from "../components/sections/Hero";
 import About from "../components/sections/About";
-import ValueProposition from "../components/sections/ValueProposition";
-import Sectors from "../components/sections/Sectors";
-import Contact from "../components/sections/Contact";
-import Footer from "../components/layout/Footer";
-import WhatsAppFloat from "../components/layout/WhatsAppFloat";
+import Services from "../components/Services";
+import ValueProposition from "../components/ValueProposition";
+import Sectors from "../components/Sectors";
+import Contact from "../components/Contact";
 
 export default function Home() {
     return (
-        <>
-            <Navbar />
+        <main>
             <Hero />
             <About />
             <Services />
             <ValueProposition />
             <Sectors />
             <Contact />
-            <Footer />
-            <WhatsAppFloat />
-        </>
+        </main>
     );
 }
