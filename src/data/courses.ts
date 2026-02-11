@@ -41,7 +41,7 @@ export const courses: Course[] = [
         title: '4. Excel: De Básico a Intermedio',
         description: 'Modalidad Intensiva de 4 semanas. Domina fórmulas, tablas dinámicas y análisis de datos esenciales.',
         type: 'paid',
-        price: 1200,
+        price: 2500,
         duration: '10 horas (4 semanas)',
         image: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?auto=format&fit=crop&q=80&w=800',
     },
@@ -50,7 +50,7 @@ export const courses: Course[] = [
         title: '5. Excel: De Intermedio a Avanzado',
         description: 'Modalidad Intensiva de 4 semanas. Macros, automatización avanzada y dashboards estratégicos para contadores.',
         type: 'paid',
-        price: 1500,
+        price: 3500,
         duration: '10 horas (4 semanas)',
         image: 'https://images.unsplash.com/photo-1512758017271-d7b84c2113f1?auto=format&fit=crop&q=80&w=800',
     }
@@ -60,21 +60,43 @@ export interface Tool {
     id: string;
     title: string;
     description: string;
+    features?: string[];
     downloadUrl: string;
+    fileName: string; // El nombre con el que se guardará el archivo
 }
 
 export const calculationTools: Tool[] = [
     {
-        id: 'calculadora-excel-fiscal',
-        title: 'Herramienta de Cálculo en Excel',
-        description: 'Plantilla automatizada para el cálculo de impuestos básicos y proyecciones financieras.',
-        downloadUrl: '#',
+        id: 'flujo-efectivo',
+        title: 'Plantilla de Flujo de Efectivo',
+        description: 'Controla tus movimientos financieros mensuales de forma automática y visual.',
+        features: ['Registro de Ingresos y Egresos', 'Flujo mensual automático', 'Gráfica de rendimiento incluida'],
+        downloadUrl: '/tools/flujo-efectivo.xlsx',
+        fileName: 'CCI_Flujo_Efectivo.xlsx'
     },
     {
-        id: 'carga-batch-diot',
-        title: 'Carga Batch para DIOT 2026',
-        description: 'Generador masivo de archivos para la Declaración Informativa de Operaciones con Terceros.',
-        downloadUrl: '#',
+        id: 'punto-equilibrio',
+        title: 'Calculadora de Punto de Equilibrio',
+        description: 'Determina cuánto necesitas vender para cubrir tus costos y empezar a generar utilidad.',
+        features: ['Costos fijos y variables', 'Precio unitario personalizado', 'Resultado automático instantáneo'],
+        downloadUrl: '/tools/punto-equilibrio.xlsx',
+        fileName: 'CCI_Punto_Equilibrio.xlsx'
+    },
+    {
+        id: 'control-fiscal',
+        title: 'Control Fiscal Mensual',
+        description: 'Mantén tus obligaciones al día y evita sorpresas con el SAT.',
+        features: ['Cálculo de ISR e IVA', 'Gestión de Retenciones', 'Semáforo de cumplimiento fiscal'],
+        downloadUrl: '/tools/control-fiscal.xlsx',
+        fileName: 'CCI_Control_Fiscal.xlsx'
+    },
+    {
+        id: 'batch-diot-2026',
+        title: 'Plantilla Batch DIOT 2026',
+        description: 'La herramienta más estratégica para cumplir con la Declaración Informativa de Operaciones con Terceros.',
+        features: ['Captura masiva de proveedores', 'RFC validado por formato', 'Exportación lista para carga masiva'],
+        downloadUrl: '/tools/diot-2026.xlsx',
+        fileName: 'CCI_Batch_DIOT_2026.xlsx'
     }
 ];
 
