@@ -1,9 +1,8 @@
 {
-    "cleanUrls": true,
     "rewrites": [
         {
-            "source": "/tools/:path*",
-            "destination": "/tools/:path*"
+            "source": "/tools/(.*)",
+            "destination": "/tools/$1"
         },
         {
             "source": "/(.*)",
