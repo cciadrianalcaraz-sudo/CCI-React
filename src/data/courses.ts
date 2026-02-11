@@ -43,7 +43,7 @@ export const courses: Course[] = [
         type: 'paid',
         price: 2500,
         duration: '10 horas (4 semanas)',
-        image: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?auto=format&fit=crop&q=80&w=800',
+        image: 'https://images.pexels.com/photos/669615/pexels-photo-669615.jpeg?auto=compress&cs=tinysrgb&w=800',
     },
     {
         id: 'excel-intermedio-avanzado',
@@ -52,7 +52,7 @@ export const courses: Course[] = [
         type: 'paid',
         price: 3500,
         duration: '10 horas (4 semanas)',
-        image: 'https://images.unsplash.com/photo-1512758017271-d7b84c2113f1?auto=format&fit=crop&q=80&w=800',
+        image: 'https://images.pexels.com/photos/265087/pexels-photo-265087.jpeg?auto=compress&cs=tinysrgb&w=800',
     }
 ];
 
