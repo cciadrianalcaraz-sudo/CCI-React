@@ -95,8 +95,8 @@ export const calculationTools: Tool[] = [
         title: 'Plantilla Batch DIOT 2026',
         description: 'La herramienta más estratégica para cumplir con la Declaración Informativa de Operaciones con Terceros.',
         features: ['Captura masiva de proveedores', 'RFC validado por formato', 'Exportación lista para carga masiva'],
-        downloadUrl: '/tools/diot-2026.xlsx',
-        fileName: 'CCI_Batch_DIOT_2026.xlsx'
+        downloadUrl: '/tools/diot-2026.xlsm',
+        fileName: 'CCI_Batch_DIOT_2026.xlsm'
     }
 ];
 
