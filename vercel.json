@@ -1,12 +1,14 @@
 {
     "cleanUrls": true,
-    "rewrites": [
+    "routes": [
         {
-            "handle": "filesystem"
+            "src": "/tools/(.*)",
+            "dest": "/tools/$1",
+            "continue": true
         },
         {
-            "source": "/(.*)",
-            "destination": "/index.html"
+            "src": "/(.*)",
+            "dest": "/index.html"
         }
     ]
 }
