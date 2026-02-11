@@ -2,9 +2,10 @@ import type { Course } from "../../data/courses";
 
 interface CourseCardProps {
     course: Course;
+    onBuy: (course: Course) => void;
 }
 
-export default function CourseCard({ course }: CourseCardProps) {
+export default function CourseCard({ course, onBuy }: CourseCardProps) {
     return (
         <div className="bg-white rounded-2xl overflow-hidden shadow-card border border-[#efe7d8] transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group">
             <div className="aspect-video relative overflow-hidden">
@@ -36,8 +37,11 @@ export default function CourseCard({ course }: CourseCardProps) {
                     <span className="text-lg font-bold text-primary">
                         {course.type === 'free' ? '$0' : `$${course.price} MXN`}
                     </span>
-                    <button className="bg-accent text-[#2c2210] px-4 py-2 rounded-lg font-semibold text-sm transition-colors hover:bg-[#a67d3d]">
-                        {course.type === 'free' ? 'Acceder ahora' : 'Ver detalles'}
+                    <button
+                        onClick={() => onBuy(course)}
+                        className="bg-accent text-[#2c2210] px-4 py-2 rounded-lg font-semibold text-sm transition-colors hover:bg-[#a67d3d] cursor-pointer"
+                    >
+                        {course.type === 'free' ? 'Acceder gratis' : 'Comprar ahora'}
                     </button>
                 </div>
             </div>
