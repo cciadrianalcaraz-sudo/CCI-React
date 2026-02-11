@@ -47,7 +47,7 @@ export default function About() {
       <div className="grid md:grid-cols-3 gap-8">
         <div className="p-6 border rounded-xl bg-white">
           <h3 className="font-bold text-lg mb-3 text-neutral-800">
-            Nuestra misión
+            Misión
           </h3>
           <p className="text-neutral-600 text-sm leading-relaxed">
             Brindar servicios contables y fiscales integrales, personalizados y
@@ -58,7 +58,7 @@ export default function About() {
 
         <div className="p-6 border rounded-xl bg-white">
           <h3 className="font-bold text-lg mb-3 text-neutral-800">
-            Nuestra visión
+            Visión
           </h3>
           <p className="text-neutral-600 text-sm leading-relaxed">
             Ser un referente en consultoría contable y fiscal en México,
@@ -69,7 +69,7 @@ export default function About() {
 
         <div className="p-6 border rounded-xl bg-white">
           <h3 className="font-bold text-lg mb-3 text-neutral-800">
-            Nuestros valores
+            Valores
           </h3>
           <ul className="text-neutral-600 text-sm space-y-1">
             <li>• Integridad</li>
