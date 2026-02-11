@@ -100,8 +100,6 @@ export default function Training() {
                             <a
                                 href={tool.downloadUrl}
                                 download={tool.fileName}
-                                target="_blank"
-                                rel="noopener noreferrer"
                                 className="mt-auto inline-flex items-center gap-2 font-bold text-accent hover:text-[#a67d3d] transition-colors cursor-pointer"
                             >
                                 Descargar herramienta <span className="text-lg">↓</span>
