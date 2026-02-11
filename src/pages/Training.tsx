@@ -67,11 +67,12 @@ export default function Training() {
             </div>
 
             {/* Herramientas de Cálculo Section */}
+            {/* Herramientas Empresariales Gratuitas Section */}
             <section className="bg-white rounded-3xl p-10 border border-[#efe7d8] shadow-custom">
                 <div className="mb-8">
-                    <p className="uppercase tracking-[0.2rem] font-semibold text-accent text-xs mb-2">Recursos Premium</p>
-                    <h2 className="text-3xl font-heading text-primary">Herramientas de Cálculo</h2>
-                    <p className="text-muted">Descarga plantillas en Excel y herramientas de carga batch para optimizar tu trabajo diario.</p>
+                    <p className="uppercase tracking-[0.2rem] font-semibold text-accent text-xs mb-2">Recursos Gratuitos</p>
+                    <h2 className="text-3xl font-heading text-primary">Herramientas Empresariales Gratuitas</h2>
+                    <p className="text-muted">Descarga plantillas estratégicas y herramientas automatizadas para potenciar tu negocio.</p>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-8">
@@ -81,15 +82,28 @@ export default function Training() {
                                 <span className="text-2xl">📊</span>
                             </div>
                             <h3 className="text-xl font-bold text-primary mb-3">{tool.title}</h3>
-                            <p className="text-muted text-sm mb-6 leading-relaxed">
+                            <p className="text-muted text-sm mb-4 leading-relaxed">
                                 {tool.description}
                             </p>
-                            <button
-                                onClick={() => alert("Descargando: " + tool.title)}
-                                className="mt-auto inline-flex items-center gap-2 font-bold text-accent hover:text-[#a67d3d] transition-colors"
+
+                            {tool.features && (
+                                <ul className="mb-6 space-y-2">
+                                    {tool.features.map((feature, idx) => (
+                                        <li key={idx} className="flex items-center gap-2 text-xs text-neutral-600">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                                            {feature}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+
+                            <a
+                                href={tool.downloadUrl}
+                                download={tool.fileName}
+                                className="mt-auto inline-flex items-center gap-2 font-bold text-accent hover:text-[#a67d3d] transition-colors cursor-pointer"
                             >
                                 Descargar herramienta <span className="text-lg">↓</span>
-                            </button>
+                            </a>
                         </div>
                     ))}
                 </div>
