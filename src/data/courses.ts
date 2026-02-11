@@ -16,7 +16,7 @@ export const courses: Course[] = [
         type: 'paid',
         price: 850,
         duration: '2 horas',
-        image: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&q=80&w=800',
+        image: 'https://images.unsplash.com/photo-1554475900-0a0302b0c140?auto=format&fit=crop&q=80&w=800',
     },
     {
         id: 'control-interno-pyme',
@@ -25,7 +25,7 @@ export const courses: Course[] = [
         type: 'paid',
         price: 750,
         duration: '1.5 horas',
-        image: 'https://images.unsplash.com/photo-1454165833762-02ac4f407d21?auto=format&fit=crop&q=80&w=800',
+        image: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&q=80&w=800',
     },
     {
         id: 'presupuestos-paso-paso',
@@ -34,7 +34,7 @@ export const courses: Course[] = [
         type: 'paid',
         price: 600,
         duration: '2 horas',
-        image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800',
+        image: 'https://images.unsplash.com/photo-1554224155-1197a5ba05fb?auto=format&fit=crop&q=80&w=800',
     },
     {
         id: 'excel-basico-intermedio',
@@ -43,7 +43,7 @@ export const courses: Course[] = [
         type: 'paid',
         price: 1200,
         duration: '10 horas (4 semanas)',
-        image: 'https://images.unsplash.com/photo-1543286386-713bcd53b371?auto=format&fit=crop&q=80&w=800',
+        image: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?auto=format&fit=crop&q=80&w=800',
     },
     {
         id: 'excel-intermedio-avanzado',
@@ -52,7 +52,7 @@ export const courses: Course[] = [
         type: 'paid',
         price: 1500,
         duration: '10 horas (4 semanas)',
-        image: 'https://images.unsplash.com/photo-1551288049-bbbda536339a?auto=format&fit=crop&q=80&w=800',
+        image: 'https://images.unsplash.com/photo-1543286386-2e67134fd986?auto=format&fit=crop&q=80&w=800',
     }
 ];
 
