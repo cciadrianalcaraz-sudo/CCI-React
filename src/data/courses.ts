@@ -21,7 +21,7 @@ export const courses: Course[] = [
         syllabus: [
             'Conceptos básicos de impuestos en México',
             'Declaración mensual de IVA e ISR',
-            'Uso del portal del SAT (Mis Cuentas)',
+            'Uso del portal del SAT',
             'Deducciones autorizadas y requisitos fiscales',
             'Casos prácticos: Personas Físicas con Actividad Empresarial'
         ]
@@ -47,7 +47,7 @@ export const courses: Course[] = [
         title: '3. Presupuestos Empresariales Paso a Paso',
         description: 'Domina la creación de presupuestos maestros y operativos para proyectar el crecimiento real de tu negocio.',
         type: 'paid',
-        price: 600,
+        price: 800,
         duration: '2 horas',
         image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800',
         syllabus: [
