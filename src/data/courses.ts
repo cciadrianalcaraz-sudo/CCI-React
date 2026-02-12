@@ -6,6 +6,7 @@ export interface Course {
     price?: number;
     duration: string;
     image: string;
+    syllabus?: string[];
 }
 
 export const courses: Course[] = [
@@ -17,6 +18,13 @@ export const courses: Course[] = [
         price: 850,
         duration: '2 horas',
         image: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&q=80&w=800',
+        syllabus: [
+            'Conceptos básicos de impuestos en México',
+            'Declaración mensual de IVA e ISR',
+            'Uso del portal del SAT (Mis Cuentas)',
+            'Deducciones autorizadas y requisitos fiscales',
+            'Casos prácticos: Personas Físicas con Actividad Empresarial'
+        ]
     },
     {
         id: 'control-interno-pyme',
@@ -26,6 +34,13 @@ export const courses: Course[] = [
         price: 750,
         duration: '1.5 horas',
         image: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&q=80&w=800',
+        syllabus: [
+            'Fundamentos de Control Interno (COSO)',
+            'Segregación de funciones y responsabilidades',
+            'Control de inventarios y activos fijos',
+            'Prevención de fraudes y malversación de fondos',
+            'Diseño de manuales de políticas y procedimientos'
+        ]
     },
     {
         id: 'presupuestos-paso-paso',
@@ -35,6 +50,13 @@ export const courses: Course[] = [
         price: 600,
         duration: '2 horas',
         image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800',
+        syllabus: [
+            'El ciclo presupuestal en la empresa',
+            'Presupuesto de Ventas y Gastos Operativos',
+            'Flujo de caja proyectado',
+            'Análisis de variaciones estacionales',
+            'Herramientas de control y seguimiento presupuestal'
+        ]
     },
     {
         id: 'excel-basico-intermedio',
@@ -44,6 +66,13 @@ export const courses: Course[] = [
         price: 2500,
         duration: '10 horas (4 semanas)',
         image: 'https://images.pexels.com/photos/669615/pexels-photo-669615.jpeg?auto=compress&cs=tinysrgb&w=800',
+        syllabus: [
+            'Entorno de Excel y tipos de datos',
+            'Fórmulas lógicas (Si, Y, O)',
+            'Funciones de búsqueda (BUSCARV, INDICE/COINCIDIR)',
+            'Creación y personalización de tablas dinámicas',
+            'Gráficos tácticos para reportes ejecutivos'
+        ]
     },
     {
         id: 'excel-intermedio-avanzado',
@@ -53,6 +82,12 @@ export const courses: Course[] = [
         price: 3500,
         duration: '10 horas (4 semanas)',
         image: 'https://images.pexels.com/photos/265087/pexels-photo-265087.jpeg?auto=compress&cs=tinysrgb&w=800',
+        syllabus: [
+            'Automatización con Grabadora de Macros',
+            'Introducción a VBA para contadores',
+            'Power Query para limpieza masiva de datos',
+            'Diseño de dashboards interactivos'
+        ]
     }
 ];
 
