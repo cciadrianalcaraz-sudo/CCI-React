@@ -26,10 +26,13 @@ export default function Asesorias() {
                     </p>
                 </div>
 
-                <div className="bg-white rounded-3xl border border-[#efe7d8] shadow-custom overflow-hidden">
+                <div className="bg-white rounded-3xl border border-[#efe7d8] shadow-custom overflow-hidden transition-all hover:shadow-xl">
                     <div
                         className="calendly-inline-widget w-full h-[700px]"
                         data-url="https://calendly.com/cci-adrianalcaraz/30min?hide_landing_page_details=1&hide_gdpr_banner=1"
+                        data-background-color="faf7f2"
+                        data-text-color="2c2210"
+                        data-button-color="c29a5b"
                     />
                 </div>
 
