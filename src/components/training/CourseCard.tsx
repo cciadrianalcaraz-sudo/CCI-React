@@ -34,9 +34,19 @@ export default function CourseCard({ course, onBuy }: CourseCardProps) {
                     {course.description}
                 </p>
                 <div className="flex items-center justify-between">
-                    <span className="text-lg font-bold text-primary">
-                        {course.type === 'free' ? '$0' : `$${course.price} MXN`}
-                    </span>
+                    <div className="flex flex-col">
+                        <span className="text-lg font-bold text-primary">
+                            {course.type === 'free' ? '$0' : `$${course.price} MXN`}
+                        </span>
+                        {course.syllabus && (
+                            <button
+                                onClick={() => onBuy(course)}
+                                className="text-xs font-bold text-accent hover:underline cursor-pointer text-left mt-1"
+                            >
+                                Ver temario ↑
+                            </button>
+                        )}
+                    </div>
                     <button
                         onClick={() => onBuy(course)}
                         className="bg-accent text-[#2c2210] px-4 py-2 rounded-lg font-semibold text-sm transition-colors hover:bg-[#a67d3d] cursor-pointer"

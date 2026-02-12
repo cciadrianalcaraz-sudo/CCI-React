@@ -77,3 +77,20 @@
 .animate-fade-out {
   animation: fade-out 0.3s ease-in forwards;
 }
+
+/* Custom Scrollbar for Syllabus */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  @apply bg-[#faf7f2] rounded-full;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-[#efe7d8] rounded-full;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  @apply bg-accent/40;
+}

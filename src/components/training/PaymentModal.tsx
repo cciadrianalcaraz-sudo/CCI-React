@@ -37,7 +37,7 @@ export default function PaymentModal({ course, onClose, onSuccess }: PaymentModa
                         <p className="text-muted text-sm">Estás por adquirir acceso completo a este curso.</p>
                     </div>
 
-                    <div className="bg-[#faf7f2] rounded-2xl p-6 border border-[#efe7d8] mb-8">
+                    <div className="bg-[#faf7f2] rounded-2xl p-6 border border-[#efe7d8] mb-6">
                         <div className="flex justify-between items-center mb-2">
                             <span className="text-muted text-sm">Precio del curso</span>
                             <span className="font-bold text-primary">${course.price} MXN</span>
@@ -47,6 +47,25 @@ export default function PaymentModal({ course, onClose, onSuccess }: PaymentModa
                             <span className="font-bold text-2xl text-accent">${course.price} MXN</span>
                         </div>
                     </div>
+
+                    {course.syllabus && (
+                        <div className="mb-8">
+                            <h3 className="text-sm font-bold text-primary mb-3 flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                                Temario del Curso
+                            </h3>
+                            <div className="bg-white border border-[#efe7d8] rounded-xl p-4 max-h-[160px] overflow-y-auto custom-scrollbar">
+                                <ul className="space-y-2">
+                                    {course.syllabus.map((item, idx) => (
+                                        <li key={idx} className="text-xs text-muted flex gap-2">
+                                            <span className="text-accent">•</span>
+                                            {item}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="relative min-h-[150px]">
                         {isProcessing && (
