@@ -29,7 +29,7 @@ export default function Asesorias() {
                 <div className="bg-white rounded-3xl border border-[#efe7d8] shadow-custom overflow-hidden">
                     <div
                         className="calendly-inline-widget w-full h-[700px]"
-                        data-url="https://calendly.com/cci-react/asesoria-contable?hide_landing_page_details=1&hide_gdpr_banner=1"
+                        data-url="https://calendly.com/cci-adrianalcaraz/30min?hide_landing_page_details=1&hide_gdpr_banner=1"
                     />
                 </div>
 
