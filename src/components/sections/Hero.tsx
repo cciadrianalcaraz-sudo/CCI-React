@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 
 export default function Hero() {
     return (
@@ -14,7 +15,7 @@ export default function Hero() {
                         recursos para crecer.
                     </p>
                     <div className="flex flex-wrap gap-4 mb-8">
-                        <a className="inline-flex items-center justify-center px-6 py-3 rounded-full font-semibold border border-transparent transition-transform duration-200 shadow-none hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(23,55,95,0.15)] bg-primary text-white" href="#contacto">Agenda tu diagnostico</a>
+                        <Link className="inline-flex items-center justify-center px-6 py-3 rounded-full font-semibold border border-transparent transition-transform duration-200 shadow-none hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(23,55,95,0.15)] bg-primary text-white" to="/asesorias">Agenda tu diagnóstico</Link>
                         <a className="inline-flex items-center justify-center px-6 py-3 rounded-full font-semibold border transition-transform duration-200 shadow-none hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(23,55,95,0.15)] border-primary text-primary bg-transparent" href="#servicios">Conoce la metodología</a>
                     </div>
                     <div className="grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-4 mt-4">
@@ -42,7 +43,7 @@ export default function Hero() {
                         <li>Estado financiero y flujo de efectivo.</li>
                         <li>Procesos críticos y controles clave.</li>
                     </ul>
-                    <a className="inline-flex items-center justify-center px-6 py-3 rounded-full font-semibold border border-transparent transition-transform duration-200 shadow-none hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(23,55,95,0.15)] bg-accent text-[#2c2210]" href="#contacto">Quiero mi diagnóstico</a>
+                    <Link className="inline-flex items-center justify-center px-6 py-3 rounded-full font-semibold border border-transparent transition-transform duration-200 shadow-none hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(23,55,95,0.15)] bg-accent text-[#2c2210]" to="/asesorias">Quiero mi diagnóstico</Link>
                 </div>
             </div>
         </section>
