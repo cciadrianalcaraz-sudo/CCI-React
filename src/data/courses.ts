@@ -87,7 +87,7 @@ export const calculationTools: Tool[] = [
         title: 'Control Fiscal Mensual',
         description: 'Mantén tus obligaciones al día y evita sorpresas con el SAT.',
         features: ['Cálculo de ISR e IVA', 'Gestión de Retenciones', 'Semáforo de cumplimiento fiscal'],
-        downloadUrl: '/tools/control-fiscal.xlsx',
+        downloadUrl: '/tools/cf-mensual.xlsx',
         fileName: 'CCI_Control_Fiscal.xlsx'
     },
     {
