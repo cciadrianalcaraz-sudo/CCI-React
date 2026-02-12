@@ -5,6 +5,7 @@ import Footer from "./components/Footer";
 import WhatsAppButton from "./components/WhatsAppButton";
 import Home from "./pages/Home";
 import Training from "./pages/Training";
+import Asesorias from "./pages/Asesorias";
 
 export default function App() {
   const initialOptions = {
@@ -19,6 +20,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/capacitaciones" element={<Training />} />
+        <Route path="/asesorias" element={<Asesorias />} />
       </Routes>
       <Footer />
       <WhatsAppButton />
