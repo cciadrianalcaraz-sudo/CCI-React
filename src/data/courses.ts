@@ -140,19 +140,36 @@ export interface NewsItem {
     title: string;
     date: string;
     summary: string;
+    content?: string[];
+    isWebinar?: boolean;
 }
 
 export const news: NewsItem[] = [
     {
-        id: 'reformas-2025',
-        title: 'Principales Cambios en la Miscelánea Fiscal 2025',
+        id: 'reformas-2026',
+        title: 'Principales Cambios en la Miscelánea Fiscal 2026',
         date: '10 de Febrero, 2026',
         summary: 'Analizamos los puntos clave que impactarán a las PyMES mexicanas este año.',
+        content: [
+            'Ajustes en las tasas de retención para plataformas digitales.',
+            'Nuevas facilidades para el cumplimiento de personas físicas en el RESICO.',
+            'Incremento en la vigilancia sobre depósitos en efectivo superiores a $15,000 MXN.',
+            'Actualización de las tablas de ISR para el ejercicio fiscal 2025.',
+            'Digitalización total de las revisiones de gabinete por parte del SAT.'
+        ]
     },
     {
         id: 'webinar-gratuito',
         title: 'Próximo Webinar: Optimización de Flujo de Efectivo',
         date: '05 de Febrero, 2026',
         summary: 'Únete a nuestra sesión práctica sobre cómo liberar recursos atrapados en tu operación.',
+        isWebinar: true,
+        content: [
+            'Día y Hora: 20 de Febrero a las 10:00 AM (CDMX).',
+            'Temario: Estrategias de cobranza efectiva, gestión de inventarios y negociación con proveedores.',
+            'Ponente: C.P. Adrián Alcaraz, especialista en finanzas corporativas.',
+            'Registro: Gratuito para todos nuestros suscriptores.',
+            'Plataforma: Zoom (Se enviará el enlace por correo tras el registro).'
+        ]
     }
 ];
