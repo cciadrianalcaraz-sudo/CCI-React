@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { courses, calculationTools } from "../data/courses";
-import type { Course } from "../data/courses";
+import type { Course, NewsItem } from "../data/courses";
 import CourseCard from "../components/training/CourseCard";
 import NewsSection from "../components/training/NewsSection";
 import PaymentModal from "../components/training/PaymentModal";
+import WebinarRegistrationModal from "../components/training/WebinarRegistrationModal";
 
 export default function Training() {
     const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+    const [selectedWebinar, setSelectedWebinar] = useState<NewsItem | null>(null);
     const [showSuccess, setShowSuccess] = useState(false);
 
     const handleBuyCourse = (course: Course) => {
@@ -15,6 +17,10 @@ export default function Training() {
             return;
         }
         setSelectedCourse(course);
+    };
+
+    const handleRegisterWebinar = (newsItem: NewsItem) => {
+        setSelectedWebinar(newsItem);
     };
 
     const handlePaymentSuccess = (details: any) => {
@@ -62,7 +68,7 @@ export default function Training() {
                 </div>
 
                 <aside>
-                    <NewsSection />
+                    <NewsSection onRegister={handleRegisterWebinar} />
                 </aside>
             </div>
 
@@ -114,6 +120,13 @@ export default function Training() {
                     course={selectedCourse}
                     onClose={() => setSelectedCourse(null)}
                     onSuccess={handlePaymentSuccess}
+                />
+            )}
+
+            {selectedWebinar && (
+                <WebinarRegistrationModal
+                    newsItem={selectedWebinar}
+                    onClose={() => setSelectedWebinar(null)}
                 />
             )}
         </div>
