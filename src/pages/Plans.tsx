@@ -8,9 +8,9 @@ const plans = [
         description: "Ideal para personas físicas o en el régimen RESICO que buscan cumplimiento sin complicaciones.",
         features: [
             "Declaraciones mensuales integras",
-            "Asesoría mensual (15-20 min)",
+            "Asesoría mensual (45 min)",
             "Recordatorios de vencimientos fiscales",
-            "Soporte básico por correo",
+            "Soporte básico por correo y/o whatsapp",
             "Validación de facturación recibida"
         ],
         highlight: false,
