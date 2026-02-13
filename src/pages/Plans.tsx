@@ -56,7 +56,7 @@ const plans = [
 export default function Plans() {
     const whatsappLink = (planName: string) => {
         const message = `Hola, me interesa obtener más información sobre el ${planName}.`;
-        return `https://wa.me/5213318253163?text=${encodeURIComponent(message)}`;
+        return `https://wa.me/5213121682366?text=${encodeURIComponent(message)}`;
     };
 
     return (
