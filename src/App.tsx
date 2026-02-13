@@ -6,6 +6,7 @@ import WhatsAppButton from "./components/WhatsAppButton";
 import Home from "./pages/Home";
 import Training from "./pages/Training";
 import Asesorias from "./pages/Asesorias";
+import Plans from "./pages/Plans";
 
 export default function App() {
   const initialOptions = {
@@ -21,6 +22,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/capacitaciones" element={<Training />} />
         <Route path="/asesorias" element={<Asesorias />} />
+        <Route path="/planes" element={<Plans />} />
       </Routes>
       <Footer />
       <WhatsAppButton />
