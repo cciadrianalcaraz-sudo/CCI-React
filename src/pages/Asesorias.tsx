@@ -58,7 +58,7 @@ export default function Asesorias() {
                         </div>
 
                         <p className="mt-8 text-center md:text-left font-semibold text-accent">
-                            👇 Selecciona en el calendario el día y la hora que mejor te convenga para comenzar.
+                            👇 Selecciona tu horario disponible y asegura tu sesión estratégica hoy.
                         </p>
                     </div>
 
