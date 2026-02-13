@@ -2,7 +2,7 @@ import { Check } from "lucide-react";
 
 const plans = [
     {
-        name: "Plan Esencial",
+        name: "Plan Básico",
         price: "$1,200",
         period: "MXN / mes",
         description: "Ideal para personas físicas o en el régimen RESICO que buscan cumplimiento sin complicaciones.",
@@ -24,7 +24,7 @@ const plans = [
         period: "MXN / mes",
         description: "Para negocios en crecimiento que necesitan una visión clara de sus finanzas y estrategia fiscal.",
         features: [
-            "Todo lo del Plan Esencial",
+            "Todo lo del Plan Básico",
             "Análisis de estados financieros",
             "Estrategia fiscal personalizada",
             "Soporte prioritario por WhatsApp",
