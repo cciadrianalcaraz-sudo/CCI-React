@@ -51,6 +51,15 @@ export default function Training() {
                 <p className="text-xl text-muted">
                     Accede a cursos especializados y mantente informado con las últimas novedades del mundo contable y fiscal.
                 </p>
+                <div className="flex flex-col sm:flex-row gap-6 mt-8">
+                    <a
+                        href="#herramientas"
+                        className="inline-flex items-center justify-center px-8 py-4 bg-accent text-white font-bold rounded-2xl shadow-lg hover:bg-[#a67d3d] transition-all hover:-translate-y-1 active:scale-95 group"
+                    >
+                        Ver Herramientas
+                        <span className="ml-2 group-hover:translate-y-0.5 transition-transform">↓</span>
+                    </a>
+                </div>
             </div>
 
             <div className="grid lg:grid-cols-3 gap-12 mb-20">
@@ -74,7 +83,7 @@ export default function Training() {
 
             {/* Herramientas de Cálculo Section */}
             {/* Herramientas Empresariales Gratuitas Section */}
-            <section className="bg-white rounded-3xl p-10 border border-[#efe7d8] shadow-custom">
+            <section id="herramientas" className="bg-white rounded-3xl p-10 border border-[#efe7d8] shadow-custom scroll-mt-32">
                 <div className="mb-8">
                     <p className="uppercase tracking-[0.2rem] font-semibold text-accent text-xs mb-2">Recursos Gratuitos</p>
                     <h2 className="text-3xl font-heading text-primary">Herramientas Empresariales Gratuitas</h2>
