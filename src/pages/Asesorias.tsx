@@ -44,7 +44,7 @@ export default function Asesorias() {
                             ))}
                         </div>
 
-                        <div className="flex flex-wrap justify-center md:justify-start gap-8 pt-8 border-t border-[#efe7d8]">
+                        <div className="flex flex-wrap justify-center md:justify-start gap-8 py-8 border-y border-[#efe7d8]">
                             <div className="flex items-center gap-2">
                                 <span className="text-xl">⏱️</span>
                                 <span className="font-bold text-primary">Duración:</span>
@@ -56,10 +56,14 @@ export default function Asesorias() {
                                 <span className="text-muted">Online</span>
                             </div>
                         </div>
+
+                        <p className="mt-8 text-center md:text-left font-semibold text-accent">
+                            👇 Selecciona en el calendario el día y la hora que mejor te convenga para comenzar.
+                        </p>
                     </div>
 
                     <p className="text-xl text-muted max-w-[700px] mx-auto mb-4 italic">
-                        Selecciona el tipo de asesoría que necesitas y elige el horario que mejor se adapte a tu agenda.
+                        Agenda tu sesión en unos segundos:
                     </p>
                 </div>
 
