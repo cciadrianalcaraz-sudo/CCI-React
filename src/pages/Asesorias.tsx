@@ -19,7 +19,7 @@ export default function Asesorias() {
                 <div className="text-center mb-12">
                     <p className="uppercase tracking-[0.2rem] font-semibold text-accent text-xs mb-4">Agendar Cita</p>
                     <h1 className="text-[clamp(2.5rem,5vw,3.5rem)] font-heading text-primary leading-[1.1] mb-6">
-                        Asesoría 1 a 1 Especializada
+                        Asesoría Especializada 1 a 1
                     </h1>
                     <p className="text-xl text-muted max-w-[700px] mx-auto">
                         Selecciona el tipo de asesoría que necesitas y elige el horario que mejor se adapte a tu agenda.
