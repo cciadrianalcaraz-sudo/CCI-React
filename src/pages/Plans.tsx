@@ -44,7 +44,6 @@ const plans = [
             "Todo lo del Plan Estratégico",
             "Auditoría interna preventiva",
             "Consultoría fiscal ilimitada",
-            "Gestión de requerimientos del SAT",
             "Dashboard financiero avanzado",
             "Acompañamiento en toma de decisiones estratégicas"
         ],
