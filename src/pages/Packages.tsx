@@ -1,6 +1,6 @@
 import { Check } from "lucide-react";
 
-const plans = [
+const packages = [
     {
         name: "Plan Básico",
         price: "$1,200",
@@ -53,7 +53,7 @@ const plans = [
     }
 ];
 
-export default function Plans() {
+export default function Packages() {
     const whatsappLink = (planName: string) => {
         const message = `Hola, me interesa obtener más información sobre el ${planName}.`;
         return `https://wa.me/5213121682366?text=${encodeURIComponent(message)}`;
@@ -63,7 +63,7 @@ export default function Plans() {
         <div className="pt-32 pb-20 px-[8vw] min-h-screen bg-[#faf7f2]">
             <div className="max-w-[1200px] mx-auto">
                 <div className="text-center mb-16">
-                    <p className="uppercase tracking-[0.2rem] font-semibold text-accent text-xs mb-4">Planes de Servicio</p>
+                    <p className="uppercase tracking-[0.2rem] font-semibold text-accent text-xs mb-4">Paquetes de Servicio</p>
                     <h1 className="text-[clamp(2.5rem,5vw,3.5rem)] font-heading text-primary leading-[1.1] mb-6">
                         Inversión inteligente para tu tranquilidad fiscal
                     </h1>
@@ -73,12 +73,12 @@ export default function Plans() {
                 </div>
 
                 <div className="grid lg:grid-cols-3 gap-8 items-start">
-                    {plans.map((plan, index) => (
+                    {packages.map((plan, index) => (
                         <div
                             key={index}
                             className={`relative bg-white rounded-3xl p-8 border ${plan.highlight
-                                    ? "border-accent ring-4 ring-accent/10 shadow-2xl scale-105 z-10"
-                                    : "border-[#efe7d8] shadow-custom"
+                                ? "border-accent ring-4 ring-accent/10 shadow-2xl scale-105 z-10"
+                                : "border-[#efe7d8] shadow-custom"
                                 } transition-all duration-300 hover:translate-y-[-8px]`}
                         >
                             {plan.highlight && (
@@ -111,8 +111,8 @@ export default function Plans() {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className={`w-full py-4 px-6 rounded-2xl font-bold text-center transition-all flex items-center justify-center gap-2 ${plan.highlight
-                                        ? "bg-accent text-white shadow-lg shadow-accent/20 hover:bg-[#a67d3d]"
-                                        : "bg-[#faf7f2] text-primary border border-[#efe7d8] hover:bg-neutral-100"
+                                    ? "bg-accent text-white shadow-lg shadow-accent/20 hover:bg-[#a67d3d]"
+                                    : "bg-[#faf7f2] text-primary border border-[#efe7d8] hover:bg-neutral-100"
                                     }`}
                             >
                                 {plan.cta}
@@ -122,7 +122,7 @@ export default function Plans() {
                 </div>
 
                 <div className="mt-20 p-10 bg-white rounded-3xl border border-[#efe7d8] text-center shadow-custom">
-                    <h2 className="text-2xl font-bold text-primary mb-4">¿Necesitas un plan a la medida?</h2>
+                    <h2 className="text-2xl font-bold text-primary mb-4">¿Necesitas un paquete a la medida?</h2>
                     <p className="text-muted mb-8 max-w-[600px] mx-auto">
                         Entendemos que cada negocio es único. Si tus requerimientos superan estos niveles, podemos diseñar una propuesta personalizada para ti.
                     </p>
