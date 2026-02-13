@@ -3,11 +3,12 @@ import { Check } from "lucide-react";
 const plans = [
     {
         name: "Plan Esencial",
-        price: "$1,200 – $2,500",
+        price: "$1,800",
         period: "MXN / mes",
         description: "Ideal para personas físicas o en el régimen RESICO que buscan cumplimiento sin complicaciones.",
         features: [
             "Declaraciones mensuales integras",
+            "Papeles de trabajo",
             "Asesoría mensual (45 min)",
             "Recordatorios de vencimientos fiscales",
             "Soporte básico por correo y/o whatsapp",
