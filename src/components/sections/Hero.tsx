@@ -1,51 +1,80 @@
 import { Link } from "react-router-dom";
+import Button from "../ui/Button";
 
 export default function Hero() {
     return (
-        <section className="bg-hero-gradient px-[8vw] pt-32 pb-24">
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-12 items-center">
-                <div>
-                    <p className="uppercase tracking-[0.2rem] font-semibold text-muted text-xs mb-4">CCICONTABLE.COM</p>
-                    <h1 className="text-[clamp(2.2rem,4vw,3.4rem)] text-primary mb-4 font-heading leading-[1.2]">
+        <header className="relative bg-gradient-to-br from-[#f3f1ee] via-white to-[#fbf2df] px-[6vw] md:px-[8vw] pt-32 pb-16 md:pt-44 md:pb-24">
+            <div className="max-w-[1400px] mx-auto grid lg:grid-cols-2 gap-12 md:gap-20 items-center">
+                <div className="text-center lg:text-left">
+                    <p className="uppercase tracking-[0.2rem] text-[0.65rem] md:text-xs font-semibold text-neutral-500 mb-4 md:mb-6">
+                        CCICONTABLE.COM
+                    </p>
+
+                    <h1 className="text-[clamp(2rem,8vw,3.5rem)] font-bold mb-6 leading-[1.15] text-primary-dark font-heading">
                         Estrategia fiscal, financiera y de control interno para tomar mejores decisiones.
                     </h1>
-                    <p className="text-[1.1rem] text-muted mb-6">
-                        Acompañamos a micro, pequeñas y medianas empresas a transformar la contabilidad en
-                        una ventaja competitiva. Diseñamos soluciones que ordenan, optimizan y liberan
-                        recursos para crecer.
+
+                    <p className="text-neutral-600 text-base md:text-lg mb-8 md:mb-10 max-w-[600px] mx-auto lg:mx-0">
+                        Acompañamos a micro, pequeñas y medianas empresas a transformar la contabilidad en una ventaja competitiva. Diseñamos soluciones que ordenan, optimizan y liberan recursos para crecer.
                     </p>
-                    <div className="flex flex-wrap gap-4 mb-8">
-                        <Link className="inline-flex items-center justify-center px-6 py-3 rounded-full font-semibold border border-transparent transition-transform duration-200 shadow-none hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(23,55,95,0.15)] bg-primary text-white" to="/asesorias">Agenda tu diagnóstico</Link>
-                        <a className="inline-flex items-center justify-center px-6 py-3 rounded-full font-semibold border transition-transform duration-200 shadow-none hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(23,55,95,0.15)] border-primary text-primary bg-transparent" href="#servicios">Conoce la metodología</a>
+
+                    <div className="flex flex-col sm:flex-row flex-wrap gap-4 mb-10 md:mb-14 justify-center lg:justify-start">
+                        <Button primary className="w-full sm:w-auto active:scale-95" onClick={() => window.location.href = '/asesorias'}>
+                            Agenda tu diagnóstico
+                        </Button>
+                        <Button outline className="w-full sm:w-auto active:scale-95" onClick={() => window.location.href = '#servicios'}>
+                            Conoce la metodología
+                        </Button>
                     </div>
-                    <div className="grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-4 mt-4">
-                        <div>
-                            <h3 className="text-primary mb-2 text-[1.1rem] font-heading leading-[1.2]">360°</h3>
-                            <p>Visión integral en fiscal, finanzas y control interno.</p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-6 pt-8 border-t border-light-beige lg:border-none">
+                        <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
+                            <h3 className="text-primary font-bold text-xl mb-1 font-heading">360°</h3>
+                            <p className="text-sm text-neutral-600">Visión integral en fiscal, finanzas y control interno.</p>
                         </div>
-                        <div>
-                            <h3 className="text-primary mb-2 text-[1.1rem] font-heading leading-[1.2]">Mejor decisión</h3>
-                            <p>Reportes claros para actuar con confianza.</p>
+                        <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
+                            <h3 className="text-primary font-bold text-xl mb-1 font-heading">Claridad</h3>
+                            <p className="text-sm text-neutral-600">Reportes fáciles de entender para actuar con confianza.</p>
                         </div>
-                        <div>
-                            <h3 className="text-primary mb-2 text-[1.1rem] font-heading leading-[1.2]">Más control</h3>
-                            <p>Procesos definidos que reducen riesgos.</p>
+                        <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
+                            <h3 className="text-primary font-bold text-xl mb-1 font-heading">Control</h3>
+                            <p className="text-sm text-neutral-600">Procesos definidos que reducen riesgos operativos.</p>
                         </div>
                     </div>
                 </div>
-                <div className="bg-white p-8 rounded-3xl shadow-custom border border-[#eee4d2]">
-                    <h2 className="text-2xl mb-3 font-heading leading-[1.2]">Diagnóstico inicial sin costo</h2>
-                    <p>
-                        Revisamos tu situación actual y priorizamos oportunidades de mejora en 30 minutos.
-                    </p>
-                    <ul className="my-6 pl-5 text-muted list-disc">
-                        <li>Mapa de riesgos y obligaciones fiscales.</li>
-                        <li>Estado financiero y flujo de efectivo.</li>
-                        <li>Procesos críticos y controles clave.</li>
-                    </ul>
-                    <Link className="inline-flex items-center justify-center px-6 py-3 rounded-full font-semibold border border-transparent transition-transform duration-200 shadow-none hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(23,55,95,0.15)] bg-accent text-[#2c2210]" to="/asesorias">Quiero mi diagnóstico</Link>
+
+                <div className="relative">
+                    <div className="bg-white p-8 md:p-10 rounded-[2.5rem] shadow-2xl border border-[#eee4d2] relative z-10">
+                        <h2 className="text-2xl font-bold mb-4 font-heading text-primary leading-tight">Diagnóstico inicial sin costo</h2>
+                        <p className="text-neutral-600 mb-6 font-medium">
+                            Revisamos tu situación actual y priorizamos oportunidades de mejora en 30 minutos.
+                        </p>
+                        <ul className="my-8 space-y-4 text-neutral-600">
+                            <li className="flex items-start gap-3">
+                                <span className="text-accent text-xl leading-none">✓</span>
+                                <span className="text-sm">Mapa de riesgos y obligaciones fiscales.</span>
+                            </li>
+                            <li className="flex items-start gap-3">
+                                <span className="text-accent text-xl leading-none">✓</span>
+                                <span className="text-sm">Estado financiero y flujo de efectivo.</span>
+                            </li>
+                            <li className="flex items-start gap-3">
+                                <span className="text-accent text-xl leading-none">✓</span>
+                                <span className="text-sm">Procesos críticos y controles clave.</span>
+                            </li>
+                        </ul>
+                        <Link
+                            to="/asesorias"
+                            className="w-full bg-accent text-[#2c2210] py-4 px-6 rounded-2xl font-bold text-center inline-block transition-all hover:bg-[#a67d3d] shadow-lg shadow-accent/20 active:scale-95"
+                        >
+                            Quiero mi diagnóstico
+                        </Link>
+                    </div>
+                    {/* Decorative element */}
+                    <div className="absolute -top-4 -right-4 w-24 h-24 bg-accent/10 rounded-full blur-2xl -z-0"></div>
                 </div>
             </div>
-        </section>
+        </header>
     );
 }
+

@@ -75,49 +75,51 @@ export default function Services() {
   };
 
   return (
-    <section id="servicios" className="px-[8vw] py-20">
-      <div className="max-w-[720px] mb-12">
-        <p className="uppercase tracking-[0.2rem] font-semibold text-muted text-xs mb-4">
-          Servicios
-        </p>
-        <h2 className="text-[clamp(1.9rem,3vw,2.6rem)] mb-3 font-heading leading-[1.2]">
-          Más que impuestos: acompañamiento estratégico.
-        </h2>
-        <p className="text-muted">
-          Nuestro enfoque combina cumplimiento con visión financiera y control
-          interno para maximizar beneficios.
-        </p>
-      </div>
+    <section id="servicios" className="px-[6vw] md:px-[8vw] py-16 md:py-24 bg-white">
+      <div className="max-w-[1400px] mx-auto">
+        <div className="max-w-[800px] mb-12 md:mb-16 text-center md:text-left">
+          <p className="uppercase tracking-[0.2rem] font-semibold text-accent text-[0.65rem] md:text-xs mb-4 md:mb-6">
+            Servicios
+          </p>
+          <h2 className="text-[clamp(1.9rem,4vw,2.8rem)] mb-4 md:mb-6 font-heading leading-[1.15] font-bold text-primary">
+            Más que impuestos: acompañamiento estratégico.
+          </h2>
+          <p className="text-base md:text-lg text-neutral-600 leading-relaxed max-w-[650px] mx-auto md:mx-0">
+            Nuestro enfoque combina cumplimiento con visión financiera y control
+            interno para maximizar los beneficios de tu negocio.
+          </p>
+        </div>
 
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-6">
-        {services.map((service) => (
-          <article
-            key={service.id}
-            className="bg-white p-6 rounded-[20px] shadow-card border border-[#efe7d8] flex flex-col items-start"
-          >
-            <h3 className="mb-2 text-primary font-heading leading-[1.2]">
-              {service.title}
-            </h3>
-            <p className="text-muted mb-4 flex-grow">
-              {service.description}
-            </p>
-
-            <button
-              type="button"
-              onClick={() => setActiveService(service)}
-              className="mt-auto text-sm font-semibold text-accent hover:underline cursor-pointer"
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+          {services.map((service) => (
+            <article
+              key={service.id}
+              className="bg-[#faf7f2] p-8 rounded-[2rem] border border-[#efe7d8] flex flex-col items-start transition-all hover:bg-white hover:shadow-xl hover:border-accent/30 group"
             >
-              Ver servicios →
-            </button>
-          </article>
-        ))}
+              <h3 className="mb-4 text-primary font-bold text-xl font-heading leading-tight min-h-[3rem] flex items-center">
+                {service.title}
+              </h3>
+              <p className="text-neutral-600 text-sm mb-8 flex-grow leading-relaxed">
+                {service.description}
+              </p>
+
+              <button
+                type="button"
+                onClick={() => setActiveService(service)}
+                className="mt-auto text-sm font-bold text-accent group-hover:translate-x-1 transition-transform cursor-pointer flex items-center gap-2"
+              >
+                Ver servicios <span>→</span>
+              </button>
+            </article>
+          ))}
+        </div>
       </div>
 
       {activeService && (
-        <div className="fixed inset-0 z-50 flex">
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6">
           {/* Overlay */}
           <div
-            className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity ${isClosing ? "animate-fade-out" : "animate-fade-in"
+            className={`absolute inset-0 bg-primary/40 backdrop-blur-md transition-opacity duration-300 ${isClosing ? "opacity-0" : "opacity-100"
               }`}
             onClick={handleClose}
             aria-hidden="true"
@@ -125,8 +127,10 @@ export default function Services() {
 
           {/* Panel */}
           <div
-            className={`relative ml-auto h-full w-full max-w-md bg-white shadow-2xl p-8 overflow-y-auto flex flex-col ${isClosing ? "animate-slide-out" : "animate-slide-in"
-              }`}
+            className={`relative w-full max-w-lg bg-white shadow-2xl overflow-y-auto flex flex-col transition-all duration-300 transform
+                ${isClosing ? "translate-y-full opacity-0" : "translate-y-0 opacity-100"}
+                h-[90vh] sm:h-auto sm:max-h-[85vh] rounded-t-[2.5rem] sm:rounded-[2.5rem] p-8 md:p-10
+              `}
             role="dialog"
             aria-modal="true"
             aria-labelledby="modal-title"
@@ -134,34 +138,35 @@ export default function Services() {
             <button
               type="button"
               onClick={handleClose}
-              className="absolute top-6 right-6 text-muted hover:text-primary transition-colors cursor-pointer"
+              className="absolute top-6 right-6 p-2 text-neutral-400 hover:text-primary transition-colors cursor-pointer bg-neutral-100 rounded-full"
               aria-label="Cerrar modal"
             >
-              ✕
+              <span className="text-xl leading-none">✕</span>
             </button>
 
-            <h3 id="modal-title" className="text-2xl font-heading text-primary mb-3 pr-8">
+            <h3 id="modal-title" className="text-2xl md:text-3xl font-bold font-heading text-primary mb-4 pr-10 leading-tight">
               {activeService.title}
             </h3>
 
-            <p className="text-muted mb-8 leading-relaxed">
+            <p className="text-neutral-600 mb-10 leading-relaxed">
               {activeService.description}
             </p>
 
-            <div className="grid gap-3 mb-8">
+            <div className="grid gap-4 mb-10 overflow-y-auto">
               {activeService.items.map((item, index) => (
                 <div
                   key={`${activeService.id}-${index}`}
-                  className="flex items-start gap-3 rounded-xl border border-[#efe7d8] bg-[#faf7f2] px-4 py-3 text-sm transition-colors hover:border-accent/20"
+                  className="flex items-start gap-4 rounded-2xl border border-[#efe7d8] bg-[#faf7f2] px-5 py-4 text-sm md:text-base transition-colors hover:border-accent/20"
                 >
-                  <span className="mt-1.5 h-2 w-2 rounded-full bg-accent shrink-0" />
-                  <span className="text-gray-700">{item}</span>
+                  <span className="mt-2 h-2.5 w-2.5 rounded-full bg-accent shrink-0" />
+                  <span className="text-neutral-700 font-medium">{item}</span>
                 </div>
               ))}
             </div>
+
             <Link
               to="/asesorias"
-              className="mt-auto w-full rounded-xl bg-primary px-6 py-4 text-white font-semibold text-center hover:opacity-90 transition-opacity shadow-lg shadow-primary/20"
+              className="mt-4 w-full rounded-2xl bg-primary px-6 py-5 text-white font-bold text-center hover:bg-primary-dark transition-all shadow-xl shadow-primary/20 active:scale-95"
             >
               Agendar asesoría
             </Link>
