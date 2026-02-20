@@ -7,6 +7,7 @@ import Home from "./pages/Home";
 import Training from "./pages/Training";
 import Asesorias from "./pages/Asesorias";
 import Packages from "./pages/Packages";
+import ClientPortal from "./pages/ClientPortal";
 
 export default function App() {
   const initialOptions = {
@@ -23,6 +24,7 @@ export default function App() {
         <Route path="/capacitaciones" element={<Training />} />
         <Route path="/asesorias" element={<Asesorias />} />
         <Route path="/paquetes" element={<Packages />} />
+        <Route path="/portal" element={<ClientPortal />} />
       </Routes>
       <Footer />
       <WhatsAppButton />
