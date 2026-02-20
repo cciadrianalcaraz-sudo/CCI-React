@@ -31,10 +31,10 @@ export default function Training() {
     };
 
     return (
-        <div className="pt-32 pb-20 px-[8vw] relative">
+        <div className="pt-24 pb-16 md:pt-40 md:pb-24 px-[6vw] md:px-[8vw] relative min-h-screen">
             {/* Success Notification */}
             {showSuccess && (
-                <div className="fixed top-24 right-8 z-[100] bg-green-500 text-white px-6 py-4 rounded-2xl shadow-2xl animate-slide-in flex items-center gap-3">
+                <div className="fixed top-24 right-6 md:right-8 z-[100] bg-green-500 text-white px-6 py-4 rounded-2xl shadow-2xl animate-slide-in flex items-center gap-3">
                     <span className="text-2xl">🎉</span>
                     <div>
                         <p className="font-bold">¡Pago Exitoso!</p>
@@ -43,29 +43,29 @@ export default function Training() {
                 </div>
             )}
 
-            <div className="max-w-[720px] mb-16">
-                <p className="uppercase tracking-[0.2rem] font-semibold text-accent text-xs mb-4">Capacitaciones</p>
-                <h1 className="text-[clamp(2.5rem,5vw,3.5rem)] font-heading text-primary leading-[1.1] mb-6">
+            <div className="max-w-[800px] mb-12 md:mb-20 text-center md:text-left">
+                <p className="uppercase tracking-[0.2rem] font-semibold text-accent text-[0.65rem] md:text-xs mb-4 md:mb-6">Capacitaciones</p>
+                <h1 className="text-[clamp(2.2rem,8vw,3.5rem)] font-heading text-primary leading-[1.15] mb-6 font-bold">
                     Potenciamos tu conocimiento para un mejor control.
                 </h1>
-                <p className="text-xl text-muted">
+                <p className="text-lg md:text-xl text-muted max-w-[650px] mx-auto md:mx-0 leading-relaxed">
                     Accede a cursos especializados y mantente informado con las últimas novedades del mundo contable y fiscal.
                 </p>
-                <div className="flex flex-col sm:flex-row gap-6 mt-8">
+                <div className="flex flex-col sm:flex-row gap-4 mt-10 justify-center md:justify-start">
                     <a
                         href="#herramientas"
-                        className="inline-flex items-center justify-center px-8 py-4 bg-accent text-white font-bold rounded-2xl shadow-lg hover:bg-[#a67d3d] transition-all hover:-translate-y-1 active:scale-95 group"
+                        className="inline-flex items-center justify-center px-10 py-5 bg-accent text-white font-bold rounded-2xl shadow-xl shadow-accent/20 hover:bg-[#a67d3d] transition-all active:scale-95 group"
                     >
                         Ver Herramientas
-                        <span className="ml-2 group-hover:translate-y-0.5 transition-transform">↓</span>
+                        <span className="ml-2 group-hover:translate-y-1 transition-transform">↓</span>
                     </a>
                 </div>
             </div>
 
-            <div className="grid lg:grid-cols-3 gap-12 mb-20">
+            <div className="grid lg:grid-cols-3 gap-12 md:gap-16 mb-20 md:mb-32">
                 <div className="lg:col-span-2">
-                    <h2 className="text-2xl font-heading text-primary mb-8 border-b border-[#efe7d8] pb-4">Nuestros Cursos</h2>
-                    <div className="grid md:grid-cols-2 gap-8">
+                    <h2 className="text-2xl md:text-3xl font-heading text-primary mb-10 border-b border-light-beige pb-4 font-bold">Nuestros Cursos</h2>
+                    <div className="grid sm:grid-cols-2 gap-8">
                         {courses.map((course) => (
                             <CourseCard
                                 key={course.id}
@@ -76,36 +76,35 @@ export default function Training() {
                     </div>
                 </div>
 
-                <aside>
+                <div className="lg:pt-20">
                     <NewsSection onRegister={handleRegisterWebinar} />
-                </aside>
+                </div>
             </div>
 
             {/* Herramientas de Cálculo Section */}
-            {/* Herramientas Empresariales Gratuitas Section */}
-            <section id="herramientas" className="bg-white rounded-3xl p-10 border border-[#efe7d8] shadow-custom scroll-mt-32">
-                <div className="mb-8">
-                    <p className="uppercase tracking-[0.2rem] font-semibold text-accent text-xs mb-2">Recursos Gratuitos</p>
-                    <h2 className="text-3xl font-heading text-primary">Herramientas Empresariales Gratuitas</h2>
-                    <p className="text-muted">Descarga plantillas estratégicas y herramientas automatizadas para potenciar tu negocio.</p>
+            <section id="herramientas" className="bg-white rounded-[2.5rem] md:rounded-[3.5rem] p-8 md:p-16 border border-[#efe7d8] shadow-custom scroll-mt-28 md:scroll-mt-32">
+                <div className="mb-12 md:mb-16">
+                    <p className="uppercase tracking-[0.2rem] font-semibold text-accent text-[0.65rem] md:text-xs mb-3 md:mb-4">Recursos Gratuitos</p>
+                    <h2 className="text-3xl md:text-4xl font-heading text-primary mb-4 font-bold">Herramientas Empresariales Gratuitas</h2>
+                    <p className="text-muted text-lg leading-relaxed max-w-[600px]">Descarga plantillas estratégicas y herramientas automatizadas para potenciar tu negocio.</p>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-8">
                     {calculationTools.map((tool) => (
-                        <div key={tool.id} className="bg-[#faf7f2] p-8 rounded-2xl border border-[#efe7d8] flex flex-col items-start transition-all hover:border-accent/40 group">
-                            <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <div key={tool.id} className="bg-[#faf7f2] p-8 md:p-10 rounded-3xl border border-[#efe7d8] flex flex-col items-start transition-all hover:border-accent/40 group hover:shadow-lg">
+                            <div className="w-14 h-14 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                                 <span className="text-2xl">📊</span>
                             </div>
-                            <h3 className="text-xl font-bold text-primary mb-3">{tool.title}</h3>
-                            <p className="text-muted text-sm mb-4 leading-relaxed">
+                            <h3 className="text-xl md:text-2xl font-bold text-primary mb-4">{tool.title}</h3>
+                            <p className="text-muted text-sm md:text-base mb-6 leading-relaxed">
                                 {tool.description}
                             </p>
 
                             {tool.features && (
-                                <ul className="mb-6 space-y-2">
+                                <ul className="mb-8 space-y-3">
                                     {tool.features.map((feature, idx) => (
-                                        <li key={idx} className="flex items-center gap-2 text-xs text-neutral-600">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                                        <li key={idx} className="flex items-start gap-3 text-sm text-neutral-600">
+                                            <span className="w-2 h-2 rounded-full bg-accent shrink-0 mt-1.5" />
                                             {feature}
                                         </li>
                                     ))}
@@ -115,14 +114,16 @@ export default function Training() {
                             <a
                                 href={tool.downloadUrl}
                                 download={tool.fileName}
-                                className="mt-auto inline-flex items-center gap-2 font-bold text-accent hover:text-[#a67d3d] transition-colors cursor-pointer"
+                                className="mt-auto inline-flex items-center gap-2 font-bold text-accent hover:text-[#a67d3d] transition-all cursor-pointer group/link"
                             >
-                                Descargar herramienta <span className="text-lg">↓</span>
+                                Descargar herramienta
+                                <span className="text-xl group-hover:translate-y-1 transition-transform">↓</span>
                             </a>
                         </div>
                     ))}
                 </div>
             </section>
+
 
             {selectedCourse && (
                 <PaymentModal

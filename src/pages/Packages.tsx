@@ -60,14 +60,14 @@ export default function Packages() {
     };
 
     return (
-        <div className="pt-32 pb-20 px-[8vw] min-h-screen bg-[#faf7f2]">
+        <div className="pt-24 pb-16 md:pt-40 md:pb-24 px-[6vw] md:px-[8vw] min-h-screen bg-[#faf7f2]">
             <div className="max-w-[1200px] mx-auto">
-                <div className="text-center mb-16">
-                    <p className="uppercase tracking-[0.2rem] font-semibold text-accent text-xs mb-4">Paquetes de Servicio</p>
-                    <h1 className="text-[clamp(2.5rem,5vw,3.5rem)] font-heading text-primary leading-[1.1] mb-6">
+                <div className="text-center mb-12 md:mb-20">
+                    <p className="uppercase tracking-[0.2rem] font-semibold text-accent text-[0.65rem] md:text-xs mb-4 md:mb-6">Paquetes de Servicio</p>
+                    <h1 className="text-[clamp(2.2rem,8vw,3.5rem)] font-heading text-primary leading-[1.15] mb-6 font-bold">
                         Inversión inteligente para tu tranquilidad fiscal
                     </h1>
-                    <p className="text-xl text-muted max-w-[700px] mx-auto">
+                    <p className="text-lg md:text-xl text-muted max-w-[700px] mx-auto">
                         Elige el nivel de acompañamiento que mejor se adapte a la etapa actual de tu negocio.
                     </p>
                 </div>
@@ -76,31 +76,31 @@ export default function Packages() {
                     {packages.map((plan, index) => (
                         <div
                             key={index}
-                            className={`relative bg-white rounded-3xl p-8 border ${plan.highlight
-                                ? "border-accent ring-4 ring-accent/10 shadow-2xl scale-105 z-10"
-                                : "border-[#efe7d8] shadow-custom"
-                                } transition-all duration-300 hover:translate-y-[-8px]`}
+                            className={`relative bg-white rounded-[2.5rem] p-8 md:p-10 border transition-all duration-300 ${plan.highlight
+                                ? "border-accent ring-4 ring-accent/5 shadow-2xl lg:scale-105 z-10"
+                                : "border-[#efe7d8] shadow-custom hover:translate-y-[-8px]"
+                                }`}
                         >
                             {plan.highlight && (
-                                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-accent text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-accent text-white px-5 py-1.5 rounded-full text-[0.65rem] font-bold uppercase tracking-[0.1rem] whitespace-nowrap">
                                     Más Recomendado
                                 </div>
                             )}
 
-                            <div className="mb-8">
-                                <h3 className="text-2xl font-bold text-primary mb-2">{plan.name}</h3>
-                                <p className="text-sm text-neutral-500 mb-6 min-h-[48px]">{plan.description}</p>
-                                <div className="flex items-baseline gap-1">
-                                    <span className="text-4xl font-heading text-primary font-bold">{plan.price}</span>
+                            <div className="mb-10">
+                                <h3 className="text-2xl font-bold text-primary mb-3">{plan.name}</h3>
+                                <p className="text-sm text-neutral-500 mb-8 min-h-[48px] leading-relaxed">{plan.description}</p>
+                                <div className="flex items-baseline gap-1.5">
+                                    <span className="text-4xl md:text-5xl font-heading text-primary font-bold">{plan.price}</span>
                                     <span className="text-muted text-sm">{plan.period}</span>
                                 </div>
-                                <p className="text-xs text-accent font-bold mt-2 uppercase tracking-wide italic">{plan.target}</p>
+                                <p className="text-[0.65rem] text-accent font-bold mt-3 uppercase tracking-wider italic bg-accent/5 inline-block px-3 py-1 rounded-lg">{plan.target}</p>
                             </div>
 
-                            <ul className="space-y-4 mb-10">
+                            <ul className="space-y-5 mb-12">
                                 {plan.features.map((feature, fIndex) => (
-                                    <li key={fIndex} className="flex gap-3 text-sm text-neutral-600">
-                                        <Check className="w-5 h-5 text-accent shrink-0" />
+                                    <li key={fIndex} className="flex gap-4 text-sm md:text-base text-neutral-600">
+                                        <Check className="w-5 h-5 text-accent shrink-0 mt-0.5" />
                                         <span>{feature}</span>
                                     </li>
                                 ))}
@@ -110,8 +110,8 @@ export default function Packages() {
                                 href={whatsappLink(plan.name)}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className={`w-full py-4 px-6 rounded-2xl font-bold text-center transition-all flex items-center justify-center gap-2 ${plan.highlight
-                                    ? "bg-accent text-white shadow-lg shadow-accent/20 hover:bg-[#a67d3d]"
+                                className={`w-full py-5 px-6 rounded-2xl font-bold text-center transition-all flex items-center justify-center gap-2 active:scale-95 ${plan.highlight
+                                    ? "bg-accent text-white shadow-xl shadow-accent/20 hover:bg-[#a67d3d]"
                                     : "bg-[#faf7f2] text-primary border border-[#efe7d8] hover:bg-neutral-100"
                                     }`}
                             >
@@ -121,16 +121,16 @@ export default function Packages() {
                     ))}
                 </div>
 
-                <div className="mt-20 p-10 bg-white rounded-3xl border border-[#efe7d8] text-center shadow-custom">
-                    <h2 className="text-2xl font-bold text-primary mb-4">¿Necesitas un paquete a la medida?</h2>
-                    <p className="text-muted mb-8 max-w-[600px] mx-auto">
+                <div className="mt-20 md:mt-32 p-10 md:p-16 bg-white rounded-[3rem] border border-[#efe7d8] text-center shadow-custom">
+                    <h2 className="text-2xl md:text-3xl font-bold text-primary mb-6">¿Necesitas un paquete a la medida?</h2>
+                    <p className="text-muted text-lg mb-10 max-w-[650px] mx-auto leading-relaxed">
                         Entendemos que cada negocio es único. Si tus requerimientos superan estos niveles, podemos diseñar una propuesta personalizada para ti.
                     </p>
                     <a
                         href={whatsappLink("Plan Personalizado")}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center px-10 py-4 bg-primary text-white font-bold rounded-2xl hover:bg-primary-dark transition-all"
+                        className="inline-flex items-center justify-center px-12 py-5 bg-primary text-white font-bold rounded-2xl hover:bg-primary-dark transition-all shadow-xl shadow-primary/20 active:scale-95"
                     >
                         Hablar con un consultor
                     </a>
@@ -138,4 +138,5 @@ export default function Packages() {
             </div>
         </div>
     );
+
 }

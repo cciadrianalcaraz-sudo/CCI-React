@@ -14,10 +14,11 @@ const Metric: React.FC<MetricProps> = ({ title, text }) => (
 
 export default function HeroMetrics() {
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-4 mt-8 lg:mt-0">
             <Metric title="360°" text="Visión integral fiscal y financiera" />
-            <Metric title="Mejor decisión" text="Reportes claros" />
-            <Metric title="Más control" text="Procesos definidos" />
+            <Metric title="Claridad" text="Reportes fáciles de entender" />
+            <Metric title="Control" text="Procesos robustos y definidos" />
         </div>
     );
 }
+
