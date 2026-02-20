@@ -88,37 +88,42 @@ export default function Navbar() {
 
                 {/* Mobile Navigation Overlay */}
                 <div className={`
-                    fixed inset-0 bg-white transition-all duration-300 lg:hidden
-                    ${isMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}
+                    fixed inset-0 bg-white/98 backdrop-blur-xl transition-all duration-500 lg:hidden z-[45]
+                    ${isMenuOpen ? "opacity-100 translate-x-0" : "opacity-0 translate-x-full"}
                 `}>
-                    <div className="flex flex-col items-center justify-center h-full gap-8 px-8">
-                        {navLinks.map((link, index) => (
-                            <div
-                                key={link.path}
-                                className={`transition-all duration-500 transform ${isMenuOpen ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}
-                                style={{ transitionDelay: `${index * 50}ms` }}
-                            >
-                                <LinkComponent
-                                    link={link}
-                                    className="text-2xl font-bold text-primary-dark hover:text-accent transition-colors block"
-                                />
-                            </div>
-                        ))}
+                    <div className="flex flex-col h-full pt-32 pb-12 px-[10vw]">
+                        <div className="flex flex-col gap-6">
+                            {navLinks.map((link, index) => (
+                                <div
+                                    key={link.path}
+                                    className={`transition-all duration-700 transform ${isMenuOpen ? "translate-x-0 opacity-100" : "translate-x-12 opacity-0"}`}
+                                    style={{ transitionDelay: `${index * 70}ms` }}
+                                >
+                                    <LinkComponent
+                                        link={link}
+                                        className="text-3xl font-bold text-primary-dark hover:text-accent transition-colors block border-b border-light-beige/30 pb-4"
+                                    />
+                                </div>
+                            ))}
+                        </div>
 
-                        <div className={`mt-8 transition-all duration-500 delay-400 transform ${isMenuOpen ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}>
+                        <div className={`mt-auto transition-all duration-700 delay-500 transform ${isMenuOpen ? "translate-y-0 opacity-100" : "translate-y-12 opacity-0"}`}>
+                            <p className="text-muted text-sm mb-4 font-medium italic">¿Necesitas ayuda personalizada?</p>
                             <a
                                 href="https://wa.me/5213121682366"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="bg-accent text-white px-8 py-4 rounded-2xl font-bold shadow-lg shadow-accent/20 active:scale-95 transition-transform"
+                                className="inline-block w-full bg-accent text-[#2c2210] py-5 px-8 rounded-2xl font-bold text-center shadow-xl shadow-accent/20 active:scale-95 transition-transform text-lg"
                             >
                                 Agendar vía WhatsApp
                             </a>
                         </div>
                     </div>
+
+                    {/* Decorative background element */}
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 rounded-full blur-3xl -z-10 -mr-32 -mt-32"></div>
                 </div>
             </div>
         </nav>
     );
 }
-
