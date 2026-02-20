@@ -14,58 +14,63 @@ export default function Asesorias() {
     }, []);
 
     return (
-        <div className="pt-32 pb-20 px-[8vw] min-h-screen bg-[#faf7f2]">
+        <div className="pt-24 pb-16 md:pt-40 md:pb-24 px-[6vw] md:px-[8vw] min-h-screen bg-[#faf7f2]">
             <div className="max-w-[1000px] mx-auto">
-                <div className="text-center mb-16">
-                    <p className="uppercase tracking-[0.2rem] font-semibold text-accent text-xs mb-4">Agendar Cita</p>
-                    <h1 className="text-[clamp(2.5rem,5vw,3.5rem)] font-heading text-primary leading-[1.1] mb-8">
+                <div className="text-center mb-12 md:mb-16">
+                    <p className="uppercase tracking-[0.2rem] font-semibold text-accent text-[0.65rem] md:text-xs mb-4 md:mb-6">Agendar Cita</p>
+                    <h1 className="text-[clamp(2.2rem,8vw,3.5rem)] font-heading text-primary leading-[1.15] mb-8 font-bold">
                         Asesoría Especializada 1 a 1
                     </h1>
 
-                    <div className="max-w-[800px] mx-auto bg-white rounded-3xl border border-[#efe7d8] p-8 md:p-12 mb-12 shadow-sm text-left">
-                        <h2 className="text-2xl font-bold text-primary mb-6 text-center md:text-left">
+                    <div className="max-w-[800px] mx-auto bg-white rounded-[2.5rem] border border-[#efe7d8] p-8 md:p-12 mb-12 shadow-sm text-left">
+                        <h2 className="text-2xl font-bold text-primary mb-6 text-center md:text-left leading-tight">
                             ¿Tienes dudas fiscales o financieras que afectan tu rentabilidad?
                         </h2>
-                        <p className="text-lg text-muted mb-8 text-center md:text-left">
+                        <p className="text-base md:text-lg text-muted mb-8 text-center md:text-left leading-relaxed">
                             En esta sesión 1 a 1 analizamos tu situación real y te damos una estrategia clara y accionable.
                         </p>
 
-                        <div className="grid sm:grid-cols-2 gap-6 mb-10">
+                        <div className="grid sm:grid-cols-2 gap-4 md:gap-6 mb-10">
                             {[
                                 { title: "Optimización fiscal", icon: "⚖️" },
                                 { title: "Estructura financiera", icon: "🏗️" },
                                 { title: "Flujo de efectivo", icon: "💸" },
                                 { title: "Planeación estratégica", icon: "🎯" }
                             ].map((item, idx) => (
-                                <div key={idx} className="flex items-center gap-4 p-4 rounded-2xl bg-[#faf7f2] border border-[#efe7d8]/50">
+                                <div key={idx} className="flex items-center gap-4 p-4 rounded-2xl bg-[#faf7f2] border border-[#efe7d8]/50 transition-colors hover:border-accent/30">
                                     <span className="text-2xl text-accent">{item.icon}</span>
-                                    <span className="font-semibold text-primary">{item.title}</span>
+                                    <span className="font-semibold text-primary text-sm md:text-base">{item.title}</span>
                                 </div>
                             ))}
                         </div>
 
-                        <div className="flex flex-wrap justify-center md:justify-start gap-8 py-8 border-y border-[#efe7d8]">
-                            <div className="flex items-center gap-2">
+                        <div className="flex flex-col sm:flex-row flex-wrap justify-center md:justify-start gap-6 md:gap-10 py-8 border-y border-[#efe7d8]">
+                            <div className="flex items-center gap-3">
                                 <span className="text-xl">⏱️</span>
-                                <span className="font-bold text-primary">Duración:</span>
-                                <span className="text-muted">60 minutos</span>
+                                <div className="flex flex-col sm:flex-row sm:gap-2">
+                                    <span className="font-bold text-primary text-sm md:text-base">Duración:</span>
+                                    <span className="text-muted text-sm md:text-base">60 minutos</span>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-3">
                                 <span className="text-xl">🌐</span>
-                                <span className="font-bold text-primary">Modalidad:</span>
-                                <span className="text-muted">Online</span>
+                                <div className="flex flex-col sm:flex-row sm:gap-2">
+                                    <span className="font-bold text-primary text-sm md:text-base">Modalidad:</span>
+                                    <span className="text-muted text-sm md:text-base">Online</span>
+                                </div>
                             </div>
                         </div>
 
-                        <p className="mt-8 text-center md:text-left font-semibold text-accent">
-                            👇 Selecciona tu horario disponible y asegura tu sesión estratégica hoy.
+                        <p className="mt-8 text-center md:text-left font-semibold text-accent text-sm md:text-base flex items-center justify-center md:justify-start gap-2">
+                            <span>👇</span> Selecciona tu horario disponible y asegura tu sesión estratégica hoy.
                         </p>
                     </div>
 
-                    <p className="text-xl text-muted max-w-[700px] mx-auto mb-4 italic">
+                    <p className="text-lg md:text-xl text-muted max-w-[700px] mx-auto mb-4 italic">
                         Agenda tu sesión en unos segundos:
                     </p>
                 </div>
+
 
                 <div className="bg-white rounded-3xl border border-[#efe7d8] shadow-custom overflow-hidden transition-all hover:shadow-xl">
                     <div
