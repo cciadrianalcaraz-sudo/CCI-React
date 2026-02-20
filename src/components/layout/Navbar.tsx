@@ -56,14 +56,17 @@ export default function Navbar() {
     };
 
     return (
-        <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md px-[6vw] md:px-[8vw] py-4 shadow-sm border-b border-light-beige/50">
+        <nav className={`
+            fixed top-0 left-0 right-0 z-50 px-[6vw] md:px-[8vw] py-4 transition-all duration-300
+            ${isMenuOpen ? "bg-transparent shadow-none border-transparent" : "bg-white/90 backdrop-blur-md shadow-sm border-b border-light-beige/50"}
+        `}>
             <div className="flex items-center justify-between max-w-[1400px] mx-auto">
                 <Link to="/" className="flex flex-col gap-0.5 font-semibold group z-50">
                     <img
-                        className="w-[180px] md:w-[220px] h-auto object-contain transition-transform group-hover:scale-[1.02]"
+                        className="w-[160px] md:w-[220px] h-auto object-contain transition-transform group-hover:scale-[1.02]"
                         src={logo}
                         alt="CCI Consultoría Contable Integral" />
-                    <span className="text-[0.55rem] md:text-[0.6rem] text-muted uppercase tracking-[0.1rem]">Consultoría Contable Integral</span>
+                    <span className="text-[0.5rem] md:text-[0.6rem] text-muted uppercase tracking-[0.1rem]">Consultoría Contable Integral</span>
                 </Link>
 
                 {/* Desktop Navigation */}
@@ -88,40 +91,37 @@ export default function Navbar() {
 
                 {/* Mobile Navigation Overlay */}
                 <div className={`
-                    fixed inset-0 bg-white/98 backdrop-blur-xl transition-all duration-500 lg:hidden z-[45]
-                    ${isMenuOpen ? "opacity-100 translate-x-0" : "opacity-0 translate-x-full"}
+                    fixed inset-0 bg-white transition-all duration-500 lg:hidden z-[45]
+                    ${isMenuOpen ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-full pointer-events-none"}
                 `}>
-                    <div className="flex flex-col h-full pt-32 pb-12 px-[10vw]">
-                        <div className="flex flex-col gap-6">
+                    <div className="flex flex-col h-full pt-32 pb-12 px-[8vw]">
+                        <div className="flex flex-col gap-4">
                             {navLinks.map((link, index) => (
                                 <div
                                     key={link.path}
-                                    className={`transition-all duration-700 transform ${isMenuOpen ? "translate-x-0 opacity-100" : "translate-x-12 opacity-0"}`}
-                                    style={{ transitionDelay: `${index * 70}ms` }}
+                                    className={`transition-all duration-500 transform ${isMenuOpen ? "translate-x-0 opacity-100" : "translate-x-8 opacity-0"}`}
+                                    style={{ transitionDelay: `${index * 60}ms` }}
                                 >
                                     <LinkComponent
                                         link={link}
-                                        className="text-3xl font-bold text-primary-dark hover:text-accent transition-colors block border-b border-light-beige/30 pb-4"
+                                        className="text-2xl font-bold text-primary-dark hover:text-accent transition-colors block py-3 border-b border-light-beige/30"
                                     />
                                 </div>
                             ))}
                         </div>
 
                         <div className={`mt-auto transition-all duration-700 delay-500 transform ${isMenuOpen ? "translate-y-0 opacity-100" : "translate-y-12 opacity-0"}`}>
-                            <p className="text-muted text-sm mb-4 font-medium italic">¿Necesitas ayuda personalizada?</p>
+                            <p className="text-muted text-xs mb-4 font-medium uppercase tracking-wider">Contacto Directo</p>
                             <a
                                 href="https://wa.me/5213121682366"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-block w-full bg-accent text-[#2c2210] py-5 px-8 rounded-2xl font-bold text-center shadow-xl shadow-accent/20 active:scale-95 transition-transform text-lg"
+                                className="inline-block w-full bg-accent text-[#2c2210] py-4 px-8 rounded-2xl font-bold text-center shadow-lg shadow-accent/20 active:scale-95 transition-transform"
                             >
                                 Agendar vía WhatsApp
                             </a>
                         </div>
                     </div>
-
-                    {/* Decorative background element */}
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 rounded-full blur-3xl -z-10 -mr-32 -mt-32"></div>
                 </div>
             </div>
         </nav>
