@@ -70,14 +70,22 @@ export default function Navbar() {
                 </Link>
 
                 {/* Desktop Navigation */}
-                <div className="hidden lg:flex gap-8 font-semibold text-primary-dark text-sm">
-                    {navLinks.map((link) => (
-                        <LinkComponent
-                            key={link.path}
-                            link={link}
-                            className="relative after:content-[''] after:absolute after:left-0 after:-bottom-[4px] after:w-0 after:h-[2px] after:bg-accent after:transition-[width] after:duration-200 hover:after:w-full"
-                        />
-                    ))}
+                <div className="hidden lg:flex items-center gap-8">
+                    <div className="flex gap-8 font-semibold text-primary-dark text-sm">
+                        {navLinks.map((link) => (
+                            <LinkComponent
+                                key={link.path}
+                                link={link}
+                                className="relative after:content-[''] after:absolute after:left-0 after:-bottom-[4px] after:w-0 after:h-[2px] after:bg-accent after:transition-[width] after:duration-200 hover:after:w-full"
+                            />
+                        ))}
+                    </div>
+                    <Link
+                        to="/portal"
+                        className="bg-primary text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-primary/20 hover:bg-primary-dark transition-all active:scale-95"
+                    >
+                        Acceso Clientes
+                    </Link>
                 </div>
 
                 {/* Mobile Menu Toggle */}
@@ -96,6 +104,14 @@ export default function Navbar() {
                 `}>
                     <div className="flex flex-col h-full pt-32 pb-12 px-[8vw]">
                         <div className="flex flex-col gap-4">
+                            <Link
+                                to="/portal"
+                                className="bg-primary-dark text-white px-6 py-4 rounded-2xl font-bold text-center mb-4 flex items-center justify-center gap-2 shadow-xl shadow-primary/10"
+                                onClick={() => setIsMenuOpen(false)}
+                            >
+                                <span className="w-2 h-2 bg-accent rounded-full animate-pulse" />
+                                Acceso Clientes
+                            </Link>
                             {navLinks.map((link, index) => (
                                 <div
                                     key={link.path}
