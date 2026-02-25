@@ -146,30 +146,63 @@ export interface NewsItem {
 
 export const news: NewsItem[] = [
     {
-        id: 'reformas-2026',
-        title: 'Principales Cambios en la Miscelánea Fiscal 2026',
-        date: '10 de Febrero, 2026',
-        summary: 'Analizamos los puntos clave que impactarán a las PyMES mexicanas este año.',
+        id: 'cierre-pm-2025',
+        title: 'Cierre de Declaración Anual de Personas Morales',
+        date: '25 de Febrero, 2026',
+        summary: 'Recordatorio importante: El plazo para la declaración del ejercicio 2025 vence el 31 de marzo.',
         content: [
-            'Ajustes en las tasas de retención para plataformas digitales.',
-            'Nuevas facilidades para el cumplimiento de personas físicas en el RESICO.',
-            'Incremento en la vigilancia sobre depósitos en efectivo superiores a $15,000 MXN.',
-            'Actualización de las tablas de ISR para el ejercicio fiscal 2025.',
-            'Digitalización total de las revisiones de gabinete por parte del SAT.'
+            'Checklist de papeles de trabajo: Conciliación contable-fiscal, estados financieros y depreciaciones.',
+            'Conciliación Crucial: CFDI de nómina vs. Visores del SAT para asegurar la deducibilidad.',
+            'Revisión de coeficientes de utilidad y pérdidas fiscales de ejercicios anteriores.',
+            'Asegúrate de tener la e.firma vigente para evitar contratiempos de último minuto.'
         ]
     },
     {
-        id: 'webinar-gratuito',
-        title: 'Próximo Webinar: Optimización de Flujo de Efectivo',
-        date: '05 de Febrero, 2026',
-        summary: 'Únete a nuestra sesión práctica sobre cómo liberar recursos atrapados en tu operación.',
-        isWebinar: true,
+        id: 'prep-declaracion-pf',
+        title: 'Preparación para la Declaración de Personas Físicas',
+        date: '22 de Febrero, 2026',
+        summary: 'Tips para optimizar tus deducciones personales antes del inicio del periodo en abril.',
         content: [
-            'Día y Hora: 20 de Febrero a las 10:00 AM (CDMX).',
-            'Temario: Estrategias de cobranza efectiva, gestión de inventarios y negociación con proveedores.',
-            'Ponente: C.P. Adrián Alcaraz, especialista en finanzas corporativas.',
-            'Registro: Gratuito para todos nuestros suscriptores.',
-            'Plataforma: Zoom (Se enviará el enlace por correo tras el registro).'
+            'Honorarios Médicos: Verifica que el pago haya sido por medios electrónicos.',
+            'Colegiaturas: Asegúrate de contar con el complemento de instituciones educativas.',
+            'Gastos Funerarios y Primas de Seguros: Revisa que los CFDI cumplan con los requisitos.',
+            'Intereses Hipotecarios: Solicita tu constancia de retenciones bancarias a tiempo.'
+        ]
+    },
+    {
+        id: 'prima-riesgo-imss',
+        title: 'Determinación de la Prima de Riesgo ante el IMSS',
+        date: '15 de Febrero, 2026',
+        summary: 'Febrero es el mes para presentar la determinación. Evita multas y recargos por omisión.',
+        content: [
+            'Análisis de la siniestralidad: Riesgos de trabajo ocurridos en el ejercicio 2025.',
+            'Cálculo de la prima: Utiliza el IDSE o la herramienta SUA debidamente actualizada.',
+            'Fecha límite: Tienes hasta el último día hábil de febrero para cumplir con esta obligación.',
+            'Importancia crítica: Una mala determinación impacta directamente en los costos de seguridad social.'
+        ]
+    },
+    {
+        id: 'reforma-fiscal-2026',
+        title: '🔍 Cambios Clave en la Reforma Fiscal 2026',
+        date: '10 de Febrero, 2026',
+        summary: 'Entérate de los mecanismos de control más estrictos que el SAT ha implementado este año.',
+        content: [
+            'Suspensión de Sellos (CSD): Modificaciones al Art. 17-H Bis para agilizar bloqueos.',
+            'Materialidad (Art. 69-B): Sanciones severas por CFDI que no amparen operaciones reales.',
+            'Catálogos CFDI 4.0: Actualización masiva de claves de productos y regímenes aduaneros.',
+            'Validaciones automáticas: El SAT ahora cruza información en tiempo real con terceros.'
+        ]
+    },
+    {
+        id: 'ambito-laboral-2026',
+        title: '💼 Actualización Laboral y Seguridad Social 2026',
+        date: '05 de Febrero, 2026',
+        summary: 'Impacto financiero del nuevo salario mínimo y la transición en la jornada laboral.',
+        content: [
+            'Salario Mínimo 2026: Reajuste en cuotas obrero-patronales y bases de cotización.',
+            'Jornada Laboral: Estatus de la reducción gradual de 48 a 40 horas y su impacto en presupuestos.',
+            'Retención por Intereses: Incremento en la tasa nominal (del 0.50% al 0.90%) según la LIF.',
+            'Estrategias de Contratación: Cómo presupuestar el incremento en horas extra o vacantes.'
         ]
     }
 ];
