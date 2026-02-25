@@ -148,7 +148,7 @@ export const news: NewsItem[] = [
     {
         id: 'cierre-pm-2025',
         title: 'Cierre de Declaración Anual de Personas Morales',
-        date: '25 de Febrero, 2026',
+        date: '10 de Marzo, 2026',
         summary: 'Recordatorio importante: El plazo para la declaración del ejercicio 2025 vence el 31 de marzo.',
         content: [
             'Checklist de papeles de trabajo: Conciliación contable-fiscal, estados financieros y depreciaciones.',
@@ -160,7 +160,7 @@ export const news: NewsItem[] = [
     {
         id: 'prep-declaracion-pf',
         title: 'Preparación para la Declaración de Personas Físicas',
-        date: '22 de Febrero, 2026',
+        date: '16 de Marzo, 2026',
         summary: 'Tips para optimizar tus deducciones personales antes del inicio del periodo en abril.',
         content: [
             'Honorarios Médicos: Verifica que el pago haya sido por medios electrónicos.',
@@ -170,21 +170,9 @@ export const news: NewsItem[] = [
         ]
     },
     {
-        id: 'prima-riesgo-imss',
-        title: 'Determinación de la Prima de Riesgo ante el IMSS',
-        date: '15 de Febrero, 2026',
-        summary: 'Febrero es el mes para presentar la determinación. Evita multas y recargos por omisión.',
-        content: [
-            'Análisis de la siniestralidad: Riesgos de trabajo ocurridos en el ejercicio 2025.',
-            'Cálculo de la prima: Utiliza el IDSE o la herramienta SUA debidamente actualizada.',
-            'Fecha límite: Tienes hasta el último día hábil de febrero para cumplir con esta obligación.',
-            'Importancia crítica: Una mala determinación impacta directamente en los costos de seguridad social.'
-        ]
-    },
-    {
         id: 'reforma-fiscal-2026',
         title: '🔍 Cambios Clave en la Reforma Fiscal 2026',
-        date: '10 de Febrero, 2026',
+        date: '03 de Marzo, 2026',
         summary: 'Entérate de los mecanismos de control más estrictos que el SAT ha implementado este año.',
         content: [
             'Suspensión de Sellos (CSD): Modificaciones al Art. 17-H Bis para agilizar bloqueos.',
@@ -196,7 +184,7 @@ export const news: NewsItem[] = [
     {
         id: 'ambito-laboral-2026',
         title: '💼 Actualización Laboral y Seguridad Social 2026',
-        date: '05 de Febrero, 2026',
+        date: '01 de Marzo, 2026',
         summary: 'Impacto financiero del nuevo salario mínimo y la transición en la jornada laboral.',
         content: [
             'Salario Mínimo 2026: Reajuste en cuotas obrero-patronales y bases de cotización.',
