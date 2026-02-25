@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { faqItems } from '../../data/faq';
+import { faqItems } from '../data/faq';
 
 export default function FAQ() {
     const [openId, setOpenId] = useState<string | null>(null);
@@ -9,7 +9,7 @@ export default function FAQ() {
     };
 
     return (
-        <section id="faq" className="py-20 bg-white">
+        <section id="faq" className="py-20 bg-soft/50">
             <div className="container mx-auto px-6">
                 <div className="max-w-3xl mx-auto text-center mb-16">
                     <h2 className="text-4xl font-heading text-primary mb-4">Preguntas Frecuentes</h2>
@@ -22,7 +22,7 @@ export default function FAQ() {
                     {faqItems.map((item) => (
                         <div
                             key={item.id}
-                            className="border border-[#efe7d8] rounded-2xl overflow-hidden transition-all duration-300"
+                            className="bg-white border border-[#efe7d8] rounded-2xl overflow-hidden transition-all duration-300"
                         >
                             <button
                                 onClick={() => toggleAccordion(item.id)}
@@ -39,7 +39,7 @@ export default function FAQ() {
                             <div
                                 className={`transition-all duration-300 ease-in-out ${openId === item.id ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}
                             >
-                                <div className="p-6 pt-0 text-neutral-600 leading-relaxed border-t border-[#efe7d8]/50 bg-[#faf7f2]/50">
+                                <div className="p-6 pt-0 text-neutral-600 leading-relaxed border-t border-[#efe7d8]/50">
                                     {item.answer}
                                 </div>
                             </div>
