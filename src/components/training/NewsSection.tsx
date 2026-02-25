@@ -8,6 +8,10 @@ interface NewsSectionProps {
 
 export default function NewsSection({ onRegister }: NewsSectionProps) {
     const [expandedItem, setExpandedItem] = useState<string | null>(null);
+    const [showAll, setShowAll] = useState(false);
+
+    const displayedNews = showAll ? news : news.slice(0, 3);
+    const hasMore = news.length > 3;
 
     return (
         <section className="bg-[#faf7f2] rounded-3xl p-8 border border-[#efe7d8]">
@@ -16,11 +20,18 @@ export default function NewsSection({ onRegister }: NewsSectionProps) {
                     <h2 className="text-2xl font-heading text-primary">Novedades y Actualizaciones</h2>
                     <p className="text-muted text-sm">Mantente al día con lo último en fiscal y finanzas.</p>
                 </div>
-                <button className="text-accent font-semibold hover:underline text-sm hidden sm:block">Ver todas</button>
+                {hasMore && (
+                    <button
+                        onClick={() => setShowAll(!showAll)}
+                        className="text-accent font-semibold hover:underline text-sm hidden sm:block cursor-pointer"
+                    >
+                        {showAll ? 'Ver menos' : 'Ver todas'}
+                    </button>
+                )}
             </div>
 
             <div className="grid gap-6">
-                {news.map((item) => (
+                {displayedNews.map((item) => (
                     <article
                         key={item.id}
                         className={`bg-white p-6 rounded-2xl border transition-all duration-300 ${expandedItem === item.id ? 'border-accent shadow-lg bg-white' : 'border-[#efe7d8] hover:border-accent/40'}`}
