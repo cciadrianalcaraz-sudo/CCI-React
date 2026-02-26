@@ -12,6 +12,7 @@ interface Profile {
     full_name: string;
     rfc: string;
     advisor_name: string;
+    status: 'activo' | 'suspendido' | 'cancelado';
 }
 
 interface Document {
@@ -218,6 +219,14 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                         <p className="text-neutral-500 flex items-center gap-2">
                             <ShieldCheck size={16} className="text-green-600" />
                             Empresa: <span className="font-bold text-primary">{profile?.full_name || user.email}</span>
+                            {profile?.status && (
+                                <span className={`ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${profile.status === 'activo' ? 'bg-green-100 text-green-700' :
+                                        profile.status === 'suspendido' ? 'bg-amber-100 text-amber-700' :
+                                            'bg-red-100 text-red-700'
+                                    }`}>
+                                    {profile.status}
+                                </span>
+                            )}
                         </p>
                     </div>
                     <div className="flex items-center gap-4">
