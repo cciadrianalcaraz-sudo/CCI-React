@@ -221,8 +221,8 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                             Empresa: <span className="font-bold text-primary">{profile?.full_name || user.email}</span>
                             {profile?.status && (
                                 <span className={`ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${profile.status === 'activo' ? 'bg-green-100 text-green-700' :
-                                        profile.status === 'suspendido' ? 'bg-amber-100 text-amber-700' :
-                                            'bg-red-100 text-red-700'
+                                    profile.status === 'suspendido' ? 'bg-amber-100 text-amber-700' :
+                                        'bg-red-100 text-red-700'
                                     }`}>
                                     {profile.status}
                                 </span>
@@ -337,7 +337,12 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                     <span className="text-white/50">Asesor:</span>
                                     <span className="font-bold text-accent">{profile?.advisor_name || 'Administración'}</span>
                                 </div>
-                                <Button primary full className="bg-white !text-primary-dark hover:bg-accent hover:!text-white border-none py-3 text-sm">
+                                <Button
+                                    primary
+                                    full
+                                    className="bg-white !text-primary-dark hover:bg-accent hover:!text-white border-none py-3 text-sm"
+                                    onClick={() => window.open('https://wa.me/5213121682366?text=Hola%20Adrián,%20soy%20un%20cliente%20registrado%20y%20necesito%20asesoría.', '_blank')}
+                                >
                                     Contactar Asesor
                                 </Button>
                             </div>
