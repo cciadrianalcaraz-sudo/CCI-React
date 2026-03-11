@@ -1,8 +1,11 @@
+import { useState } from "react";
 import { useParams, Link, Navigate } from "react-router-dom";
 import { blogPosts } from "../data/blog";
+import NewsletterModal from "../components/blog/NewsletterModal";
 
 export default function BlogPost() {
     const { id } = useParams();
+    const [showNewsletter, setShowNewsletter] = useState(false);
     const post = blogPosts.find(p => p.id === id);
 
     if (!post) {
@@ -59,7 +62,10 @@ export default function BlogPost() {
                             <h3 className="text-2xl font-bold text-primary mb-2 font-heading">¿Te resultó útil este análisis?</h3>
                             <p className="text-muted">Suscríbete para recibir nuestras actualizaciones estratégicas directamente en tu correo.</p>
                         </div>
-                        <button className="bg-accent text-[#2c2210] px-8 py-4 rounded-2xl font-bold shadow-lg shadow-accent/20 hover:bg-[#a67d3d] transition-all active:scale-95 whitespace-nowrap">
+                        <button
+                            onClick={() => setShowNewsletter(true)}
+                            className="bg-accent text-[#2c2210] px-8 py-4 rounded-2xl font-bold shadow-lg shadow-accent/20 hover:bg-[#a67d3d] transition-all active:scale-95 whitespace-nowrap cursor-pointer"
+                        >
                             Suscribirme ahora
                         </button>
                     </div>
@@ -71,6 +77,10 @@ export default function BlogPost() {
                     </Link>
                 </div>
             </article>
+
+            {showNewsletter && (
+                <NewsletterModal onClose={() => setShowNewsletter(false)} />
+            )}
         </div>
     );
 }
