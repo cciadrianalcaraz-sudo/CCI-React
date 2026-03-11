@@ -146,22 +146,23 @@ export interface NewsItem {
 
 export const news: NewsItem[] = [
     {
-        id: 'cierre-pm-2025',
-        title: 'Cierre de Declaración Anual de Personas Morales',
-        date: '10 de Marzo, 2026',
-        summary: 'Recordatorio importante: El plazo para la declaración del ejercicio 2025 vence el 31 de marzo.',
+        id: 'webinar-deducciones-2025',
+        title: '🔴 En Vivo: Maximiza tu Saldo a Favor 2025',
+        date: 'Lunes 23 de Marzo, 2026',
+        summary: 'Webinar exclusivo: Estrategias legales para optimizar tus deducciones personales y maximizar tu devolución de impuestos.',
         content: [
-            'Checklist de papeles de trabajo: Conciliación contable-fiscal, estados financieros y depreciaciones.',
-            'Conciliación Crucial: CFDI de nómina vs. Visores del SAT para asegurar la deducibilidad.',
-            'Revisión de coeficientes de utilidad y pérdidas fiscales de ejercicios anteriores.',
-            'Asegúrate de tener la e.firma vigente para evitar contratiempos de último minuto.'
-        ]
+            'Deducciones personales: Cómo asegurar que el SAT las acepte sin problemas.',
+            'Errores comunes al facturar honorarios médicos y educativos que te hacen perder dinero.',
+            'Uso estratégico del visor de deducciones antes de que inicie el periodo de declaración.',
+            'Sesión de Q&A en vivo para resolver dudas sobre tu caso particular.'
+        ],
+        isWebinar: true
     },
     {
         id: 'prep-declaracion-pf',
         title: 'Preparación para la Declaración de Personas Físicas',
-        date: '16 de Marzo, 2026',
-        summary: 'Tips para optimizar tus deducciones personales antes del inicio del periodo en abril.',
+        date: '19 de Marzo, 2026',
+        summary: 'Faltan pocos días para abril. Revisa tu visor de nómina y deducciones personales para evitar sorpresas.',
         content: [
             'Honorarios Médicos: Verifica que el pago haya sido por medios electrónicos.',
             'Colegiaturas: Asegúrate de contar con el complemento de instituciones educativas.',
@@ -171,26 +172,14 @@ export const news: NewsItem[] = [
     },
     {
         id: 'reforma-fiscal-2026',
-        title: '🔍 Cambios Clave en la Reforma Fiscal 2026',
-        date: '03 de Marzo, 2026',
-        summary: 'Entérate de los mecanismos de control más estrictos que el SAT ha implementado este año.',
+        title: '🔍 Control Estricto del SAT en 2026',
+        date: '30 de Marzo, 2026',
+        summary: 'Entérate de los nuevos mecanismos de automatización que el SAT utiliza para cruzar tus ingresos.',
         content: [
             'Suspensión de Sellos (CSD): Modificaciones al Art. 17-H Bis para agilizar bloqueos.',
             'Materialidad (Art. 69-B): Sanciones severas por CFDI que no amparen operaciones reales.',
             'Catálogos CFDI 4.0: Actualización masiva de claves de productos y regímenes aduaneros.',
             'Validaciones automáticas: El SAT ahora cruza información en tiempo real con terceros.'
-        ]
-    },
-    {
-        id: 'ambito-laboral-2026',
-        title: '💼 Actualización Laboral y Seguridad Social 2026',
-        date: '01 de Marzo, 2026',
-        summary: 'Impacto financiero del nuevo salario mínimo y la transición en la jornada laboral.',
-        content: [
-            'Salario Mínimo 2026: Reajuste en cuotas obrero-patronales y bases de cotización.',
-            'Jornada Laboral: Estatus de la reducción gradual de 48 a 40 horas y su impacto en presupuestos.',
-            'Retención por Intereses: Incremento en la tasa nominal (del 0.50% al 0.90%) según la LIF.',
-            'Estrategias de Contratación: Cómo presupuestar el incremento en horas extra o vacantes.'
         ]
     }
 ];
