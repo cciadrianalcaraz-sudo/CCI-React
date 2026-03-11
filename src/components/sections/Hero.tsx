@@ -3,7 +3,7 @@ import Button from "../ui/Button";
 
 export default function Hero() {
     return (
-        <header className="relative bg-gradient-to-br from-[#f3f1ee] via-white to-[#fbf2df] px-[6vw] md:px-[8vw] pt-32 pb-16 md:pt-44 md:pb-24">
+        <header id="top" className="relative bg-gradient-to-br from-[#f3f1ee] via-white to-[#fbf2df] px-[6vw] md:px-[8vw] pt-32 pb-16 md:pt-44 md:pb-24">
             <div className="max-w-[1400px] mx-auto grid lg:grid-cols-2 gap-12 md:gap-20 items-center">
                 <div className="text-center lg:text-left">
                     <p className="uppercase tracking-[0.2rem] text-[0.65rem] md:text-xs font-semibold text-neutral-500 mb-4 md:mb-6">

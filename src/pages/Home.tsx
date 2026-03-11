@@ -6,6 +6,7 @@ import ValueProposition from "../components/ValueProposition";
 import Sectors from "../components/Sectors";
 import Contact from "../components/Contact";
 import FAQ from "../components/FAQ";
+import LatestBlog from "../components/sections/LatestBlog";
 
 export default function Home() {
     return (
@@ -16,6 +17,7 @@ export default function Home() {
             <About />
             <ValueProposition />
             <Sectors />
+            <LatestBlog />
             <FAQ />
             <Contact />
         </main>
