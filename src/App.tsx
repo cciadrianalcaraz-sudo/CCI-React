@@ -3,10 +3,13 @@ import { PayPalScriptProvider } from "@paypal/react-paypal-js";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/Footer";
 import WhatsAppButton from "./components/WhatsAppButton";
+import ScrollToTop from "./components/layout/ScrollToTop";
 import Home from "./pages/Home";
 import Training from "./pages/Training";
 import Asesorias from "./pages/Asesorias";
 import Packages from "./pages/Packages";
+import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
 
 export default function App() {
   const initialOptions = {
@@ -17,12 +20,15 @@ export default function App() {
 
   return (
     <PayPalScriptProvider options={initialOptions}>
+      <ScrollToTop />
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/capacitaciones" element={<Training />} />
         <Route path="/asesorias" element={<Asesorias />} />
         <Route path="/paquetes" element={<Packages />} />
+        <Route path="/blog" element={<Blog />} />
+        <Route path="/blog/:id" element={<BlogPost />} />
       </Routes>
       <Footer />
       <WhatsAppButton />

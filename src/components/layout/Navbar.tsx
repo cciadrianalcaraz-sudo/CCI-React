@@ -22,17 +22,18 @@ export default function Navbar() {
     }, [isMenuOpen]);
 
     const navLinks = [
-        { name: "Inicio", path: "/" },
+        { name: "Inicio", path: "/#top" },
         { name: "Servicios", path: "/#servicios" },
         { name: "Propuesta de valor", path: "/#valor" },
         { name: "Asesorías", path: "/asesorias" },
         { name: "Paquetes", path: "/paquetes" },
         { name: "Capacitaciones", path: "/capacitaciones" },
+        { name: "Blog", path: "/blog" },
         { name: "Contacto", path: "/#contacto" },
     ];
 
     const LinkComponent = ({ link, className }: { link: typeof navLinks[0], className?: string }) => {
-        const isExternal = link.path.startsWith("/#");
+        const isExternal = link.path.startsWith("/#") || link.path === "/";
         if (isExternal) {
             return (
                 <a
@@ -61,7 +62,7 @@ export default function Navbar() {
             ${isMenuOpen ? "bg-transparent shadow-none border-transparent" : "bg-white/90 backdrop-blur-md shadow-sm border-b border-light-beige/50"}
         `}>
             <div className="flex items-center justify-between max-w-[1400px] mx-auto">
-                <Link to="/" className="flex flex-col gap-0.5 font-semibold group z-50">
+                <Link to="/#top" className="flex flex-col gap-0.5 font-semibold group z-50">
                     <img
                         className="w-[160px] md:w-[220px] h-auto object-contain transition-transform group-hover:scale-[1.02]"
                         src={logo}
