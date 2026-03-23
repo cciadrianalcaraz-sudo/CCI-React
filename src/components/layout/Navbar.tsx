@@ -81,6 +81,9 @@ export default function Navbar() {
                             />
                         ))}
                     </div>
+                    <Link to="/portal" className="bg-primary text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md hover:bg-primary-dark hover:scale-[1.02] transition-all">
+                        Portal Clientes
+                    </Link>
                 </div>
 
                 {/* Mobile Menu Toggle */}
@@ -113,16 +116,25 @@ export default function Navbar() {
                             ))}
                         </div>
 
-                        <div className={`mt-auto transition-all duration-700 delay-500 transform ${isMenuOpen ? "translate-y-0 opacity-100" : "translate-y-12 opacity-0"}`}>
-                            <p className="text-muted text-xs mb-4 font-medium uppercase tracking-wider">Contacto Directo</p>
-                            <a
-                                href="https://wa.me/5213121682366"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-block w-full bg-accent text-[#2c2210] py-4 px-8 rounded-2xl font-bold text-center shadow-lg shadow-accent/20 active:scale-95 transition-transform"
-                            >
-                                Agendar vía WhatsApp
-                            </a>
+                        <div className={`mt-auto transition-all duration-700 delay-500 transform ${isMenuOpen ? "translate-y-0 opacity-100" : "translate-y-12 opacity-0 flex flex-col gap-3"}`}>
+                            <p className="text-muted text-xs mb-3 font-medium uppercase tracking-wider text-center">Acceso Rápido</p>
+                            <div className="flex flex-col gap-3">
+                                <Link
+                                    to="/portal"
+                                    onClick={() => setIsMenuOpen(false)}
+                                    className="inline-block w-full bg-white text-primary-dark border-2 border-primary py-4 px-8 rounded-2xl font-bold text-center active:scale-95 transition-transform"
+                                >
+                                    Portal Clientes
+                                </Link>
+                                <a
+                                    href="https://wa.me/5213121682366"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-block w-full bg-accent text-[#2c2210] py-4 px-8 rounded-2xl font-bold text-center shadow-lg shadow-accent/20 active:scale-95 transition-transform"
+                                >
+                                    Agendar vía WhatsApp
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
