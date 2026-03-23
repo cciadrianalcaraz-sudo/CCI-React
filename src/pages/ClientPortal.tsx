@@ -7,6 +7,9 @@ import {
 import Button from "../components/ui/Button";
 import { supabase } from "../lib/supabase";
 import FinanceTracker from "../components/portal/FinanceTracker";
+import AdminDashboard from "../components/portal/AdminDashboard";
+
+const MASTER_EMAIL = 'cci.adrianalcaraz@gmail.com';
 
 // Define interfaces for our real data
 interface Profile {
@@ -146,7 +149,7 @@ export default function ClientPortal() {
                                     <a href="#" className="text-xs text-accent font-bold hover:underline">¿Olvidaste tu contraseña?</a>
                                 </div>
 
-                                <Button primary full className="py-4" loading={isLoading}>
+                                <Button primary full className="py-4" loading={isLoading} type="submit">
                                     {isLoading ? 'Verificando...' : 'Entrar al Portal'}
                                 </Button>
                             </form>
@@ -172,6 +175,8 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
     const [docs, setDocs] = useState<Document[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'dashboard' | 'finance'>('dashboard');
+
+    const isMaster = user.email === MASTER_EMAIL;
 
     useEffect(() => {
         async function loadDashboardData() {
@@ -248,8 +253,12 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                     </div>
                 </div>
 
-                {/* Tab Navigation */}
-                <div className="flex flex-wrap gap-4 mb-8 border-b border-light-beige pb-4 animate-fade-in delay-100">
+                {isMaster ? (
+                    <AdminDashboard user={user} />
+                ) : (
+                    <>
+                        {/* Tab Navigation */}
+                        <div className="flex flex-wrap gap-4 mb-8 border-b border-light-beige pb-4 animate-fade-in delay-100">
                     <button 
                         onClick={() => setActiveTab('dashboard')}
                         className={`px-6 py-2.5 rounded-full font-bold text-sm transition-all ${activeTab === 'dashboard' ? 'bg-primary-dark text-white shadow-md' : 'bg-white border border-light-beige text-neutral-500 hover:border-accent hover:text-primary-dark'}`}
@@ -390,6 +399,8 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                     <div className="animate-fade-in">
                         <FinanceTracker user={user} />
                     </div>
+                )}
+                    </>
                 )}
             </div>
         </div>
