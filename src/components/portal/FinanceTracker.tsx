@@ -25,6 +25,12 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
     const [loading, setLoading] = useState(true);
     const [isFormOpen, setIsFormOpen] = useState(false);
     
+    // View modes
+    const [viewMode, setViewMode] = useState<'detailed' | 'summary'>('detailed');
+    const [selectedMonth, setSelectedMonth] = useState<string>('');
+    const [uniqueMonths, setUniqueMonths] = useState<{label: string, value: string}[]>([]);
+    const [summaryData, setSummaryData] = useState<{concept: string, income: number, expense: number}[]>([]);
+    
     // Form state
     const [concept, setConcept] = useState('');
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -55,6 +61,47 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
             setLoading(false);
         }
     };
+
+    // Extract unique months and pivot table data
+    useEffect(() => {
+        if (records.length === 0) return;
+        
+        const months = Array.from(new Set(records.map(r => r.date.substring(0, 7)))).sort().reverse();
+        const formattedMonths = months.map(m => {
+            const [year, month] = m.split('-');
+            const date = new Date(Number(year), Number(month) - 1, 1);
+            return {
+                value: m,
+                label: date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
+            };
+        });
+        
+        setUniqueMonths(formattedMonths);
+        
+        // Auto-select the most recent month initially if none selected
+        if (!selectedMonth && formattedMonths.length > 0) {
+            setSelectedMonth(formattedMonths[0].value);
+        }
+    }, [records]);
+
+    useEffect(() => {
+        if (!selectedMonth) return;
+        
+        const filteredRecords = records.filter(r => r.date.startsWith(selectedMonth));
+        
+        const grouped = filteredRecords.reduce((acc, curr) => {
+            const c = curr.concept || 'SIN CONCEPTO';
+            if (!acc[c]) {
+                acc[c] = { concept: c, income: 0, expense: 0 };
+            }
+            acc[c].income += Number(curr.income) || 0;
+            acc[c].expense += Number(curr.expense) || 0;
+            return acc;
+        }, {} as Record<string, {concept: string, income: number, expense: number}>);
+        
+        const sortedSummary = Object.values(grouped).sort((a, b) => a.concept.localeCompare(b.concept));
+        setSummaryData(sortedSummary);
+    }, [records, selectedMonth]);
 
     const handleAddRecord = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -233,13 +280,55 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                 </div>
             )}
 
+            <div className="p-6 border-b border-light-beige bg-white flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex bg-neutral-100 p-1 rounded-xl w-fit">
+                    <button 
+                        onClick={() => setViewMode('detailed')}
+                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'detailed' ? 'bg-white shadow-sm text-primary-dark' : 'text-neutral-500 hover:text-primary-dark'}`}
+                    >
+                        Registro Detallado
+                    </button>
+                    <button 
+                        onClick={() => setViewMode('summary')}
+                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'summary' ? 'bg-white shadow-sm text-primary-dark' : 'text-neutral-500 hover:text-primary-dark'}`}
+                    >
+                        Resumen por Mes
+                    </button>
+                </div>
+                
+                {viewMode === 'summary' && uniqueMonths.length > 0 && (
+                    <div className="flex items-center gap-3">
+                        <label className="text-sm font-bold text-primary-dark uppercase tracking-wider">Mes:</label>
+                        <select 
+                            value={selectedMonth} 
+                            onChange={(e) => setSelectedMonth(e.target.value)}
+                            className="bg-white border border-light-beige rounded-xl px-4 py-2 text-sm font-bold text-accent outline-none focus:border-accent capitalize"
+                        >
+                            {uniqueMonths.map(m => (
+                                <option key={m.value} value={m.value}>{m.label}</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
+            </div>
+
             <div className="overflow-x-auto">
                 {loading ? (
                     <div className="p-12 flex justify-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-accent"></div>
                     </div>
-                ) : recordsWithBalance.length > 0 ? (
-                    <table className="w-full text-left border-collapse">
+                ) : recordsWithBalance.length === 0 ? (
+                    <div className="p-12 text-center text-neutral-400">
+                        <div className="flex justify-center mb-4">
+                            <div className="w-16 h-16 bg-primary/5 rounded-full flex items-center justify-center text-primary/30">
+                                <Search size={24} />
+                            </div>
+                        </div>
+                        <p className="font-bold text-primary-dark mb-1">Sin registros financieros</p>
+                        <p className="text-sm">Comienza agregando tu primer movimiento.</p>
+                    </div>
+                ) : viewMode === 'detailed' ? (
+                    <table className="w-full text-left border-collapse animate-fade-in delay-100">
                         <thead>
                             <tr className="bg-primary/5 text-primary-dark text-xs uppercase tracking-wider">
                                 <th className="p-4 border-b border-light-beige font-bold whitespace-nowrap">No.</th>
@@ -305,14 +394,73 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                         </tfoot>
                     </table>
                 ) : (
-                    <div className="p-12 text-center text-neutral-400">
-                        <div className="flex justify-center mb-4">
-                            <div className="w-16 h-16 bg-primary/5 rounded-full flex items-center justify-center text-primary/30">
-                                <Search size={24} />
-                            </div>
+                    <div className="p-8 max-w-4xl mx-auto animate-fade-in delay-100">
+                        {selectedMonth && (
+                            <h3 className="text-2xl font-bold font-heading text-center text-primary-dark mb-6 capitalize decoration-accent underline underline-offset-8">
+                                {uniqueMonths.find(m => m.value === selectedMonth)?.label}
+                            </h3>
+                        )}
+                        <div className="border-t-[3px] border-b-[3px] border-[#4a7c82] overflow-hidden rounded-sm">
+                            <table className="w-full text-left">
+                                <thead>
+                                    <tr className="bg-[#4a7c82] text-white">
+                                        <th className="p-3 font-extrabold tracking-wider border-r border-[#3d686d] text-sm">Concepto</th>
+                                        <th className="p-3 font-extrabold tracking-wider border-r border-[#3d686d] text-sm text-right w-32">SUM de Ingreso</th>
+                                        <th className="p-3 font-extrabold tracking-wider text-sm text-right w-32">SUM de Gasto</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white">
+                                    {summaryData.length > 0 ? summaryData.map((row) => (
+                                        <tr key={row.concept} className="hover:bg-neutral-50 font-bold border-b border-neutral-200">
+                                            <td className="py-1 px-3 border-r border-neutral-200 text-sm text-neutral-700 uppercase">{row.concept}</td>
+                                            <td className="py-1 px-3 border-r border-neutral-200 text-sm text-right text-gray-800">
+                                                <div className="flex justify-between">
+                                                    <span className="text-neutral-400 font-normal">$</span>
+                                                    <span>{row.income > 0 ? row.income.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</span>
+                                                </div>
+                                            </td>
+                                            <td className="py-1 px-3 text-sm text-right text-gray-800">
+                                                <div className="flex justify-between">
+                                                    <span className="text-neutral-400 font-normal">$</span>
+                                                    <span>{row.expense > 0 ? row.expense.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )) : (
+                                        <tr>
+                                            <td colSpan={3} className="py-8 text-center text-neutral-400 font-normal">No hay movimientos en este mes.</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                                <tfoot>
+                                    <tr className="bg-[#e2e8f0] border-t-[3px] border-double border-neutral-800 font-extrabold">
+                                        <td className="p-3 border-r border-neutral-300 text-sm uppercase">Suma total</td>
+                                        <td className="p-3 border-r border-neutral-300 text-sm text-right text-gray-900">
+                                            <div className="flex justify-between">
+                                                <span className="text-neutral-500 font-normal">$</span>
+                                                <span>{summaryData.reduce((acc, row) => acc + row.income, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                            </div>
+                                        </td>
+                                        <td className="p-3 text-sm text-right text-gray-900">
+                                            <div className="flex justify-between">
+                                                <span className="text-neutral-500 font-normal">$</span>
+                                                <span>{summaryData.reduce((acc, row) => acc + row.expense, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr className="bg-white">
+                                        <td className="p-2 border-r border-neutral-200"></td>
+                                        <td className="p-2 border-r border-neutral-200"></td>
+                                        <td className="p-2 text-sm text-right font-extrabold text-neutral-800 flex justify-between">
+                                            <span className="text-neutral-500 font-normal">$</span>
+                                            <span>
+                                                {(summaryData.reduce((acc, row) => acc + row.income, 0) - summaryData.reduce((acc, row) => acc + row.expense, 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
                         </div>
-                        <p className="font-bold text-primary-dark mb-1">Sin registros financieros</p>
-                        <p className="text-sm">Comienza agregando tu primer movimiento.</p>
                     </div>
                 )}
             </div>
