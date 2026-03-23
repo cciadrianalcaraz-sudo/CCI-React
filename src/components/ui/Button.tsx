@@ -10,9 +10,10 @@ interface ButtonProps {
     onClick?: () => void;
     disabled?: boolean;
     loading?: boolean;
+    type?: 'button' | 'submit' | 'reset';
 }
 
-export default function Button({ children, primary, secondary, outline, full, className = "", onClick, disabled, loading }: ButtonProps) {
+export default function Button({ children, primary, secondary, outline, full, className = "", onClick, disabled, loading, type = "button" }: ButtonProps) {
     const baseStyles = "px-6 py-3 rounded-2xl font-bold transition-all active:scale-[0.98] cursor-pointer inline-flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed";
 
     const variants = {
@@ -26,6 +27,7 @@ export default function Button({ children, primary, secondary, outline, full, cl
 
     return (
         <button
+            type={type}
             onClick={onClick}
             disabled={disabled || loading}
             className={`${baseStyles} ${variantClass} ${widthClass} ${className}`}

@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import Button from "../components/ui/Button";
 import { supabase } from "../lib/supabase";
+import FinanceTracker from "../components/portal/FinanceTracker";
 
 // Define interfaces for our real data
 interface Profile {
@@ -170,6 +171,7 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
     const [profile, setProfile] = useState<Profile | null>(null);
     const [docs, setDocs] = useState<Document[]>([]);
     const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState<'dashboard' | 'finance'>('dashboard');
 
     useEffect(() => {
         async function loadDashboardData() {
@@ -246,7 +248,25 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                     </div>
                 </div>
 
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12 animate-slide-in">
+                {/* Tab Navigation */}
+                <div className="flex flex-wrap gap-4 mb-8 border-b border-light-beige pb-4 animate-fade-in delay-100">
+                    <button 
+                        onClick={() => setActiveTab('dashboard')}
+                        className={`px-6 py-2.5 rounded-full font-bold text-sm transition-all ${activeTab === 'dashboard' ? 'bg-primary-dark text-white shadow-md' : 'bg-white border border-light-beige text-neutral-500 hover:border-accent hover:text-primary-dark'}`}
+                    >
+                        Panel Principal
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab('finance')}
+                        className={`px-6 py-2.5 rounded-full font-bold text-sm transition-all ${activeTab === 'finance' ? 'bg-primary-dark text-white shadow-md' : 'bg-white border border-light-beige text-neutral-500 hover:border-accent hover:text-primary-dark'}`}
+                    >
+                        Finanzas Personales
+                    </button>
+                </div>
+
+                {activeTab === 'dashboard' ? (
+                    <>
+                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12 animate-slide-in">
                     <div className="bg-white p-6 rounded-3xl border border-light-beige shadow-sm hover:shadow-md transition-all group">
                         <div className="flex items-center justify-between mb-4">
                             <div className="p-3 rounded-2xl bg-green-50 text-green-600">
@@ -365,6 +385,12 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                         </div>
                     </div>
                 </div>
+                </>
+                ) : (
+                    <div className="animate-fade-in">
+                        <FinanceTracker user={user} />
+                    </div>
+                )}
             </div>
         </div>
     );
