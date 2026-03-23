@@ -201,6 +201,7 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                     {/* Listas sugeridas (Dropdowns / Autocomplete) */}
                     <datalist id="concept-options">
                         <option value="ALIMENTOS" />
+                        <option value="AHORRO" />
                         <option value="FAM CASTILLO" />
                         <option value="ASEO PERSONAL" />
                         <option value="ANGELITO" />
