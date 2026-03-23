@@ -44,7 +44,6 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
             const { data, error } = await supabase
                 .from('finance_records')
                 .select('*')
-                .eq('user_id', user.id)
                 .order('date', { ascending: true })
                 .order('created_at', { ascending: true }); // chronological order
 

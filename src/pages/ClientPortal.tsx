@@ -47,22 +47,30 @@ export default function ClientPortal() {
         return () => subscription.unsubscribe();
     }, []);
 
-    const handleLogin = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleLogin = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+        console.log("Attempting login...");
         setIsLoading(true);
         setMessage(null);
 
-        const { error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-        });
+        try {
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            });
+            console.log("Login result:", { data, error });
 
-        if (error) {
-            setMessage({ type: 'error', text: 'Acceso denegado. Verifique sus credenciales.' });
-        } else {
-            setMessage({ type: 'success', text: '¡Bienvenido de nuevo!' });
+            if (error) {
+                setMessage({ type: 'error', text: 'Acceso denegado. Verifique sus credenciales.' });
+            } else {
+                setMessage({ type: 'success', text: '¡Bienvenido de nuevo!' });
+            }
+        } catch (err) {
+            console.error("Login exception:", err);
+            setMessage({ type: 'error', text: 'Ocurrió un error inesperado al iniciar sesión.' });
+        } finally {
+            setIsLoading(false);
         }
-        setIsLoading(false);
     };
 
     const handleLogout = async () => {
@@ -149,7 +157,7 @@ export default function ClientPortal() {
                                     <a href="#" className="text-xs text-accent font-bold hover:underline">¿Olvidaste tu contraseña?</a>
                                 </div>
 
-                                <Button primary full className="py-4" loading={isLoading} type="submit">
+                                <Button primary full className="py-4" loading={isLoading} type="submit" onClick={() => handleLogin()}>
                                     {isLoading ? 'Verificando...' : 'Entrar al Portal'}
                                 </Button>
                             </form>
@@ -195,7 +203,6 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                 const { data: docsData } = await supabase
                     .from('documents')
                     .select('*')
-                    .eq('user_id', user.id)
                     .order('created_at', { ascending: false });
 
                 if (docsData) setDocs(docsData);
