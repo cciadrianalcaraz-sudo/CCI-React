@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Plus, Trash2, Search } from 'lucide-react';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import Button from '../ui/Button';
 
 interface FinanceRecord {
@@ -24,6 +25,10 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
     const [records, setRecords] = useState<FinanceRecord[]>([]);
     const [loading, setLoading] = useState(true);
     const [isFormOpen, setIsFormOpen] = useState(false);
+    
+    // Gráficos de Colores
+    const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#6366f1', '#ec4899', '#14b8a6', '#84cc16', '#f43f5e', '#a855f7', '#0ea5e9'];
+
     
     // View modes
     const [viewMode, setViewMode] = useState<'detailed' | 'summary'>('detailed');
@@ -394,13 +399,118 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                         </tfoot>
                     </table>
                 ) : (
-                    <div className="p-8 max-w-4xl mx-auto animate-fade-in delay-100">
+                    <div className="p-8 max-w-7xl mx-auto animate-fade-in delay-100">
                         {selectedMonth && (
-                            <h3 className="text-2xl font-bold font-heading text-center text-primary-dark mb-6 capitalize decoration-accent underline underline-offset-8">
+                            <h3 className="text-2xl font-bold font-heading text-center text-primary-dark mb-10 capitalize decoration-accent underline underline-offset-8">
                                 {uniqueMonths.find(m => m.value === selectedMonth)?.label}
                             </h3>
                         )}
-                        <div className="border-t-[3px] border-b-[3px] border-[#4a7c82] overflow-hidden rounded-sm">
+
+                        {summaryData.length > 0 && (
+                            <>
+                                {/* Gráficas Primera Fila */}
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
+                                    {/* Ingresos - Pastel Pequeño */}
+                                    <div className="bg-white p-6 rounded-3xl border border-light-beige shadow-sm">
+                                        <h4 className="text-xl font-bold font-heading text-center text-primary-dark mb-6">Ingresos</h4>
+                                        <div className="h-64">
+                                            {summaryData.filter(d => d.income > 0).length > 0 ? (
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <PieChart>
+                                                        <Pie 
+                                                            data={summaryData.filter(d => d.income > 0).sort((a,b) => b.income - a.income)} 
+                                                            dataKey="income" 
+                                                            nameKey="concept" 
+                                                            cx="50%" cy="50%" 
+                                                            innerRadius={50} outerRadius={90} 
+                                                            paddingAngle={2}
+                                                        >
+                                                            {summaryData.filter(d => d.income > 0).sort((a,b) => b.income - a.income).map((_, index) => (
+                                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                            ))}
+                                                        </Pie>
+                                                        <Tooltip formatter={(value) => `$${Number(value).toLocaleString('en-US', { minimumFractionDigits: 2 })}`} />
+                                                        <Legend />
+                                                    </PieChart>
+                                                </ResponsiveContainer>
+                                            ) : (
+                                                <div className="h-full flex items-center justify-center text-neutral-400 text-sm">Sin ingresos</div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Gastos - Barras */}
+                                    <div className="bg-white p-6 rounded-3xl border border-light-beige shadow-sm lg:col-span-2">
+                                        <h4 className="text-xl font-bold font-heading text-center text-primary-dark mb-6">Gastos por Concepto</h4>
+                                        <div className="h-[280px]">
+                                            {summaryData.filter(d => d.expense > 0).length > 0 ? (
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <BarChart data={summaryData.filter(d => d.expense > 0).sort((a,b) => b.expense - a.expense)} margin={{ top: 10, right: 30, left: 10, bottom: 65 }}>
+                                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                                                        <XAxis dataKey="concept" angle={-45} textAnchor="end" height={60} tick={{fontSize: 9, fill: '#6B7280', fontWeight: 'bold'}} interval={0} />
+                                                        <YAxis tickFormatter={(val) => `$${val}`} tick={{fontSize: 11, fill: '#6B7280'}} width={80} />
+                                                        <Tooltip 
+                                                            formatter={(value) => `$${Number(value).toLocaleString('en-US', { minimumFractionDigits: 2 })}`} 
+                                                            cursor={{fill: '#f3f4f6'}}
+                                                        />
+                                                        <Bar dataKey="expense" radius={[4, 4, 0, 0]}>
+                                                            {summaryData.filter(d => d.expense > 0).sort((a,b) => b.expense - a.expense).map((_, index) => (
+                                                                <Cell key={`cell-${index}`} fill={'#3b82f6'} />
+                                                            ))}
+                                                        </Bar>
+                                                    </BarChart>
+                                                </ResponsiveContainer>
+                                            ) : (
+                                                <div className="h-full flex items-center justify-center text-neutral-400 text-sm">Sin gastos</div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                {/* Gastos - Dona Gigante */}
+                                <div className="bg-white p-8 rounded-3xl border border-light-beige shadow-sm mb-12 relative overflow-hidden">
+                                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-accent to-accent-light"></div>
+                                    <h4 className="text-3xl font-bold font-heading text-center text-primary-dark mt-4 mb-1">Gastos</h4>
+                                    <p className="text-center text-neutral-500 text-sm mb-8 font-medium">Distribución porcentual de los gastos en el mes</p>
+                                    
+                                    <div className="h-[450px]">
+                                        {summaryData.filter(d => d.expense > 0).length > 0 ? (
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <PieChart>
+                                                    <Pie 
+                                                        data={summaryData.filter(d => d.expense > 0).sort((a,b) => b.expense - a.expense)} 
+                                                        dataKey="expense" 
+                                                        nameKey="concept" 
+                                                        cx="50%" cy="50%" 
+                                                        innerRadius={110} outerRadius={170} 
+                                                        paddingAngle={1}
+                                                        label={({ name, percent }: any) => `${name} ${(percent * 100).toFixed(1)}%`}
+                                                        labelLine={{stroke: '#9ca3af', strokeWidth: 1}}
+                                                    >
+                                                        {summaryData.filter(d => d.expense > 0).sort((a,b) => b.expense - a.expense).map((_, index) => (
+                                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                        ))}
+                                                    </Pie>
+                                                    <Tooltip formatter={(value) => `$${Number(value).toLocaleString('en-US', { minimumFractionDigits: 2 })}`} />
+                                                </PieChart>
+                                            </ResponsiveContainer>
+                                        ) : (
+                                            <div className="h-full flex items-center justify-center text-neutral-400 text-sm">Sin gastos registrados</div>
+                                        )}
+                                    </div>
+                                    
+                                    {/* Centro decorativo de la dona */}
+                                    <div className="absolute top-[60%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center text-center -mt-4 pointer-events-none">
+                                        <span className="text-neutral-400 text-sm uppercase tracking-widest font-bold">Total Gastos</span>
+                                        <span className="text-3xl font-heading font-extrabold text-[#ef4444] mt-1">
+                                            ${summaryData.reduce((a, b) => a + b.expense, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </span>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                        
+                        <div className="border-t-[3px] border-b-[3px] border-[#4a7c82] overflow-hidden rounded-md shadow-sm">
                             <table className="w-full text-left">
                                 <thead>
                                     <tr className="bg-[#4a7c82] text-white">
