@@ -148,24 +148,52 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                     
                     {/* Listas sugeridas (Dropdowns / Autocomplete) */}
                     <datalist id="concept-options">
-                        <option value="FIESTA ANGELITO" />
                         <option value="ALIMENTOS" />
-                        <option value="DESPENSA" />
-                        <option value="NÓMINA" />
-                        <option value="SERVICIOS BÁSICOS" />
-                        <option value="TRANSPORTE / GASOLINA" />
-                        <option value="RENTA" />
+                        <option value="FAM CASTILLO" />
+                        <option value="ASEO PERSONAL" />
+                        <option value="ANGELITO" />
+                        <option value="ROPA Y CALZADO" />
+                        <option value="NEGOCIO" />
+                        <option value="SERVICIOS BASICOS" />
+                        <option value="CASA" />
+                        <option value="FAM PRECIADO" />
+                        <option value="CUMPLEAÑOS" />
+                        <option value="OTROS INGRESOS" />
+                        <option value="SUELDO" />
                         <option value="HONORARIOS" />
+                        <option value="INFONAVIT" />
+                        <option value="FAM ALCA" />
+                        <option value="TRANSPORTE" />
+                        <option value="PPR" />
+                        <option value="SALUD" />
+                        <option value="CREDITO CARRO" />
+                        <option value="COMISIONES BANCARIAS" />
+                        <option value="VALES DE GASOLINA" />
+                        <option value="TRABAJO" />
+                        <option value="GRUPO ALCA" />
+                        <option value="DESPENSA" />
+                        <option value="ART LIMPIEZA" />
+                        <option value="PAY" />
+                        <option value="DONACION" />
+                        <option value="FIESTA ANGELITO" />
+                        <option value="CASHBACK" />
+                        <option value="FACHADA CASA" />
+                        <option value="VIAJES ALCA" />
+                        <option value="INVERSIÓN CETES" />
                     </datalist>
 
                     <datalist id="payment-options">
-                        <option value="Efectivo Laura" />
-                        <option value="TD Str Adrian" />
-                        <option value="TD Str Laura" />
-                        <option value="Transferencia" />
-                        <option value="Tarjeta de Crédito" />
-                        <option value="Tarjeta de Débito" />
-                        <option value="Efectivo" />
+                        <option value="EFECTIVO LAURA" />
+                        <option value="EFECTIVO ADRIAN" />
+                        <option value="TD STR LAURA" />
+                        <option value="TD BBVA LAURA" />
+                        <option value="TC STR LAURA" />
+                        <option value="CPM" />
+                        <option value="TD STR ADRIAN" />
+                        <option value="TD DESPENSA" />
+                        <option value="VALES" />
+                        <option value="ALCANCIA" />
+                        <option value="CASHI" />
                     </datalist>
 
                     <form onSubmit={handleAddRecord} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
