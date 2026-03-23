@@ -145,10 +145,33 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
 
             {isFormOpen && (
                 <div className="p-8 border-b border-light-beige bg-neutral-50 animate-slide-in">
+                    
+                    {/* Listas sugeridas (Dropdowns / Autocomplete) */}
+                    <datalist id="concept-options">
+                        <option value="FIESTA ANGELITO" />
+                        <option value="ALIMENTOS" />
+                        <option value="DESPENSA" />
+                        <option value="NÓMINA" />
+                        <option value="SERVICIOS BÁSICOS" />
+                        <option value="TRANSPORTE / GASOLINA" />
+                        <option value="RENTA" />
+                        <option value="HONORARIOS" />
+                    </datalist>
+
+                    <datalist id="payment-options">
+                        <option value="Efectivo Laura" />
+                        <option value="TD Str Adrian" />
+                        <option value="TD Str Laura" />
+                        <option value="Transferencia" />
+                        <option value="Tarjeta de Crédito" />
+                        <option value="Tarjeta de Débito" />
+                        <option value="Efectivo" />
+                    </datalist>
+
                     <form onSubmit={handleAddRecord} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div className="space-y-1">
                             <label className="text-xs font-bold text-primary-dark">Concepto</label>
-                            <input type="text" required value={concept} onChange={e => setConcept(e.target.value)} placeholder="Ej. FIESTA ANGELITO" className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent" />
+                            <input list="concept-options" type="text" required value={concept} onChange={e => setConcept(e.target.value)} placeholder="Ej. FIESTA ANGELITO" className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent bg-white" />
                         </div>
                         <div className="space-y-1">
                             <label className="text-xs font-bold text-primary-dark">Fecha</label>
@@ -156,7 +179,7 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                         </div>
                         <div className="space-y-1">
                             <label className="text-xs font-bold text-primary-dark">Forma de pago</label>
-                            <input type="text" required value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} placeholder="Ej. Efectivo Laura" className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent" />
+                            <input list="payment-options" type="text" required value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} placeholder="Ej. Efectivo Laura" className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent bg-white" />
                         </div>
                         <div className="space-y-1">
                             <label className="text-xs font-bold text-primary-dark">Proveedor</label>
