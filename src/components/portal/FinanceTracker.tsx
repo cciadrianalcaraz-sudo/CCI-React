@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Plus, Trash2, Search, TrendingUp, TrendingDown, DollarSign, Edit2 } from 'lucide-react';
+import { Plus, Trash2, Search, TrendingUp, TrendingDown, DollarSign, Edit2, Upload } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import Button from '../ui/Button';
 
@@ -46,6 +47,8 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
     const [expense, setExpense] = useState<number | ''>('');
     const [description, setDescription] = useState('');
     const [editingId, setEditingId] = useState<string | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         loadRecords();
@@ -249,6 +252,68 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        setIsUploading(true);
+        try {
+            const data = await file.arrayBuffer();
+            const workbook = XLSX.read(data);
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            
+            const jsonData = XLSX.utils.sheet_to_json<any>(worksheet, { defval: '' });
+
+            if (jsonData.length === 0) {
+                throw new Error('El archivo está vacío');
+            }
+
+            const recordsToInsert = jsonData.map(row => {
+                let dateStr = row['Fecha'] ? String(row['Fecha']).trim() : new Date().toISOString().split('T')[0];
+                
+                if (typeof row['Fecha'] === 'number') {
+                    const jsDate = new Date((row['Fecha'] - 25569) * 86400 * 1000);
+                    dateStr = jsDate.toISOString().split('T')[0];
+                } else if (typeof dateStr === 'string' && dateStr.includes('/')) {
+                    const parts = dateStr.split('/');
+                    if (parts.length === 3) {
+                        dateStr = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                    }
+                }
+
+                return {
+                    user_id: user.id,
+                    concept: String(row['Concepto'] || 'SIN CONCEPTO').trim().toUpperCase(),
+                    date: dateStr,
+                    payment_method: String(row['Forma de Pago'] || row['Forma de pago'] || 'SIN ESPECIFICAR').trim().toUpperCase(),
+                    provider: String(row['Proveedor'] || '').trim().toUpperCase(),
+                    income: Number(row['Ingreso']) || 0,
+                    expense: Number(row['Gasto']) || 0,
+                    description: String(row['Descripción'] || row['Descripcion'] || '').trim()
+                };
+            });
+
+            const { error } = await supabase
+                .from('finance_records')
+                .insert(recordsToInsert);
+
+            if (error) throw error;
+            
+            alert(`¡Importación exitosa! Se añadieron ${recordsToInsert.length} registros.`);
+            loadRecords();
+
+        } catch (error: any) {
+            console.error("Error importing excel:", error);
+            alert(`Error al importar: ${error.message || 'Verifica el formato del archivo'}`);
+        } finally {
+            setIsUploading(false);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        }
+    };
+
     // Calculate running balance based on chronological order
     let runningBalance = 0;
     const recordsWithBalance = records.map(record => {
@@ -266,7 +331,17 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                     <h2 className="text-xl font-bold text-primary-dark">Registro de Finanzas Personales</h2>
                     <p className="text-sm text-neutral-500 mt-1">Control de ingresos, gastos y saldo al día.</p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
+                    <input 
+                        type="file" 
+                        accept=".xlsx, .xls" 
+                        ref={fileInputRef} 
+                        className="hidden" 
+                        onChange={handleFileUpload} 
+                    />
+                    <Button outline className="text-sm py-2 flex items-center gap-2" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                        <Upload size={16} /> {isUploading ? 'Importando...' : 'Importar Excel'}
+                    </Button>
                     <Button outline className="text-sm py-2" onClick={() => loadRecords()}>
                         Actualizar
                     </Button>
