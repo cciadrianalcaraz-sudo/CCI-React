@@ -29,10 +29,10 @@ export default function TicketUploader({ user, isMaster }: { user: any, isMaster
             let query = supabase.from('receipts').select('*').order('created_at', { ascending: false });
             
             if (!isMaster) {
-                // Vista de cliente: Últimos 30 días, sin filtro de UID para permitir cuentas múltiples en misma empresa
+                // Vista de cliente: Últimos 30 días, y ocultamos los que ya fueron procesados
                 const thirtyDaysAgo = new Date();
                 thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-                query = query.gte('created_at', thirtyDaysAgo.toISOString());
+                query = query.gte('created_at', thirtyDaysAgo.toISOString()).eq('status', 'pendiente');
             } else {
                 // Vista de Admin
                 query = query.eq('status', 'pendiente');
