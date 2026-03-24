@@ -16,6 +16,7 @@ export default function TicketUploader({ user, isMaster }: { user: any, isMaster
     const [receipts, setReceipts] = useState<Receipt[]>([]);
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -66,42 +67,76 @@ export default function TicketUploader({ user, isMaster }: { user: any, isMaster
         }
     };
 
-    const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+    const processFiles = async (files: FileList | null) => {
+        if (!files || files.length === 0) return;
 
         setUploading(true);
+        let successCount = 0;
+        let errorMessages: string[] = [];
+
         try {
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
-            const filePath = `${user.id}/${fileName}`;
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                try {
+                    const fileExt = file.name.split('.').pop();
+                    const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+                    const filePath = `${user.id}/${fileName}`;
 
-            const { error: uploadError } = await supabase.storage
-                .from('receipts')
-                .upload(filePath, file);
+                    const { error: uploadError } = await supabase.storage
+                        .from('receipts')
+                        .upload(filePath, file);
 
-            if (uploadError) throw uploadError;
+                    if (uploadError) throw uploadError;
 
-            const { error: dbError } = await supabase
-                .from('receipts')
-                .insert([{
-                    user_id: user.id,
-                    file_name: file.name,
-                    file_path: filePath,
-                    file_url: 'private',
-                    status: 'pendiente'
-                }]);
+                    const { error: dbError } = await supabase
+                        .from('receipts')
+                        .insert([{
+                            user_id: user.id,
+                            file_name: file.name,
+                            file_path: filePath,
+                            file_url: 'private',
+                            status: 'pendiente'
+                        }]);
 
-            if (dbError) throw dbError;
+                    if (dbError) throw dbError;
+                    successCount++;
+                } catch (err: any) {
+                    errorMessages.push(`${file.name}: ${err.message}`);
+                }
+            }
 
-            loadReceipts();
-        } catch (error: any) {
-            console.error("Error uploading:", error);
-            alert(`Error al subir: ${error.message}`);
+            if (successCount > 0) {
+                loadReceipts();
+            }
+            if (errorMessages.length > 0) {
+                alert(`Hubo errores al subir algunos archivos:\n${errorMessages.join('\n')}`);
+            }
         } finally {
             setUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
         }
+    };
+
+    const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        processFiles(e.target.files);
+    };
+
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setIsDragging(false);
+        if (!isMaster) {
+            processFiles(e.dataTransfer.files);
+        }
+    };
+
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        if (!isMaster) setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setIsDragging(false);
     };
 
     const handleDownload = async (filePath: string) => {
@@ -134,7 +169,19 @@ export default function TicketUploader({ user, isMaster }: { user: any, isMaster
     };
 
     return (
-        <div className="bg-white rounded-[2rem] border border-light-beige shadow-sm overflow-hidden animate-fade-in relative">
+        <div 
+            className={`bg-white rounded-[2rem] border shadow-sm overflow-hidden animate-fade-in relative transition-all duration-300 ${isDragging ? 'border-accent border-2 bg-accent/5 scale-[1.01]' : 'border-light-beige'}`}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+        >
+            {isDragging && (
+                <div className="absolute inset-0 bg-accent/10 backdrop-blur-[2px] z-50 flex flex-col items-center justify-center border-4 border-dashed border-accent rounded-[2rem] pointer-events-none">
+                    <UploadCloud size={64} className="text-accent animate-bounce" />
+                    <h2 className="text-2xl font-bold text-primary-dark mt-4">Suelta tus comprobantes aquí</h2>
+                    <p className="text-neutral-500 font-medium">Puedes subir múltiples archivos a la vez</p>
+                </div>
+            )}
             <div className="p-8 border-b border-light-beige flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-xl font-bold text-primary-dark">
@@ -147,7 +194,7 @@ export default function TicketUploader({ user, isMaster }: { user: any, isMaster
                 
                 {!isMaster && (
                     <div>
-                        <input type="file" ref={fileInputRef} onChange={handleUpload} className="hidden" accept="image/*,.pdf" capture="environment" />
+                        <input type="file" multiple ref={fileInputRef} onChange={handleUpload} className="hidden" accept="image/*,.pdf" />
                         <Button primary className="flex items-center gap-2 px-6 shadow-md" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
                             {uploading ? <Loader className="animate-spin" size={18} /> : <UploadCloud size={18} />}
                             {uploading ? 'Subiendo...' : 'Subir Comprobante'}
