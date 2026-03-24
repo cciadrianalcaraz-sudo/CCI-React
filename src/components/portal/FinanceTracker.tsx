@@ -463,18 +463,18 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                                             <button 
                                                 type="button"
                                                 onClick={() => handleEditClick(record)}
-                                                className="p-1.5 text-neutral-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-colors"
+                                                className="px-3 py-1.5 flex items-center gap-1.5 text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors text-xs font-bold shadow-sm"
                                                 title="Editar"
                                             >
-                                                <Edit2 size={16} />
+                                                <Edit2 size={14} /> Editar
                                             </button>
                                             <button 
                                                 type="button"
                                                 onClick={() => handleDelete(record.id)}
-                                                className="p-1.5 text-neutral-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                                                className="px-3 py-1.5 flex items-center gap-1.5 text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors text-xs font-bold shadow-sm"
                                                 title="Eliminar"
                                             >
-                                                <Trash2 size={16} />
+                                                <Trash2 size={14} /> Eliminar
                                             </button>
                                         </div>
                                     </td>
