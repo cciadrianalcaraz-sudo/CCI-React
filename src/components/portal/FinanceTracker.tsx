@@ -270,21 +270,42 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
             }
 
             const recordsToInsert = jsonData.map(row => {
-                // Función auxiliar para buscar llaves sin importar mayúsculas, minúsculas o espacios extra
-                const getValue = (keys: string[]) => {
-                    const rowKey = Object.keys(row).find(k => keys.includes(k.trim().toUpperCase()));
+                // Función auxiliar súper flexible para buscar columnas que "contengan" la palabra clave
+                const getValue = (keywords: string[]) => {
+                    const rowKey = Object.keys(row).find(k => {
+                        const upperK = k.toUpperCase().replace(/\s/g, ''); // Quitamos espacios para ser infalibles
+                        return keywords.some(kw => upperK.includes(kw));
+                    });
                     return rowKey ? row[rowKey] : undefined;
                 };
 
-                // Función auxiliar para limpiar signos de pesos y comas antes de convertir a número
+                // Función auxiliar para extraer números en cualquier formato (americano o europeo/latino)
                 const parseNumber = (val: any) => {
                     if (typeof val === 'number') return val;
                     if (!val) return 0;
-                    const cleaned = String(val).replace(/[$,\s]/g, '');
-                    return Number(cleaned) || 0;
+                    
+                    // Asegurar de pasarlo a texto y quitarle todo lo que no sea digito, punto, coma o negativo
+                    let str = String(val).replace(/[^\d.,-]/g, '');
+                    if (!str) return 0;
+
+                    // Averiguar si están usando coma o punto como decimal
+                    const lastComma = str.lastIndexOf(',');
+                    const lastDot = str.lastIndexOf('.');
+                    
+                    if (lastComma > lastDot) {
+                        // La coma es el separador decimal (ej: 1.500,00)
+                        str = str.replace(/\./g, ''); // Quitamos todos los puntos (miles)
+                        str = str.replace(',', '.');  // Cambiamos la coma decimal por punto
+                    } else {
+                        // El punto es el separador decimal (ej: 1,500.00 o 1500)
+                        str = str.replace(/,/g, ''); // Quitamos todas las comas (miles)
+                    }
+                    
+                    const parsed = Number(str);
+                    return isNaN(parsed) ? 0 : parsed;
                 };
 
-                const rawDate = getValue(['FECHA']);
+                const rawDate = getValue(['FECHA', 'DATE']);
                 let dateStr = rawDate ? String(rawDate).trim() : new Date().toISOString().split('T')[0];
                 
                 if (typeof rawDate === 'number') {
@@ -299,13 +320,13 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
 
                 return {
                     user_id: user.id,
-                    concept: String(getValue(['CONCEPTO']) || 'SIN CONCEPTO').trim().toUpperCase(),
+                    concept: String(getValue(['CONCEPTO', 'CONCEPT']) || 'SIN CONCEPTO').trim().toUpperCase(),
                     date: dateStr,
-                    payment_method: String(getValue(['FORMA DE PAGO', 'FORMADEPAGO']) || 'SIN ESPECIFICAR').trim().toUpperCase(),
-                    provider: String(getValue(['PROVEEDOR']) || '').trim().toUpperCase(),
-                    income: parseNumber(getValue(['INGRESO', 'INGRESOS'])),
-                    expense: parseNumber(getValue(['GASTO', 'GASTOS'])),
-                    description: String(getValue(['DESCRIPCIÓN', 'DESCRIPCION']) || '').trim()
+                    payment_method: String(getValue(['FORMADEPAGO', 'PAGO', 'CUENTA']) || 'SIN ESPECIFICAR').trim().toUpperCase(),
+                    provider: String(getValue(['PROVEEDOR', 'PROVIDER', 'LUGAR']) || '').trim().toUpperCase(),
+                    income: parseNumber(getValue(['INGRESO', 'ENTRADA', 'POSITIVO'])),
+                    expense: parseNumber(getValue(['GASTO', 'SALIDA', 'NEGATIVO', 'EGRESO'])),
+                    description: String(getValue(['DESCRIPCION', 'DETALLE', 'MOTIVO']) || '').trim()
                 };
             });
 
