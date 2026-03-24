@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Plus, Trash2, Search, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+import { Plus, Trash2, Search, TrendingUp, TrendingDown, DollarSign, Edit2 } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import Button from '../ui/Button';
 
@@ -45,6 +45,7 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
     const [income, setIncome] = useState<number | ''>('');
     const [expense, setExpense] = useState<number | ''>('');
     const [description, setDescription] = useState('');
+    const [editingId, setEditingId] = useState<string | null>(null);
 
     useEffect(() => {
         loadRecords();
@@ -111,7 +112,10 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
         // Calcular Balances por Forma de Pago
         const paymentMap: Record<string, { initial: number, income: number, expense: number }> = {};
         
-        records.forEach(r => {
+        // Ordenar cronológicamente para que los "SALDO INICIAL" sobreescriban correctamente el pasado
+        const chronRecords = [...records].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        
+        chronRecords.forEach(r => {
             const pm = r.payment_method || 'SIN ESPECIFICAR';
             if (!paymentMap[pm]) {
                 paymentMap[pm] = { initial: 0, income: 0, expense: 0 };
@@ -120,8 +124,13 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
             const recordMonth = r.date.substring(0, 7);
             
             if (recordMonth < selectedMonth) {
-                // Meses pasados -> Saldo Inicial
-                paymentMap[pm].initial += (Number(r.income) || 0) - (Number(r.expense) || 0);
+                // Regla Mágica: Si el concepto es 'SALDO INICIAL', borra el historial previo y sobreescribe
+                if ((r.concept || '').toUpperCase().trim() === 'SALDO INICIAL') {
+                    paymentMap[pm].initial = (Number(r.income) || 0) - (Number(r.expense) || 0);
+                } else {
+                    // Meses pasados -> Saldo Inicial se acumula
+                    paymentMap[pm].initial += (Number(r.income) || 0) - (Number(r.expense) || 0);
+                }
             } else if (recordMonth === selectedMonth) {
                 // Este mes -> Ingresos y Gastos
                 paymentMap[pm].income += Number(r.income) || 0;
@@ -150,30 +159,52 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
             const numIncome = Number(income) || 0;
             const numExpense = Number(expense) || 0;
 
-            const { data, error } = await supabase
-                .from('finance_records')
-                .insert([{
-                    user_id: user.id,
-                    concept,
-                    date,
-                    payment_method: paymentMethod,
-                    provider,
-                    income: numIncome,
-                    expense: numExpense,
-                    description
-                }])
-                .select();
+            if (editingId) {
+                const { error, data } = await supabase
+                    .from('finance_records')
+                    .update({
+                        concept,
+                        date,
+                        payment_method: paymentMethod,
+                        provider,
+                        income: numIncome,
+                        expense: numExpense,
+                        description
+                    })
+                    .eq('id', editingId)
+                    .eq('user_id', user.id)
+                    .select();
 
-            if (error) throw error;
+                if (error) throw error;
+                if (data) {
+                    loadRecords();
+                    resetForm();
+                    setIsFormOpen(false);
+                }
+            } else {
+                const { data, error } = await supabase
+                    .from('finance_records')
+                    .insert([{
+                        user_id: user.id,
+                        concept,
+                        date,
+                        payment_method: paymentMethod,
+                        provider,
+                        income: numIncome,
+                        expense: numExpense,
+                        description
+                    }])
+                    .select();
 
-            if (data) {
-                // To keep correct chronological sorting calculate balance properly
-                loadRecords();
-                resetForm();
-                setIsFormOpen(false);
+                if (error) throw error;
+                if (data) {
+                    loadRecords();
+                    resetForm();
+                    setIsFormOpen(false);
+                }
             }
         } catch (error) {
-            console.error("Error adding record:", error);
+            console.error("Error adding/updating record:", error);
             alert("Hubo un error al guardar el registro.");
         }
     };
@@ -202,6 +233,20 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
         setIncome('');
         setExpense('');
         setDescription('');
+        setEditingId(null);
+    };
+
+    const handleEditClick = (record: FinanceRecord) => {
+        setConcept(record.concept);
+        setDate(record.date.split('T')[0]);
+        setPaymentMethod(record.payment_method || '');
+        setProvider(record.provider || '');
+        setIncome((record.income && Number(record.income) > 0) ? Number(record.income) : '');
+        setExpense((record.expense && Number(record.expense) > 0) ? Number(record.expense) : '');
+        setDescription(record.description || '');
+        setEditingId(record.id);
+        setIsFormOpen(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     // Calculate running balance based on chronological order
@@ -315,8 +360,8 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                             <input type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="Ej. TOMATE, CHILE SERRANO Y CEBOLLA" className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent" />
                         </div>
                         <div className="lg:col-span-4 flex justify-end gap-3 mt-2">
-                            <Button outline type="button" onClick={() => setIsFormOpen(false)} className="text-sm py-2">Cancelar</Button>
-                            <Button primary type="submit" className="text-sm py-2">Guardar Registro</Button>
+                            <Button outline type="button" onClick={() => { setIsFormOpen(false); resetForm(); }} className="text-sm py-2">Cancelar</Button>
+                            <Button primary type="submit" className="text-sm py-2">{editingId ? 'Actualizar Registro' : 'Guardar Registro'}</Button>
                         </div>
                     </form>
                 </div>
@@ -414,13 +459,24 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                                         {record.description}
                                     </td>
                                     <td className="p-4 text-center">
-                                        <button 
-                                            onClick={() => handleDelete(record.id)}
-                                            className="p-1.5 text-neutral-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
-                                            title="Eliminar"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
+                                        <div className="flex justify-center gap-2">
+                                            <button 
+                                                type="button"
+                                                onClick={() => handleEditClick(record)}
+                                                className="p-1.5 text-neutral-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-colors"
+                                                title="Editar"
+                                            >
+                                                <Edit2 size={16} />
+                                            </button>
+                                            <button 
+                                                type="button"
+                                                onClick={() => handleDelete(record.id)}
+                                                className="p-1.5 text-neutral-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                                                title="Eliminar"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
