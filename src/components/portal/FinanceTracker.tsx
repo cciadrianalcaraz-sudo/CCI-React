@@ -86,7 +86,7 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
             };
         });
         
-        setUniqueMonths(formattedMonths);
+        setUniqueMonths([{label: 'Todos los meses', value: 'all'}, ...formattedMonths]);
         
         // Auto-select the most recent month initially if none selected
         if (!selectedMonth && formattedMonths.length > 0) {
@@ -97,7 +97,7 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
     useEffect(() => {
         if (!selectedMonth) return;
         
-        const filteredRecords = records.filter(r => r.date.startsWith(selectedMonth));
+        const filteredRecords = selectedMonth === 'all' ? records : records.filter(r => r.date.startsWith(selectedMonth));
         
         const grouped = filteredRecords.reduce((acc, curr) => {
             const c = curr.concept || 'SIN CONCEPTO';
@@ -126,7 +126,7 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
             
             const recordMonth = r.date.substring(0, 7);
             
-            if (recordMonth < selectedMonth) {
+            if (selectedMonth !== 'all' && recordMonth < selectedMonth) {
                 // Regla Mágica: Si el concepto es 'SALDO INICIAL', borra el historial previo y sobreescribe
                 if ((r.concept || '').toUpperCase().trim() === 'SALDO INICIAL') {
                     paymentMap[pm].initial = (Number(r.income) || 0) - (Number(r.expense) || 0);
@@ -134,8 +134,8 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                     // Meses pasados -> Saldo Inicial se acumula
                     paymentMap[pm].initial += (Number(r.income) || 0) - (Number(r.expense) || 0);
                 }
-            } else if (recordMonth === selectedMonth) {
-                // Este mes -> Ingresos y Gastos
+            } else if (selectedMonth === 'all' || recordMonth === selectedMonth) {
+                // Este mes (o todos los meses) -> Ingresos y Gastos
                 paymentMap[pm].income += Number(r.income) || 0;
                 paymentMap[pm].expense += Number(r.expense) || 0;
             }
@@ -360,6 +360,10 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
         };
     });
 
+    const displayRecords = selectedMonth === 'all' 
+        ? recordsWithBalance 
+        : recordsWithBalance.filter(r => r.date.startsWith(selectedMonth));
+
     return (
         <div className="bg-white rounded-[2rem] border border-light-beige shadow-sm overflow-hidden animate-fade-in">
             <div className="p-8 border-b border-light-beige flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -500,7 +504,7 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                     </button>
                 </div>
                 
-                {(viewMode === 'summary' || viewMode === 'balances') && uniqueMonths.length > 0 && (
+                {uniqueMonths.length > 0 && (
                     <div className="flex items-center gap-3">
                         <label className="text-sm font-bold text-primary-dark uppercase tracking-wider">Mes:</label>
                         <select 
@@ -521,7 +525,7 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                     <div className="p-12 flex justify-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-accent"></div>
                     </div>
-                ) : recordsWithBalance.length === 0 ? (
+                ) : displayRecords.length === 0 ? (
                     <div className="p-12 text-center text-neutral-400">
                         <div className="flex justify-center mb-4">
                             <div className="w-16 h-16 bg-primary/5 rounded-full flex items-center justify-center text-primary/30">
@@ -548,7 +552,7 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-light-beige/50">
-                            {recordsWithBalance.map((record, index) => (
+                            {displayRecords.map((record, index) => (
                                 <tr key={record.id} className="hover:bg-[#faf7f2]/50 transition-colors text-sm text-neutral-700">
                                     <td className="p-4 whitespace-nowrap text-neutral-400 font-medium">{index + 1}</td>
                                     <td className="p-4 whitespace-nowrap font-medium text-primary-dark">{record.concept}</td>
@@ -594,17 +598,14 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                         </tbody>
                         <tfoot className="bg-neutral-50/50">
                             <tr>
-                                <td colSpan={5} className="p-4 text-right font-bold text-primary-dark text-sm uppercase">Total</td>
+                                <td colSpan={5} className="p-4 text-right font-bold text-primary-dark text-sm uppercase">Total Mostrado</td>
                                 <td className="p-4 text-right font-bold text-green-600">
-                                    ${recordsWithBalance.reduce((acc, curr) => acc + Number(curr.income), 0).toFixed(2)}
+                                    ${displayRecords.reduce((acc, curr) => acc + Number(curr.income), 0).toFixed(2)}
                                 </td>
                                 <td className="p-4 text-right font-bold text-red-600">
-                                    ${recordsWithBalance.reduce((acc, curr) => acc + Number(curr.expense), 0).toFixed(2)}
+                                    ${displayRecords.reduce((acc, curr) => acc + Number(curr.expense), 0).toFixed(2)}
                                 </td>
-                                <td className="p-4 text-right font-bold text-primary-dark">
-                                    ${runningBalance.toFixed(2)}
-                                </td>
-                                <td colSpan={2}></td>
+                                <td colSpan={3}></td>
                             </tr>
                         </tfoot>
                     </table>
