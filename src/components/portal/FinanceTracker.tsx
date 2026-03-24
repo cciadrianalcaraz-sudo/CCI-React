@@ -31,10 +31,11 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
 
     
     // View modes
-    const [viewMode, setViewMode] = useState<'detailed' | 'summary'>('detailed');
+    const [viewMode, setViewMode] = useState<'detailed' | 'summary' | 'balances'>('detailed');
     const [selectedMonth, setSelectedMonth] = useState<string>('');
     const [uniqueMonths, setUniqueMonths] = useState<{label: string, value: string}[]>([]);
     const [summaryData, setSummaryData] = useState<{concept: string, income: number, expense: number}[]>([]);
+    const [paymentBalancesData, setPaymentBalancesData] = useState<{method: string, initialBalance: number, income: number, expense: number, finalBalance: number}[]>([]);
     
     // Form state
     const [concept, setConcept] = useState('');
@@ -106,6 +107,41 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
         
         const sortedSummary = Object.values(grouped).sort((a, b) => a.concept.localeCompare(b.concept));
         setSummaryData(sortedSummary);
+        
+        // Calcular Balances por Forma de Pago
+        const paymentMap: Record<string, { initial: number, income: number, expense: number }> = {};
+        
+        records.forEach(r => {
+            const pm = r.payment_method || 'SIN ESPECIFICAR';
+            if (!paymentMap[pm]) {
+                paymentMap[pm] = { initial: 0, income: 0, expense: 0 };
+            }
+            
+            const recordMonth = r.date.substring(0, 7);
+            
+            if (recordMonth < selectedMonth) {
+                // Meses pasados -> Saldo Inicial
+                paymentMap[pm].initial += (Number(r.income) || 0) - (Number(r.expense) || 0);
+            } else if (recordMonth === selectedMonth) {
+                // Este mes -> Ingresos y Gastos
+                paymentMap[pm].income += Number(r.income) || 0;
+                paymentMap[pm].expense += Number(r.expense) || 0;
+            }
+        });
+        
+        const balances = Object.entries(paymentMap)
+            .map(([method, data]) => ({
+                method,
+                initialBalance: data.initial,
+                income: data.income,
+                expense: data.expense,
+                finalBalance: data.initial + data.income - data.expense
+            }))
+            .filter(p => p.initialBalance !== 0 || p.income !== 0 || p.expense !== 0 || p.finalBalance !== 0)
+            .sort((a,b) => b.finalBalance - a.finalBalance);
+            
+        setPaymentBalancesData(balances);
+        
     }, [records, selectedMonth]);
 
     const handleAddRecord = async (e: React.FormEvent) => {
@@ -300,9 +336,15 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                     >
                         Resumen por Mes
                     </button>
+                    <button 
+                        onClick={() => setViewMode('balances')}
+                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'balances' ? 'bg-white shadow-sm text-primary-dark' : 'text-neutral-500 hover:text-primary-dark'}`}
+                    >
+                        Saldos
+                    </button>
                 </div>
                 
-                {viewMode === 'summary' && uniqueMonths.length > 0 && (
+                {(viewMode === 'summary' || viewMode === 'balances') && uniqueMonths.length > 0 && (
                     <div className="flex items-center gap-3">
                         <label className="text-sm font-bold text-primary-dark uppercase tracking-wider">Mes:</label>
                         <select 
@@ -399,7 +441,7 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                             </tr>
                         </tfoot>
                     </table>
-                ) : (
+                ) : viewMode === 'summary' ? (
                     <div className="p-8 max-w-7xl mx-auto animate-fade-in delay-100">
                         {selectedMonth && (
                             <h3 className="text-2xl font-bold font-heading text-center text-primary-dark mb-10 capitalize decoration-accent underline underline-offset-8">
@@ -543,7 +585,9 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                             </>
                         )}
                         
-                        <div className="border-t-[3px] border-b-[3px] border-[#4a7c82] overflow-hidden rounded-md shadow-sm">
+                        
+                        {/* Tabla de Resumen por Concepto */}
+                        <div className="border-t-[3px] border-b-[3px] border-[#4a7c82] overflow-hidden rounded-md shadow-sm mb-12">
                             <table className="w-full text-left">
                                 <thead>
                                     <tr className="bg-[#4a7c82] text-white">
@@ -605,7 +649,76 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                             </table>
                         </div>
                     </div>
-                )}
+                ) : viewMode === 'balances' ? (
+                    <div className="p-8 max-w-7xl mx-auto animate-fade-in delay-100">
+                        {selectedMonth && (
+                            <h3 className="text-2xl font-bold font-heading text-center text-primary-dark mb-10 capitalize decoration-accent underline underline-offset-8">
+                                {uniqueMonths.find(m => m.value === selectedMonth)?.label}
+                            </h3>
+                        )}
+                        {/* Tabla Balance por Forma de Pago */}
+                        {paymentBalancesData.length > 0 && (
+                            <div className="bg-white overflow-hidden rounded-md shadow-sm border border-neutral-200">
+                                <h4 className="text-xl font-bold text-center text-primary-dark p-6 bg-neutral-50 border-b border-light-beige">
+                                    Control de Efectivo por Cuenta
+                                </h4>
+                                <table className="w-full text-left">
+                                    <thead>
+                                        <tr className="bg-neutral-100 text-neutral-600 uppercase text-xs tracking-wider">
+                                            <th className="p-4 border-b border-neutral-200 font-bold whitespace-nowrap">Forma de Pago</th>
+                                            <th className="p-4 border-b border-neutral-200 font-bold text-right whitespace-nowrap">Saldo Inicial</th>
+                                            <th className="p-4 border-b border-neutral-200 font-bold text-right whitespace-nowrap">Ingresos</th>
+                                            <th className="p-4 border-b border-neutral-200 font-bold text-right whitespace-nowrap">Gastos</th>
+                                            <th className="p-4 border-b border-neutral-200 font-bold text-right whitespace-nowrap">Saldo Final</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-neutral-100">
+                                        {paymentBalancesData.map((row) => (
+                                            <tr key={row.method} className="hover:bg-neutral-50 transition-colors">
+                                                <td className="p-4 font-bold text-primary-dark text-sm">{row.method}</td>
+                                                <td className="p-4 text-right text-sm text-neutral-600">
+                                                    <span className="opacity-50 font-normal mr-1">$</span>
+                                                    {row.initialBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                </td>
+                                                <td className="p-4 text-right text-sm text-green-600 font-medium">
+                                                    {row.income > 0 ? <><span className="opacity-50 font-normal mr-1">$</span>{row.income.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</> : '-'}
+                                                </td>
+                                                <td className="p-4 text-right text-sm text-red-600 font-medium">
+                                                    {row.expense > 0 ? <><span className="opacity-50 font-normal mr-1">$</span>{row.expense.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</> : '-'}
+                                                </td>
+                                                <td className={`p-4 text-right text-sm font-bold ${row.finalBalance < 0 ? 'text-red-600' : 'text-primary-dark'}`}>
+                                                    <span className="opacity-50 font-normal mr-1">$</span>
+                                                    {row.finalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                    <tfoot className="bg-[#f8f9fa] border-t-[3px] border-double border-neutral-800">
+                                        <tr>
+                                            <td className="p-4 font-black text-primary-dark text-sm uppercase text-right">Totales Acumulados</td>
+                                            <td className="p-4 text-right font-black text-neutral-700 text-sm">
+                                                <span className="opacity-50 font-normal mr-1">$</span>
+                                                {paymentBalancesData.reduce((acc, r) => acc + r.initialBalance, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </td>
+                                            <td className="p-4 text-right font-black text-green-600 text-sm">
+                                                <span className="opacity-50 font-normal mr-1">$</span>
+                                                {paymentBalancesData.reduce((acc, r) => acc + r.income, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </td>
+                                            <td className="p-4 text-right font-black text-red-600 text-sm">
+                                                <span className="opacity-50 font-normal mr-1">$</span>
+                                                {paymentBalancesData.reduce((acc, r) => acc + r.expense, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </td>
+                                            <td className="p-4 text-right font-black text-primary-dark text-sm">
+                                                <span className="opacity-50 font-normal mr-1">$</span>
+                                                {paymentBalancesData.reduce((acc, r) => acc + r.finalBalance, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        )}
+                    </div>
+                ) : null}
             </div>
         </div>
     );
