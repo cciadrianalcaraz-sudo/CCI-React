@@ -99,15 +99,17 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
         
         const filteredRecords = selectedMonth === 'all' ? records : records.filter(r => r.date.startsWith(selectedMonth));
         
-        const grouped = filteredRecords.reduce((acc, curr) => {
-            const c = curr.concept || 'SIN CONCEPTO';
-            if (!acc[c]) {
-                acc[c] = { concept: c, income: 0, expense: 0 };
-            }
-            acc[c].income += Number(curr.income) || 0;
-            acc[c].expense += Number(curr.expense) || 0;
-            return acc;
-        }, {} as Record<string, {concept: string, income: number, expense: number}>);
+        const grouped = filteredRecords
+            .filter(r => (r.concept || '').toUpperCase().trim() !== 'SALDO INICIAL')
+            .reduce((acc, curr) => {
+                const c = curr.concept || 'SIN CONCEPTO';
+                if (!acc[c]) {
+                    acc[c] = { concept: c, income: 0, expense: 0 };
+                }
+                acc[c].income += Number(curr.income) || 0;
+                acc[c].expense += Number(curr.expense) || 0;
+                return acc;
+            }, {} as Record<string, {concept: string, income: number, expense: number}>);
         
         const sortedSummary = Object.values(grouped).sort((a, b) => a.concept.localeCompare(b.concept));
         setSummaryData(sortedSummary);
@@ -125,19 +127,25 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
             }
             
             const recordMonth = r.date.substring(0, 7);
+            const isInitialBalance = (r.concept || '').toUpperCase().trim() === 'SALDO INICIAL';
             
             if (selectedMonth !== 'all' && recordMonth < selectedMonth) {
                 // Regla Mágica: Si el concepto es 'SALDO INICIAL', borra el historial previo y sobreescribe
-                if ((r.concept || '').toUpperCase().trim() === 'SALDO INICIAL') {
+                if (isInitialBalance) {
                     paymentMap[pm].initial = (Number(r.income) || 0) - (Number(r.expense) || 0);
                 } else {
                     // Meses pasados -> Saldo Inicial se acumula
                     paymentMap[pm].initial += (Number(r.income) || 0) - (Number(r.expense) || 0);
                 }
             } else if (selectedMonth === 'all' || recordMonth === selectedMonth) {
-                // Este mes (o todos los meses) -> Ingresos y Gastos
-                paymentMap[pm].income += Number(r.income) || 0;
-                paymentMap[pm].expense += Number(r.expense) || 0;
+                if (isInitialBalance) {
+                    // Si es saldo inicial, NUNCA entra a ingresos/gastos. Solo afecta saldo inicial.
+                    paymentMap[pm].initial += (Number(r.income) || 0) - (Number(r.expense) || 0);
+                } else {
+                    // Este mes (o todos los meses) -> Ingresos y Gastos
+                    paymentMap[pm].income += Number(r.income) || 0;
+                    paymentMap[pm].expense += Number(r.expense) || 0;
+                }
             }
         });
         
@@ -396,6 +404,7 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                     
                     {/* Listas sugeridas (Dropdowns / Autocomplete) */}
                     <datalist id="concept-options">
+                        <option value="SALDO INICIAL" />
                         <option value="ALIMENTOS" />
                         <option value="AHORRO" />
                         <option value="FAM CASTILLO" />
@@ -437,7 +446,10 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                         <option value="TD STR LAURA" />
                         <option value="TD BBVA LAURA" />
                         <option value="TC STR LAURA" />
-                        <option value="CPM" />
+                        <option value="CPM LAURA" />
+                         <option value="CPM ADRIAN" />
+                          <option value="CPM CRÉDITO" />
+                          <option value="CETES" />
                         <option value="TD STR ADRIAN" />
                         <option value="TD DESPENSA" />
                         <option value="VALES" />
@@ -553,9 +565,12 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                         </thead>
                         <tbody className="divide-y divide-light-beige/50">
                             {displayRecords.map((record, index) => (
-                                <tr key={record.id} className="hover:bg-[#faf7f2]/50 transition-colors text-sm text-neutral-700">
+                                <tr key={record.id} className={`hover:bg-[#faf7f2]/50 transition-colors text-sm text-neutral-700 ${record.concept.toUpperCase() === 'SALDO INICIAL' ? 'bg-amber-50/10 opacity-75' : ''}`}>
                                     <td className="p-4 whitespace-nowrap text-neutral-400 font-medium">{index + 1}</td>
-                                    <td className="p-4 whitespace-nowrap font-medium text-primary-dark">{record.concept}</td>
+                                    <td className="p-4 whitespace-nowrap font-medium text-primary-dark">
+                                        {record.concept}
+                                        {record.concept.toUpperCase() === 'SALDO INICIAL' && <span className="ml-2 text-[9px] bg-primary/10 text-primary-dark px-1 py-0.5 rounded uppercase tracking-wider">Ajuste</span>}
+                                    </td>
                                     <td className="p-4 whitespace-nowrap">{new Date(record.date).toLocaleDateString()}</td>
                                     <td className="p-4 whitespace-nowrap">
                                         <span className="bg-neutral-100 px-2 py-1 rounded text-xs">{record.payment_method}</span>
@@ -598,12 +613,12 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                         </tbody>
                         <tfoot className="bg-neutral-50/50">
                             <tr>
-                                <td colSpan={5} className="p-4 text-right font-bold text-primary-dark text-sm uppercase">Total Mostrado</td>
+                                <td colSpan={5} className="p-4 text-right font-bold text-primary-dark text-sm uppercase">Total Mostrado <span className="text-[10px] text-neutral-400 block normal-case">(Excluye Saldos Iniciales)</span></td>
                                 <td className="p-4 text-right font-bold text-green-600">
-                                    ${displayRecords.reduce((acc, curr) => acc + Number(curr.income), 0).toFixed(2)}
+                                    ${displayRecords.filter(r => r.concept.toUpperCase() !== 'SALDO INICIAL').reduce((acc, curr) => acc + Number(curr.income), 0).toFixed(2)}
                                 </td>
                                 <td className="p-4 text-right font-bold text-red-600">
-                                    ${displayRecords.reduce((acc, curr) => acc + Number(curr.expense), 0).toFixed(2)}
+                                    ${displayRecords.filter(r => r.concept.toUpperCase() !== 'SALDO INICIAL').reduce((acc, curr) => acc + Number(curr.expense), 0).toFixed(2)}
                                 </td>
                                 <td colSpan={3}></td>
                             </tr>
