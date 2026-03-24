@@ -8,6 +8,7 @@ import Button from "../components/ui/Button";
 import { supabase } from "../lib/supabase";
 import FinanceTracker from "../components/portal/FinanceTracker";
 import AdminDashboard from "../components/portal/AdminDashboard";
+import TicketUploader from "../components/portal/TicketUploader";
 
 const MASTER_EMAIL = 'cci.adrianalcaraz@gmail.com';
 
@@ -182,7 +183,7 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
     const [profile, setProfile] = useState<Profile | null>(null);
     const [docs, setDocs] = useState<Document[]>([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'dashboard' | 'finance'>('dashboard');
+    const [activeTab, setActiveTab] = useState<'dashboard' | 'finance' | 'tickets'>('dashboard');
 
     const isMaster = user.email === MASTER_EMAIL;
 
@@ -277,6 +278,12 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                         className={`px-6 py-2.5 rounded-full font-bold text-sm transition-all ${activeTab === 'finance' ? 'bg-primary-dark text-white shadow-md' : 'bg-white border border-light-beige text-neutral-500 hover:border-accent hover:text-primary-dark'}`}
                     >
                         Finanzas Personales
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab('tickets')}
+                        className={`px-6 py-2.5 rounded-full font-bold text-sm transition-all ${activeTab === 'tickets' ? 'bg-primary-dark text-white shadow-md' : 'bg-white border border-light-beige text-neutral-500 hover:border-accent hover:text-primary-dark'}`}
+                    >
+                        Tickets y Facturas
                     </button>
                 </div>
 
@@ -402,9 +409,13 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                     </div>
                 </div>
                 </>
-                ) : (
+                ) : activeTab === 'finance' ? (
                     <div className="animate-fade-in">
                         <FinanceTracker user={user} />
+                    </div>
+                ) : (
+                    <div className="animate-fade-in">
+                        <TicketUploader user={user} isMaster={false} />
                     </div>
                 )}
                     </>

@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { createClient } from '@supabase/supabase-js';
 import { Plus, Users, ShieldCheck, Mail, Lock } from 'lucide-react';
 import Button from '../ui/Button';
+import TicketUploader from './TicketUploader';
 
 // Isolated client just for creating auth users without logging out
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
@@ -28,7 +29,7 @@ interface AdminDashboardProps {
     user: any;
 }
 
-export default function AdminDashboard({}: AdminDashboardProps) {
+export default function AdminDashboard({ user }: AdminDashboardProps) {
     const [profiles, setProfiles] = useState<Profile[]>([]);
     const [loading, setLoading] = useState(true);
     const [isFormOpen, setIsFormOpen] = useState(false);
@@ -254,6 +255,10 @@ export default function AdminDashboard({}: AdminDashboardProps) {
                     )}
                 </div>
             </div>
+
+            {/* Nueva sección: Bandeja de Tickets Global */}
+            <TicketUploader user={user} isMaster={true} />
+            
         </div>
     );
 }
