@@ -270,10 +270,25 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
             }
 
             const recordsToInsert = jsonData.map(row => {
-                let dateStr = row['Fecha'] ? String(row['Fecha']).trim() : new Date().toISOString().split('T')[0];
+                // Función auxiliar para buscar llaves sin importar mayúsculas, minúsculas o espacios extra
+                const getValue = (keys: string[]) => {
+                    const rowKey = Object.keys(row).find(k => keys.includes(k.trim().toUpperCase()));
+                    return rowKey ? row[rowKey] : undefined;
+                };
+
+                // Función auxiliar para limpiar signos de pesos y comas antes de convertir a número
+                const parseNumber = (val: any) => {
+                    if (typeof val === 'number') return val;
+                    if (!val) return 0;
+                    const cleaned = String(val).replace(/[$,\s]/g, '');
+                    return Number(cleaned) || 0;
+                };
+
+                const rawDate = getValue(['FECHA']);
+                let dateStr = rawDate ? String(rawDate).trim() : new Date().toISOString().split('T')[0];
                 
-                if (typeof row['Fecha'] === 'number') {
-                    const jsDate = new Date((row['Fecha'] - 25569) * 86400 * 1000);
+                if (typeof rawDate === 'number') {
+                    const jsDate = new Date((rawDate - 25569) * 86400 * 1000);
                     dateStr = jsDate.toISOString().split('T')[0];
                 } else if (typeof dateStr === 'string' && dateStr.includes('/')) {
                     const parts = dateStr.split('/');
@@ -284,13 +299,13 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
 
                 return {
                     user_id: user.id,
-                    concept: String(row['Concepto'] || 'SIN CONCEPTO').trim().toUpperCase(),
+                    concept: String(getValue(['CONCEPTO']) || 'SIN CONCEPTO').trim().toUpperCase(),
                     date: dateStr,
-                    payment_method: String(row['Forma de Pago'] || row['Forma de pago'] || 'SIN ESPECIFICAR').trim().toUpperCase(),
-                    provider: String(row['Proveedor'] || '').trim().toUpperCase(),
-                    income: Number(row['Ingreso']) || 0,
-                    expense: Number(row['Gasto']) || 0,
-                    description: String(row['Descripción'] || row['Descripcion'] || '').trim()
+                    payment_method: String(getValue(['FORMA DE PAGO', 'FORMADEPAGO']) || 'SIN ESPECIFICAR').trim().toUpperCase(),
+                    provider: String(getValue(['PROVEEDOR']) || '').trim().toUpperCase(),
+                    income: parseNumber(getValue(['INGRESO', 'INGRESOS'])),
+                    expense: parseNumber(getValue(['GASTO', 'GASTOS'])),
+                    description: String(getValue(['DESCRIPCIÓN', 'DESCRIPCION']) || '').trim()
                 };
             });
 
