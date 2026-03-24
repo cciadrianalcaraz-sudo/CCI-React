@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Plus, Trash2, Search } from 'lucide-react';
+import { Plus, Trash2, Search, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import Button from '../ui/Button';
 
@@ -409,6 +409,34 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
 
                         {summaryData.length > 0 && (
                             <>
+                                {/* Tarjetas de Resumen Rápido (KPIs) */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                                    <div className="bg-white p-6 rounded-3xl border border-light-beige shadow-sm flex flex-col justify-center relative overflow-hidden group hover:shadow-md transition-shadow">
+                                        <div className="absolute top-1/2 -translate-y-1/2 right-4 opacity-10 text-green-500 group-hover:scale-110 transition-transform"><TrendingUp size={64} /></div>
+                                        <p className="text-neutral-500 font-bold uppercase tracking-wider text-xs mb-2 z-10">Ingresos Totales</p>
+                                        <p className="text-3xl font-heading font-extrabold text-green-600 z-10">
+                                            <span className="text-xl font-normal opacity-70 mr-1">$</span>
+                                            {summaryData.reduce((acc, row) => acc + row.income, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </p>
+                                    </div>
+                                    <div className="bg-white p-6 rounded-3xl border border-light-beige shadow-sm flex flex-col justify-center relative overflow-hidden group hover:shadow-md transition-shadow">
+                                        <div className="absolute top-1/2 -translate-y-1/2 right-4 opacity-5 text-red-500 group-hover:scale-110 transition-transform"><TrendingDown size={64} /></div>
+                                        <p className="text-neutral-500 font-bold uppercase tracking-wider text-xs mb-2 z-10">Gastos Totales</p>
+                                        <p className="text-3xl font-heading font-extrabold text-red-500 z-10">
+                                            <span className="text-xl font-normal opacity-70 mr-1">$</span>
+                                            {summaryData.reduce((acc, row) => acc + row.expense, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </p>
+                                    </div>
+                                    <div className="bg-gradient-to-br from-primary-dark to-[#3d686d] p-6 rounded-3xl shadow-md flex flex-col justify-center relative overflow-hidden group hover:shadow-lg transition-shadow">
+                                        <div className="absolute -right-4 -bottom-4 opacity-10 text-white group-hover:rotate-12 transition-transform"><DollarSign size={96} /></div>
+                                        <p className="text-white/70 font-bold uppercase tracking-wider text-xs mb-2 z-10">Balance Neto</p>
+                                        <p className="text-3xl font-heading font-extrabold text-white z-10">
+                                            <span className="text-xl font-normal opacity-50 mr-1">$</span>
+                                            {(summaryData.reduce((acc, row) => acc + row.income, 0) - summaryData.reduce((acc, row) => acc + row.expense, 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </p>
+                                    </div>
+                                </div>
+
                                 {/* Gráficas Primera Fila */}
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
                                     {/* Ingresos - Pastel Pequeño */}
@@ -447,17 +475,21 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                                             {summaryData.filter(d => d.expense > 0).length > 0 ? (
                                                 <ResponsiveContainer width="100%" height="100%">
                                                     <BarChart data={summaryData.filter(d => d.expense > 0).sort((a,b) => b.expense - a.expense)} margin={{ top: 10, right: 30, left: 10, bottom: 65 }}>
+                                                        <defs>
+                                                            <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
+                                                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={1}/>
+                                                                <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.8}/>
+                                                            </linearGradient>
+                                                        </defs>
                                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                                                         <XAxis dataKey="concept" angle={-45} textAnchor="end" height={60} tick={{fontSize: 9, fill: '#6B7280', fontWeight: 'bold'}} interval={0} />
                                                         <YAxis tickFormatter={(val) => `$${val}`} tick={{fontSize: 11, fill: '#6B7280'}} width={80} />
                                                         <Tooltip 
                                                             formatter={(value) => `$${Number(value).toLocaleString('en-US', { minimumFractionDigits: 2 })}`} 
                                                             cursor={{fill: '#f3f4f6'}}
+                                                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                                                         />
-                                                        <Bar dataKey="expense" radius={[4, 4, 0, 0]}>
-                                                            {summaryData.filter(d => d.expense > 0).sort((a,b) => b.expense - a.expense).map((_, index) => (
-                                                                <Cell key={`cell-${index}`} fill={'#3b82f6'} />
-                                                            ))}
+                                                        <Bar dataKey="expense" radius={[6, 6, 0, 0]} fill="url(#colorExpense)">
                                                         </Bar>
                                                     </BarChart>
                                                 </ResponsiveContainer>
