@@ -140,9 +140,13 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
             } else if (selectedMonth === 'all' || recordMonth === selectedMonth) {
                 if (isInitialBalance) {
                     // Si es saldo inicial, NUNCA entra a ingresos/gastos. Solo afecta saldo inicial.
-                    paymentMap[pm].initial += (Number(r.income) || 0) - (Number(r.expense) || 0);
+                    paymentMap[pm].initial = (Number(r.income) || 0) - (Number(r.expense) || 0);
                 } else {
                     // Este mes (o todos los meses) -> Ingresos y Gastos
+                    paymentMap[pm].income = 0;
+                    paymentMap[pm].expense = 0;
+                } else {
+                    // Si no es saldo inicial, acumula normalmente
                     paymentMap[pm].income += Number(r.income) || 0;
                     paymentMap[pm].expense += Number(r.expense) || 0;
                 }
