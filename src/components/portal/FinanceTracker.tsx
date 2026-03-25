@@ -115,7 +115,7 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
         setSummaryData(sortedSummary);
         
         // Calcular Balances por Forma de Pago
-        const paymentMap: Record<string, { initial: number, income: number, expense: number }> = {};
+        const paymentMap: Record<string, { initial: number, income: number, expense: number, finalBalance: number }> = {};
         
         // Ordenar cronológicamente para que los "SALDO INICIAL" sobreescriban correctamente el pasado
         const chronRecords = [...records].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -123,32 +123,38 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
         chronRecords.forEach(r => {
             const pm = r.payment_method || 'SIN ESPECIFICAR';
             if (!paymentMap[pm]) {
-                paymentMap[pm] = { initial: 0, income: 0, expense: 0 };
-            }
+                paymentMap[pm] = { initial: 0, income: 0, expense: 0, finalBalance: 0 };
+      }
             
             const recordMonth = r.date.substring(0, 7);
             const isInitialBalance = (r.concept || '').toUpperCase().trim() === 'SALDO INICIAL';
-            
+            const recordIncome = Number(r.income) || 0;
+            const recordExpense = Number(r.expense) || 0;
             if (selectedMonth !== 'all' && recordMonth < selectedMonth) {
-                // Regla Mágica: Si el concepto es 'SALDO INICIAL', borra el historial previo y sobreescribe
+                
                 if (isInitialBalance) {
-                    paymentMap[pm].initial = (Number(r.income) || 0) - (Number(r.expense) || 0);
+                    paymentMap[pm].finalBalance = recordIncome - recordExpense;
                 } else {
                     // Meses pasados -> Saldo Inicial se acumula
-                    paymentMap[pm].initial += (Number(r.income) || 0) - (Number(r.expense) || 0);
+                    paymentMap[pm].finalBalance += recordIncome - recordExpense;
                 }
+// 2. EL SALDO INICIAL de este mes es el último finalBalance que traíamos del pasado
+         paymentMap[pm].initial = paymentMap[pm].finalBalance;
+
             } else if (selectedMonth === 'all' || recordMonth === selectedMonth) {
                 if (isInitialBalance) {
-                    // Si es saldo inicial, NUNCA entra a ingresos/gastos. Solo afecta saldo inicial.
-                    paymentMap[pm].initial = (Number(r.income) || 0) - (Number(r.expense) || 0);
-                } else {
-                    // Este mes (o todos los meses) -> Ingresos y Gastos
-                    paymentMap[pm].income = 0;
-                    paymentMap[pm].expense = 0;
-                } else {
-                    // Si no es saldo inicial, acumula normalmente
-                    paymentMap[pm].income += Number(r.income) || 0;
-                    paymentMap[pm].expense += Number(r.expense) || 0;
+                  // 3. REINICIO ABSOLUTO Y CORRECCIÓN DEL ERROR DE SINTAXIS
+                const resetValue = recordIncome - recordExpense;
+                paymentMap[pm].initial = resetValue;
+                paymentMap[pm].finalBalance = resetValue;
+                paymentMap[pm].income = 0;
+                paymentMap[pm].expense = 0;
+} else {
+    // Movimiento normal dentro del mes
+    paymentMap[pm].income += recordIncome;
+    paymentMap[pm].expense += recordExpense;
+    paymentMap[pm].finalBalance += recordIncome - recordExpense;
+}
                 }
             }
         });
@@ -159,7 +165,7 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                 initialBalance: data.initial,
                 income: data.income,
                 expense: data.expense,
-                finalBalance: data.initial + data.income - data.expense
+                finalBalance: data.finalBalance
             }))
             .filter(p => p.initialBalance !== 0 || p.income !== 0 || p.expense !== 0 || p.finalBalance !== 0)
             .sort((a,b) => b.finalBalance - a.finalBalance);
@@ -362,10 +368,16 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
         }
     };
 
-    // Calculate running balance based on chronological order
+    // Calculate running balance based on chronological order (Ignorando SALDO INICIAL)
     let runningBalance = 0;
     const recordsWithBalance = records.map(record => {
-        runningBalance = runningBalance + Number(record.income) - Number(record.expense);
+        const isInitialBalance = (record.concept || '').toUpperCase().trim() === 'SALDO INICIAL';
+        
+        // Solo sumamos o restamos al balance global si NO es un Saldo Inicial
+        if (!isInitialBalance) {
+            runningBalance = runningBalance + Number(record.income) - Number(record.expense);
+        }
+        
         return {
             ...record,
             balance: runningBalance
