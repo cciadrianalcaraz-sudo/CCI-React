@@ -37,6 +37,9 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
     const [summaryData, setSummaryData] = useState<{concept: string, income: number, expense: number}[]>([]);
     const [paymentBalancesData, setPaymentBalancesData] = useState<{method: string, initialBalance: number, income: number, expense: number, finalBalance: number}[]>([]);
     
+    // ESTADO NUEVO: Almacena los datos del presupuesto calculado
+    const [budgetData, setBudgetData] = useState<{concept: string, avgBudget: number, currentExpense: number, difference: number}[]>([]);
+    
     // Form state
     const [concept, setConcept] = useState('');
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -60,7 +63,7 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                 .from('finance_records')
                 .select('*')
                 .order('date', { ascending: true })
-                .order('created_at', { ascending: true }); // chronological order
+                .order('created_at', { ascending: true });
 
             if (error) throw error;
             if (data) setRecords(data as FinanceRecord[]);
@@ -71,7 +74,6 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
         }
     };
 
-    // Extract unique months and pivot table data
     useEffect(() => {
         if (records.length === 0) return;
         
@@ -113,8 +115,45 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
         setSummaryData(sortedSummary);
         
         // =========================================================================
-        // CALCULAR BALANCES POR FORMA DE PAGO (Con línea de tiempo real)
+        // NUEVO: CÁLCULO DE PRESUPUESTO (Promedio histórico)
         // =========================================================================
+        const historicalRecords = selectedMonth === 'all' 
+            ? records 
+            : records.filter(r => r.date.substring(0, 7) < selectedMonth);
+            
+        const historicalMonthsCount = new Set(historicalRecords.map(r => r.date.substring(0, 7))).size || 1;
+        
+        const historicalExpenses = historicalRecords
+            .filter(r => (r.concept || '').toUpperCase().trim() !== 'SALDO INICIAL' && Number(r.expense) > 0)
+            .reduce((acc, curr) => {
+                const c = curr.concept || 'SIN CONCEPTO';
+                if (!acc[c]) acc[c] = 0;
+                acc[c] += Number(curr.expense);
+                return acc;
+            }, {} as Record<string, number>);
+            
+        const allConcepts = new Set([
+            ...Object.keys(historicalExpenses),
+            ...Object.keys(grouped).filter(c => grouped[c].expense > 0)
+        ]);
+        
+        const budgetArr = Array.from(allConcepts).map(concept => {
+            const totalHistorical = historicalExpenses[concept] || 0;
+            const avgBudget = totalHistorical / historicalMonthsCount;
+            const currentExp = grouped[concept]?.expense || 0;
+            
+            return {
+                concept,
+                avgBudget,
+                currentExpense: currentExp,
+                difference: avgBudget - currentExp
+            };
+        }).filter(b => b.avgBudget > 0 || b.currentExpense > 0)
+          .sort((a,b) => b.avgBudget - a.avgBudget);
+          
+        setBudgetData(budgetArr);
+        // =========================================================================
+
         const paymentMap: Record<string, { initial: number, income: number, expense: number, finalBalance: number }> = {};
         
         records.forEach(r => {
@@ -129,7 +168,6 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
             const recordExpense = Number(r.expense) || 0;
             
             if (selectedMonth !== 'all' && recordMonth < selectedMonth) {
-                // --- HISTORIAL PASADO ---
                 if (isInitialBalance) {
                     paymentMap[pm].finalBalance = recordIncome - recordExpense; 
                 } else {
@@ -138,7 +176,6 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                 paymentMap[pm].initial = paymentMap[pm].finalBalance;
 
             } else if (selectedMonth === 'all' || recordMonth === selectedMonth) {
-                // --- MES ACTUAL ---
                 if (isInitialBalance) {
                     const resetValue = recordIncome - recordExpense;
                     paymentMap[pm].initial = resetValue;      
@@ -356,9 +393,6 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
         }
     };
 
-    // =========================================================================
-    // CÁLCULO DEL SALDO GENERAL PARA LA VISTA DETALLADA
-    // =========================================================================
     let runningBalance = 0;
     const recordsWithBalance = records.map(record => {
         const isInitialBalance = (record.concept || '').toUpperCase().trim() === 'SALDO INICIAL';
@@ -832,6 +866,75 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                                             <span>
                                                 {(summaryData.reduce((acc, row) => acc + row.income, 0) - summaryData.reduce((acc, row) => acc + row.expense, 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                             </span>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        {/* NUEVA TABLA: Presupuesto vs Gasto Real */}
+                        <div className="mt-12 border-t-[3px] border-b-[3px] border-violet-500 overflow-hidden rounded-md shadow-sm mb-12">
+                            <h4 className="bg-violet-50 text-violet-800 font-bold p-3 text-center uppercase tracking-wider text-sm border-b border-violet-200">
+                                Control de Presupuesto (Sugerido vs Real)
+                            </h4>
+                            <table className="w-full text-left">
+                                <thead>
+                                    <tr className="bg-violet-500 text-white">
+                                        <th className="p-3 font-extrabold tracking-wider border-r border-violet-600 text-sm">Concepto de Gasto</th>
+                                        <th className="p-3 font-extrabold tracking-wider border-r border-violet-600 text-sm text-right w-40">Presupuesto Sugerido</th>
+                                        <th className="p-3 font-extrabold tracking-wider border-r border-violet-600 text-sm text-right w-40">Gasto Real (Mes)</th>
+                                        <th className="p-3 font-extrabold tracking-wider text-sm text-right w-40">Restante</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white">
+                                    {budgetData.length > 0 ? budgetData.map((row) => (
+                                        <tr key={row.concept} className="hover:bg-neutral-50 font-bold border-b border-neutral-200 transition-colors">
+                                            <td className="py-2 px-3 border-r border-neutral-200 text-sm text-neutral-700 uppercase">{row.concept}</td>
+                                            <td className="py-2 px-3 border-r border-neutral-200 text-sm text-right text-gray-600">
+                                                <div className="flex justify-between">
+                                                    <span className="text-neutral-400 font-normal">$</span>
+                                                    <span>{row.avgBudget.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                                </div>
+                                            </td>
+                                            <td className="py-2 px-3 border-r border-neutral-200 text-sm text-right text-red-600">
+                                                <div className="flex justify-between">
+                                                    <span className="text-neutral-400 font-normal">$</span>
+                                                    <span>{row.currentExpense.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                                </div>
+                                            </td>
+                                            <td className={`py-2 px-3 text-sm text-right font-black ${row.difference >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                <div className="flex justify-between">
+                                                    <span className="text-neutral-400 font-normal">$</span>
+                                                    <span>{row.difference.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )) : (
+                                        <tr>
+                                            <td colSpan={4} className="py-8 text-center text-neutral-400 font-normal">No hay suficientes datos históricos para calcular un presupuesto.</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                                <tfoot>
+                                    <tr className="bg-neutral-100 border-t-[3px] border-double border-neutral-300 font-extrabold">
+                                        <td className="p-3 border-r border-neutral-300 text-sm uppercase text-right">Totales</td>
+                                        <td className="p-3 border-r border-neutral-300 text-sm text-right text-gray-700">
+                                            <div className="flex justify-between">
+                                                <span className="text-neutral-400 font-normal">$</span>
+                                                <span>{budgetData.reduce((acc, row) => acc + row.avgBudget, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                            </div>
+                                        </td>
+                                        <td className="p-3 border-r border-neutral-300 text-sm text-right text-red-600">
+                                            <div className="flex justify-between">
+                                                <span className="text-neutral-400 font-normal">$</span>
+                                                <span>{budgetData.reduce((acc, row) => acc + row.currentExpense, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                            </div>
+                                        </td>
+                                        <td className={`p-3 text-sm text-right ${budgetData.reduce((acc, row) => acc + row.difference, 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                            <div className="flex justify-between">
+                                                <span className="text-neutral-400 font-normal">$</span>
+                                                <span>{budgetData.reduce((acc, row) => acc + row.difference, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                            </div>
                                         </td>
                                     </tr>
                                 </tfoot>
