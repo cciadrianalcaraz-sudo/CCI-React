@@ -30,7 +30,6 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
     // Gráficos de Colores
     const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#6366f1', '#ec4899', '#14b8a6', '#84cc16', '#f43f5e', '#a855f7', '#0ea5e9'];
 
-    
     // View modes
     const [viewMode, setViewMode] = useState<'detailed' | 'summary' | 'balances'>('detailed');
     const [selectedMonth, setSelectedMonth] = useState<string>('');
@@ -88,7 +87,6 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
         
         setUniqueMonths([{label: 'Todos los meses', value: 'all'}, ...formattedMonths]);
         
-        // Auto-select the most recent month initially if none selected
         if (!selectedMonth && formattedMonths.length > 0) {
             setSelectedMonth(formattedMonths[0].value);
         }
@@ -114,47 +112,43 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
         const sortedSummary = Object.values(grouped).sort((a, b) => a.concept.localeCompare(b.concept));
         setSummaryData(sortedSummary);
         
-        // Calcular Balances por Forma de Pago
+        // =========================================================================
+        // CALCULAR BALANCES POR FORMA DE PAGO (Con línea de tiempo real)
+        // =========================================================================
         const paymentMap: Record<string, { initial: number, income: number, expense: number, finalBalance: number }> = {};
         
-        // Ordenar cronológicamente para que los "SALDO INICIAL" sobreescriban correctamente el pasado
-        const chronRecords = [...records].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-        
-        chronRecords.forEach(r => {
+        records.forEach(r => {
             const pm = r.payment_method || 'SIN ESPECIFICAR';
             if (!paymentMap[pm]) {
                 paymentMap[pm] = { initial: 0, income: 0, expense: 0, finalBalance: 0 };
-      }
+            }
             
             const recordMonth = r.date.substring(0, 7);
             const isInitialBalance = (r.concept || '').toUpperCase().trim() === 'SALDO INICIAL';
             const recordIncome = Number(r.income) || 0;
             const recordExpense = Number(r.expense) || 0;
+            
             if (selectedMonth !== 'all' && recordMonth < selectedMonth) {
-                
+                // --- HISTORIAL PASADO ---
                 if (isInitialBalance) {
-                    paymentMap[pm].finalBalance = recordIncome - recordExpense;
+                    paymentMap[pm].finalBalance = recordIncome - recordExpense; 
                 } else {
-                    // Meses pasados -> Saldo Inicial se acumula
-                    paymentMap[pm].finalBalance += recordIncome - recordExpense;
+                    paymentMap[pm].finalBalance += recordIncome - recordExpense; 
                 }
-// 2. EL SALDO INICIAL de este mes es el último finalBalance que traíamos del pasado
-         paymentMap[pm].initial = paymentMap[pm].finalBalance;
+                paymentMap[pm].initial = paymentMap[pm].finalBalance;
 
             } else if (selectedMonth === 'all' || recordMonth === selectedMonth) {
+                // --- MES ACTUAL ---
                 if (isInitialBalance) {
-                  // 3. REINICIO ABSOLUTO Y CORRECCIÓN DEL ERROR DE SINTAXIS
-                const resetValue = recordIncome - recordExpense;
-                paymentMap[pm].initial = resetValue;
-                paymentMap[pm].finalBalance = resetValue;
-                paymentMap[pm].income = 0;
-                paymentMap[pm].expense = 0;
-} else {
-    // Movimiento normal dentro del mes
-    paymentMap[pm].income += recordIncome;
-    paymentMap[pm].expense += recordExpense;
-    paymentMap[pm].finalBalance += recordIncome - recordExpense;
-}
+                    const resetValue = recordIncome - recordExpense;
+                    paymentMap[pm].initial = resetValue;      
+                    paymentMap[pm].finalBalance = resetValue; 
+                    paymentMap[pm].income = 0;                
+                    paymentMap[pm].expense = 0;               
+                } else {
+                    paymentMap[pm].income += recordIncome;
+                    paymentMap[pm].expense += recordExpense;
+                    paymentMap[pm].finalBalance += recordIncome - recordExpense;
                 }
             }
         });
@@ -165,7 +159,7 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                 initialBalance: data.initial,
                 income: data.income,
                 expense: data.expense,
-                finalBalance: data.finalBalance
+                finalBalance: data.finalBalance 
             }))
             .filter(p => p.initialBalance !== 0 || p.income !== 0 || p.expense !== 0 || p.finalBalance !== 0)
             .sort((a,b) => b.finalBalance - a.finalBalance);
@@ -288,35 +282,29 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
             }
 
             const recordsToInsert = jsonData.map(row => {
-                // Función auxiliar súper flexible para buscar columnas que "contengan" la palabra clave
                 const getValue = (keywords: string[]) => {
                     const rowKey = Object.keys(row).find(k => {
-                        const upperK = k.toUpperCase().replace(/\s/g, ''); // Quitamos espacios para ser infalibles
+                        const upperK = k.toUpperCase().replace(/\s/g, '');
                         return keywords.some(kw => upperK.includes(kw));
                     });
                     return rowKey ? row[rowKey] : undefined;
                 };
 
-                // Función auxiliar para extraer números en cualquier formato (americano o europeo/latino)
                 const parseNumber = (val: any) => {
                     if (typeof val === 'number') return val;
                     if (!val) return 0;
                     
-                    // Asegurar de pasarlo a texto y quitarle todo lo que no sea digito, punto, coma o negativo
                     let str = String(val).replace(/[^\d.,-]/g, '');
                     if (!str) return 0;
 
-                    // Averiguar si están usando coma o punto como decimal
                     const lastComma = str.lastIndexOf(',');
                     const lastDot = str.lastIndexOf('.');
                     
                     if (lastComma > lastDot) {
-                        // La coma es el separador decimal (ej: 1.500,00)
-                        str = str.replace(/\./g, ''); // Quitamos todos los puntos (miles)
-                        str = str.replace(',', '.');  // Cambiamos la coma decimal por punto
+                        str = str.replace(/\./g, '');
+                        str = str.replace(',', '.');
                     } else {
-                        // El punto es el separador decimal (ej: 1,500.00 o 1500)
-                        str = str.replace(/,/g, ''); // Quitamos todas las comas (miles)
+                        str = str.replace(/,/g, '');
                     }
                     
                     const parsed = Number(str);
@@ -368,12 +356,13 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
         }
     };
 
-    // Calculate running balance based on chronological order (Ignorando SALDO INICIAL)
+    // =========================================================================
+    // CÁLCULO DEL SALDO GENERAL PARA LA VISTA DETALLADA
+    // =========================================================================
     let runningBalance = 0;
     const recordsWithBalance = records.map(record => {
         const isInitialBalance = (record.concept || '').toUpperCase().trim() === 'SALDO INICIAL';
         
-        // Solo sumamos o restamos al balance global si NO es un Saldo Inicial
         if (!isInitialBalance) {
             runningBalance = runningBalance + Number(record.income) - Number(record.expense);
         }
@@ -418,7 +407,6 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
             {isFormOpen && (
                 <div className="p-8 border-b border-light-beige bg-neutral-50 animate-slide-in">
                     
-                    {/* Listas sugeridas (Dropdowns / Autocomplete) */}
                     <datalist id="concept-options">
                         <option value="SALDO INICIAL" />
                         <option value="ALIMENTOS" />
@@ -463,9 +451,9 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                         <option value="TD BBVA LAURA" />
                         <option value="TC STR LAURA" />
                         <option value="CPM LAURA" />
-                         <option value="CPM ADRIAN" />
-                          <option value="CPM CRÉDITO" />
-                          <option value="CETES" />
+                        <option value="CPM ADRIAN" />
+                        <option value="CPM CRÉDITO" />
+                        <option value="CETES" />
                         <option value="TD STR ADRIAN" />
                         <option value="TD DESPENSA" />
                         <option value="VALES" />
@@ -580,52 +568,55 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-light-beige/50">
-                            {displayRecords.map((record, index) => (
-                                <tr key={record.id} className={`hover:bg-[#faf7f2]/50 transition-colors text-sm text-neutral-700 ${record.concept.toUpperCase() === 'SALDO INICIAL' ? 'bg-amber-50/10 opacity-75' : ''}`}>
-                                    <td className="p-4 whitespace-nowrap text-neutral-400 font-medium">{index + 1}</td>
-                                    <td className="p-4 whitespace-nowrap font-medium text-primary-dark">
-                                        {record.concept}
-                                        {record.concept.toUpperCase() === 'SALDO INICIAL' && <span className="ml-2 text-[9px] bg-primary/10 text-primary-dark px-1 py-0.5 rounded uppercase tracking-wider">Ajuste</span>}
-                                    </td>
-                                    <td className="p-4 whitespace-nowrap">{new Date(record.date).toLocaleDateString()}</td>
-                                    <td className="p-4 whitespace-nowrap">
-                                        <span className="bg-neutral-100 px-2 py-1 rounded text-xs">{record.payment_method}</span>
-                                    </td>
-                                    <td className="p-4 whitespace-nowrap">{record.provider}</td>
-                                    <td className="p-4 text-right whitespace-nowrap text-green-600 font-medium">
-                                        {Number(record.income) > 0 ? `$${Number(record.income).toFixed(2)}` : '-'}
-                                    </td>
-                                    <td className="p-4 text-right whitespace-nowrap text-red-600 font-medium">
-                                        {Number(record.expense) > 0 ? `$${Number(record.expense).toFixed(2)}` : '-'}
-                                    </td>
-                                    <td className={`p-4 text-right whitespace-nowrap font-bold ${Number(record.balance) < 0 ? 'text-red-600' : 'text-primary-dark'}`}>
-                                        ${Number(record.balance).toFixed(2)}
-                                    </td>
-                                    <td className="p-4 break-words min-w-[200px] text-xs leading-relaxed text-neutral-500">
-                                        {record.description}
-                                    </td>
-                                    <td className="p-4 text-center">
-                                        <div className="flex justify-center gap-2">
-                                            <button 
-                                                type="button"
-                                                onClick={() => handleEditClick(record)}
-                                                className="px-3 py-1.5 flex items-center gap-1.5 text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors text-xs font-bold shadow-sm"
-                                                title="Editar"
-                                            >
-                                                <Edit2 size={14} /> Editar
-                                            </button>
-                                            <button 
-                                                type="button"
-                                                onClick={() => handleDelete(record.id)}
-                                                className="px-3 py-1.5 flex items-center gap-1.5 text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors text-xs font-bold shadow-sm"
-                                                title="Eliminar"
-                                            >
-                                                <Trash2 size={14} /> Eliminar
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
+                            {displayRecords.map((record, index) => {
+                                const isInitialBalance = record.concept.toUpperCase() === 'SALDO INICIAL';
+                                return (
+                                    <tr key={record.id} className={`hover:bg-[#faf7f2]/50 transition-colors text-sm text-neutral-700 ${isInitialBalance ? 'bg-amber-50/10 opacity-75' : ''}`}>
+                                        <td className="p-4 whitespace-nowrap text-neutral-400 font-medium">{index + 1}</td>
+                                        <td className="p-4 whitespace-nowrap font-medium text-primary-dark">
+                                            {record.concept}
+                                            {isInitialBalance && <span className="ml-2 text-[9px] bg-primary/10 text-primary-dark px-1 py-0.5 rounded uppercase tracking-wider">Ajuste</span>}
+                                        </td>
+                                        <td className="p-4 whitespace-nowrap">{new Date(record.date).toLocaleDateString()}</td>
+                                        <td className="p-4 whitespace-nowrap">
+                                            <span className="bg-neutral-100 px-2 py-1 rounded text-xs">{record.payment_method}</span>
+                                        </td>
+                                        <td className="p-4 whitespace-nowrap">{record.provider}</td>
+                                        <td className="p-4 text-right whitespace-nowrap text-green-600 font-medium">
+                                            {isInitialBalance ? '-' : (Number(record.income) > 0 ? `$${Number(record.income).toFixed(2)}` : '-')}
+                                        </td>
+                                        <td className="p-4 text-right whitespace-nowrap text-red-600 font-medium">
+                                            {isInitialBalance ? '-' : (Number(record.expense) > 0 ? `$${Number(record.expense).toFixed(2)}` : '-')}
+                                        </td>
+                                        <td className={`p-4 text-right whitespace-nowrap font-bold ${Number(record.balance) < 0 ? 'text-red-600' : 'text-primary-dark'}`}>
+                                            ${Number(record.balance).toFixed(2)}
+                                        </td>
+                                        <td className="p-4 break-words min-w-[200px] text-xs leading-relaxed text-neutral-500">
+                                            {record.description}
+                                        </td>
+                                        <td className="p-4 text-center">
+                                            <div className="flex justify-center gap-2">
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => handleEditClick(record)}
+                                                    className="px-3 py-1.5 flex items-center gap-1.5 text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors text-xs font-bold shadow-sm"
+                                                    title="Editar"
+                                                >
+                                                    <Edit2 size={14} /> Editar
+                                                </button>
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => handleDelete(record.id)}
+                                                    className="px-3 py-1.5 flex items-center gap-1.5 text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors text-xs font-bold shadow-sm"
+                                                    title="Eliminar"
+                                                >
+                                                    <Trash2 size={14} /> Eliminar
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                         <tfoot className="bg-neutral-50/50">
                             <tr>
@@ -783,7 +774,6 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                                 </div>
                             </>
                         )}
-                        
                         
                         {/* Tabla de Resumen por Concepto */}
                         <div className="border-t-[3px] border-b-[3px] border-[#4a7c82] overflow-hidden rounded-md shadow-sm mb-12">
