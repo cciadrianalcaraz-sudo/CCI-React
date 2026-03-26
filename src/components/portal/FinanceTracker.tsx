@@ -306,23 +306,32 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
         if (!file) return;
 
         setIsUploading(true);
+        console.log("Iniciando importación de:", file.name);
+
         try {
             const data = await file.arrayBuffer();
-            const workbook = XLSX.read(data);
+            const workbook = XLSX.read(data, { type: 'array', cellDates: true });
             const sheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[sheetName];
             
             const jsonData = XLSX.utils.sheet_to_json<any>(worksheet, { defval: '' });
 
             if (jsonData.length === 0) {
-                throw new Error('El archivo está vacío');
+                throw new Error('El archivo está vacío o no tiene el formato correcto.');
             }
 
-            const recordsToInsert = jsonData.map(row => {
+            console.log(`Leídas ${jsonData.length} filas del archivo.`);
+
+            const normalizeKey = (k: string) => k.toUpperCase()
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Quitar acentos
+                .replace(/[^A-Z0-9]/g, ""); // Solo letras y números
+
+            const recordsToInsert = jsonData.map((row) => {
                 const getValue = (keywords: string[]) => {
+                    const normalizedKeywords = keywords.map(kw => normalizeKey(kw));
                     const rowKey = Object.keys(row).find(k => {
-                        const upperK = k.toUpperCase().replace(/\s/g, '');
-                        return keywords.some(kw => upperK.includes(kw));
+                        const normK = normalizeKey(k);
+                        return normalizedKeywords.some(kw => normK.includes(kw));
                     });
                     return rowKey ? row[rowKey] : undefined;
                 };
@@ -331,47 +340,84 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                     if (typeof val === 'number') return val;
                     if (!val) return 0;
                     
-                    let str = String(val).replace(/[^\d.,-]/g, '');
+                    // Limpiar string de símbolos de moneda y espacios
+                    let str = String(val).replace(/[^\d.,-]/g, '').trim();
                     if (!str) return 0;
 
+                    // Detectar formato: 1.234,56 vs 1,234.56
                     const lastComma = str.lastIndexOf(',');
                     const lastDot = str.lastIndexOf('.');
                     
                     if (lastComma > lastDot) {
-                        str = str.replace(/\./g, '');
-                        str = str.replace(',', '.');
-                    } else {
+                        // Formato europeo/latino: 1.234,56
+                        str = str.replace(/\./g, '').replace(',', '.');
+                    } else if (lastDot > lastComma) {
+                        // Formato US/MX: 1,234.56
                         str = str.replace(/,/g, '');
+                    } else if (lastComma !== -1) {
+                        // Solo tiene coma: 12,50 -> 12.50
+                        str = str.replace(',', '.');
                     }
                     
                     const parsed = Number(str);
                     return isNaN(parsed) ? 0 : parsed;
                 };
 
-                const rawDate = getValue(['FECHA', 'DATE']);
-                let dateStr = rawDate ? String(rawDate).trim() : new Date().toISOString().split('T')[0];
-                
-                if (typeof rawDate === 'number') {
+                // Mejorar detección de fecha
+                const rawDate = getValue(['FECHA', 'DATE', 'DIA', 'MOMENTO']);
+                let dateStr = "";
+
+                if (rawDate instanceof Date) {
+                    dateStr = rawDate.toISOString().split('T')[0];
+                } else if (typeof rawDate === 'number') {
+                    // Excel numeric date
                     const jsDate = new Date((rawDate - 25569) * 86400 * 1000);
                     dateStr = jsDate.toISOString().split('T')[0];
-                } else if (typeof dateStr === 'string' && dateStr.includes('/')) {
-                    const parts = dateStr.split('/');
+                } else if (rawDate) {
+                    const sDate = String(rawDate).trim();
+                    // Intentar DD/MM/YYYY o DD-MM-YYYY o DD.MM.YYYY
+                    const parts = sDate.split(/[/.-]/);
                     if (parts.length === 3) {
-                        dateStr = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                        if (parts[2].length === 4) {
+                            // Asumimos DD-MM-YYYY
+                            dateStr = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                        } else if (parts[0].length === 4) {
+                            // Asumimos YYYY-MM-DD
+                            dateStr = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+                        }
                     }
+                }
+
+                if (!dateStr) {
+                    dateStr = new Date().toISOString().split('T')[0];
+                }
+
+                const conceptValue = String(getValue(['CONCEPTO', 'CONCEPT', 'NOMBRE', 'TITULO', 'SERVICIO']) || '').trim().toUpperCase();
+                const incomeValue = parseNumber(getValue(['INGRESO', 'ENTRADA', 'POSITIVO', 'DEPOSITO', 'ABONO']));
+                const expenseValue = parseNumber(getValue(['GASTO', 'SALIDA', 'NEGATIVO', 'EGRESO', 'CARGO', 'RETIRO']));
+
+                // Validamos que la fila tenga contenido útil
+                if (!conceptValue && incomeValue === 0 && expenseValue === 0) {
+                    return null; // Fila vacía
                 }
 
                 return {
                     user_id: user.id,
-                    concept: String(getValue(['CONCEPTO', 'CONCEPT']) || 'SIN CONCEPTO').trim().toUpperCase(),
+                    concept: conceptValue || 'SIN CONCEPTO',
                     date: dateStr,
-                    payment_method: String(getValue(['FORMADEPAGO', 'PAGO', 'CUENTA']) || 'SIN ESPECIFICAR').trim().toUpperCase(),
-                    provider: String(getValue(['PROVEEDOR', 'PROVIDER', 'LUGAR']) || '').trim().toUpperCase(),
-                    income: parseNumber(getValue(['INGRESO', 'ENTRADA', 'POSITIVO'])),
-                    expense: parseNumber(getValue(['GASTO', 'SALIDA', 'NEGATIVO', 'EGRESO'])),
-                    description: String(getValue(['DESCRIPCION', 'DETALLE', 'MOTIVO']) || '').trim()
+                    payment_method: String(getValue(['FORMADEPAGO', 'PAGO', 'CUENTA', 'METODO', 'VIA']) || 'SIN ESPECIFICAR').trim().toUpperCase(),
+                    provider: String(getValue(['PROVEEDOR', 'PROVIDER', 'LUGAR', 'ESTABLECIMIENTO', 'DESTINO']) || '').trim().toUpperCase(),
+                    income: incomeValue,
+                    expense: expenseValue,
+                    description: String(getValue(['DESCRIPCION', 'DETALLE', 'MOTIVO', 'COMENTARIO', 'OBSERVACION']) || '').trim()
                 };
-            });
+            }).filter(record => record !== null); // Eliminar filas vacías
+
+            if (recordsToInsert.length === 0) {
+                throw new Error('No se encontraron registros válidos para importar. Verifica los nombres de las columnas.');
+            }
+
+            console.log(`Insertando ${recordsToInsert.length} registros en Supabase...`);
 
             const { error } = await supabase
                 .from('finance_records')
@@ -383,7 +429,7 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
             loadRecords();
 
         } catch (error: any) {
-            console.error("Error importing excel:", error);
+            console.error("Error detallado al importar excel:", error);
             alert(`Error al importar: ${error.message || 'Verifica el formato del archivo'}`);
         } finally {
             setIsUploading(false);
