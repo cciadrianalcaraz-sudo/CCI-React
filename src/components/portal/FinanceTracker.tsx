@@ -329,60 +329,63 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
             const recordsToInsert = jsonData.map((row) => {
                 const getValue = (keywords: string[]) => {
                     const normalizedKeywords = keywords.map(kw => normalizeKey(kw));
-                    const rowKey = Object.keys(row).find(k => {
+                    const keys = Object.keys(row);
+                    
+                    // Prioridad 1: Coincidencia exacta (normalizada)
+                    let foundKey = keys.find(k => {
                         const normK = normalizeKey(k);
-                        return normalizedKeywords.some(kw => normK.includes(kw));
+                        return normalizedKeywords.some(kw => normK === kw);
                     });
-                    return rowKey ? row[rowKey] : undefined;
+                    
+                    // Prioridad 2: Coincidencia parcial (el nombre de la columna contiene la palabra clave)
+                    if (!foundKey) {
+                        foundKey = keys.find(k => {
+                            const normK = normalizeKey(k);
+                            return normalizedKeywords.some(kw => normK.includes(kw));
+                        });
+                    }
+
+                    return foundKey ? row[foundKey] : undefined;
                 };
 
                 const parseNumber = (val: any) => {
                     if (typeof val === 'number') return val;
                     if (!val) return 0;
                     
-                    // Limpiar string de símbolos de moneda y espacios
                     let str = String(val).replace(/[^\d.,-]/g, '').trim();
                     if (!str) return 0;
 
-                    // Detectar formato: 1.234,56 vs 1,234.56
                     const lastComma = str.lastIndexOf(',');
                     const lastDot = str.lastIndexOf('.');
                     
                     if (lastComma > lastDot) {
-                        // Formato europeo/latino: 1.234,56
                         str = str.replace(/\./g, '').replace(',', '.');
                     } else if (lastDot > lastComma) {
-                        // Formato US/MX: 1,234.56
                         str = str.replace(/,/g, '');
                     } else if (lastComma !== -1) {
-                        // Solo tiene coma: 12,50 -> 12.50
                         str = str.replace(',', '.');
                     }
                     
                     const parsed = Number(str);
-                    return isNaN(parsed) ? 0 : parsed;
+                    return isNaN(parsed) ? 0 : Math.abs(parsed); // Usamos Math.abs porque a veces los gastos vienen con signo negativo
                 };
 
                 // Mejorar detección de fecha
-                const rawDate = getValue(['FECHA', 'DATE', 'DIA', 'MOMENTO']);
+                const rawDate = getValue(['FECHA', 'DATE', 'DIA', 'MOMENTO', 'FEC', 'VALOR']);
                 let dateStr = "";
 
                 if (rawDate instanceof Date) {
                     dateStr = rawDate.toISOString().split('T')[0];
                 } else if (typeof rawDate === 'number') {
-                    // Excel numeric date
                     const jsDate = new Date((rawDate - 25569) * 86400 * 1000);
                     dateStr = jsDate.toISOString().split('T')[0];
                 } else if (rawDate) {
                     const sDate = String(rawDate).trim();
-                    // Intentar DD/MM/YYYY o DD-MM-YYYY o DD.MM.YYYY
                     const parts = sDate.split(/[/.-]/);
                     if (parts.length === 3) {
                         if (parts[2].length === 4) {
-                            // Asumimos DD-MM-YYYY
                             dateStr = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
                         } else if (parts[0].length === 4) {
-                            // Asumimos YYYY-MM-DD
                             dateStr = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
                         }
                     }
@@ -392,29 +395,32 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                     dateStr = new Date().toISOString().split('T')[0];
                 }
 
-                const conceptValue = String(getValue(['CONCEPTO', 'CONCEPT', 'NOMBRE', 'TITULO', 'SERVICIO']) || '').trim().toUpperCase();
-                const incomeValue = parseNumber(getValue(['INGRESO', 'ENTRADA', 'POSITIVO', 'DEPOSITO', 'ABONO']));
-                const expenseValue = parseNumber(getValue(['GASTO', 'SALIDA', 'NEGATIVO', 'EGRESO', 'CARGO', 'RETIRO']));
+                const conceptValue = String(getValue(['CONCEPTO', 'CONCEPT', 'NOMBRE', 'TITULO', 'SERVICIO', 'MOVIMIENTO', 'DESCRIPCION', 'DETALLE', 'MOTIVO']) || '').trim().toUpperCase();
+                const incomeValue = parseNumber(getValue(['INGRESO', 'ENTRADA', 'POSITIVO', 'DEPOSITO', 'ABONO', 'CREDITO', 'INPUT', 'CASHIN']));
+                const expenseValue = parseNumber(getValue(['GASTO', 'SALIDA', 'NEGATIVO', 'EGRESO', 'CARGO', 'RETIRO', 'DEBITO', 'OUTPUT', 'CASHOUT']));
 
-                // Validamos que la fila tenga contenido útil
+                // Si no hay concepto ni montos, es una fila vacía
                 if (!conceptValue && incomeValue === 0 && expenseValue === 0) {
-                    return null; // Fila vacía
+                    return null;
                 }
 
                 return {
                     user_id: user.id,
-                    concept: conceptValue || 'SIN CONCEPTO',
+                    concept: conceptValue || 'MOVIMIENTO SIN NOMBRE',
                     date: dateStr,
-                    payment_method: String(getValue(['FORMADEPAGO', 'PAGO', 'CUENTA', 'METODO', 'VIA']) || 'SIN ESPECIFICAR').trim().toUpperCase(),
-                    provider: String(getValue(['PROVEEDOR', 'PROVIDER', 'LUGAR', 'ESTABLECIMIENTO', 'DESTINO']) || '').trim().toUpperCase(),
+                    payment_method: String(getValue(['FORMADEPAGO', 'PAGO', 'CUENTA', 'METODO', 'VIA', 'BANCO', 'ORIGEN']) || 'SIN ESPECIFICAR').trim().toUpperCase(),
+                    provider: String(getValue(['PROVEEDOR', 'PROVIDER', 'LUGAR', 'ESTABLECIMIENTO', 'DESTINO', 'COMERCIO']) || '').trim().toUpperCase(),
                     income: incomeValue,
                     expense: expenseValue,
-                    description: String(getValue(['DESCRIPCION', 'DETALLE', 'MOTIVO', 'COMENTARIO', 'OBSERVACION']) || '').trim()
+                    description: String(getValue(['DESCRIPCION', 'DETALLE', 'MOTIVO', 'COMENTARIO', 'OBSERVACION', 'REFERENCIA', 'NOTAS']) || '').trim()
                 };
             }).filter(record => record !== null); // Eliminar filas vacías
 
             if (recordsToInsert.length === 0) {
-                throw new Error('No se encontraron registros válidos para importar. Verifica los nombres de las columnas.');
+                // Si falló, mostramos en consola qué columnas sí encontramos para ayudar a depurar
+                const keys = jsonData.length > 0 ? Object.keys(jsonData[0]) : [];
+                console.error("Columnas encontradas en el Excel:", keys);
+                throw new Error(`No se encontraron columnas de Concepto/Descripción ni de Importes (Ingreso/Gasto). Columnas detectadas: ${keys.slice(0, 5).join(', ')}...`);
             }
 
             console.log(`Insertando ${recordsToInsert.length} registros en Supabase...`);
