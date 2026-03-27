@@ -118,7 +118,6 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
             const { data, error } = await supabase
                 .from('finance_records')
                 .select('*')
-                .eq('user_id', user.id)
                 .order('date', { ascending: true })
                 .order('created_at', { ascending: true });
 
@@ -282,7 +281,6 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                         description
                     })
                     .eq('id', editingId)
-                    .eq('user_id', user.id)
                     .select();
 
                 if (error) throw error;
@@ -325,8 +323,7 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
             const { error } = await supabase
                 .from('finance_records')
                 .delete()
-                .eq('id', id)
-                .eq('user_id', user.id);
+                .eq('id', id);
 
             if (error) throw error;
             setRecords(records.filter(r => r.id !== id));
