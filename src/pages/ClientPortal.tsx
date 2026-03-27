@@ -1,14 +1,17 @@
 import { useState, useEffect } from "react";
 import {
     Lock, FileText, PieChart, ShieldCheck,
-    LogOut, Download, Calendar, TrendingUp,
-    ChevronRight, Bell, User
+    LogOut, Download, TrendingUp, TrendingDown,
+    ChevronRight, Bell, DollarSign, Plus, Upload
 } from "lucide-react";
 import Button from "../components/ui/Button";
 import { supabase } from "../lib/supabase";
 import FinanceTracker from "../components/portal/FinanceTracker";
 import AdminDashboard from "../components/portal/AdminDashboard";
 import TicketUploader from "../components/portal/TicketUploader";
+import { 
+    BarChart, Bar, ResponsiveContainer, XAxis, Tooltip as RechartsTooltip
+} from 'recharts';
 
 const MASTER_EMAIL = 'cci.adrianalcaraz@gmail.com';
 
@@ -182,6 +185,7 @@ export default function ClientPortal() {
 function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) {
     const [profile, setProfile] = useState<Profile | null>(null);
     const [docs, setDocs] = useState<Document[]>([]);
+    const [records, setRecords] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'dashboard' | 'finance' | 'tickets'>('dashboard');
 
@@ -207,6 +211,14 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                     .order('created_at', { ascending: false });
 
                 if (docsData) setDocs(docsData);
+
+                // Fetch finance records for the dashboard
+                const { data: recordsData } = await supabase
+                    .from('finance_records')
+                    .select('*')
+                    .order('date', { ascending: false });
+
+                if (recordsData) setRecords(recordsData);
             } catch (error) {
                 console.error("Error loading dashboard:", error);
             } finally {
@@ -230,7 +242,7 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
             <div className="max-w-[1400px] mx-auto">
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6 animate-fade-in">
                     <div>
-                        <h1 className="text-3xl font-bold text-primary-dark mb-2">Panel de Control Fiscal</h1>
+                        <h1 className="text-3xl font-bold text-primary-dark mb-2">Resumen Financiero Digital</h1>
                         <p className="text-neutral-500 flex items-center gap-2">
                             <ShieldCheck size={16} className="text-green-600" />
                             Empresa: <span className="font-bold text-primary">{profile?.full_name || user.email}</span>
@@ -288,127 +300,224 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                 </div>
 
                 {activeTab === 'dashboard' ? (
-                    <>
-                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12 animate-slide-in">
-                    <div className="bg-white p-6 rounded-3xl border border-light-beige shadow-sm hover:shadow-md transition-all group">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="p-3 rounded-2xl bg-green-50 text-green-600">
-                                <TrendingUp size={24} />
-                            </div>
-                        </div>
-                        <h3 className="text-neutral-500 text-sm font-medium mb-1 uppercase tracking-wider">Estado Fiscal</h3>
-                        <p className="text-xl font-bold text-primary-dark leading-none">Cumplimiento Positivo</p>
-                    </div>
-                    <div className="bg-white p-6 rounded-3xl border border-light-beige shadow-sm hover:shadow-md transition-all group">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="p-3 rounded-2xl bg-amber-50 text-amber-600">
-                                <Calendar size={24} />
-                            </div>
-                        </div>
-                        <h3 className="text-neutral-500 text-sm font-medium mb-1 uppercase tracking-wider">Próxima Declaración</h3>
-                        <p className="text-xl font-bold text-primary-dark leading-none">Abril 2026</p>
-                    </div>
-                    <div className="bg-white p-6 rounded-3xl border border-light-beige shadow-sm hover:shadow-md transition-all group">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="p-3 rounded-2xl bg-blue-50 text-blue-600">
-                                <FileText size={24} />
-                            </div>
-                        </div>
-                        <h3 className="text-neutral-500 text-sm font-medium mb-1 uppercase tracking-wider">Docs Pendientes</h3>
-                        <p className="text-xl font-bold text-primary-dark leading-none">
-                            {docs.filter(d => d.status === 'pendiente').length} Archivos
-                        </p>
-                    </div>
-                </div>
-
-                <div className="grid lg:grid-cols-3 gap-12">
-                    <div className="lg:col-span-2 animate-fade-in delay-200">
-                        <div className="bg-white rounded-[2rem] border border-light-beige shadow-sm overflow-hidden">
-                            <div className="p-8 border-b border-light-beige flex items-center justify-between">
-                                <h2 className="text-xl font-bold text-primary-dark">Expediente Digital</h2>
-                            </div>
-                            <div className="divide-y divide-light-beige">
-                                {docs.length > 0 ? docs.map((doc) => (
-                                    <div key={doc.id} className="p-6 flex items-center justify-between hover:bg-[#faf7f2]/50 transition-colors group">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 bg-primary/5 rounded-lg flex items-center justify-center text-primary/40 group-hover:text-accent transition-colors">
-                                                <FileText size={20} />
-                                            </div>
-                                            <div>
-                                                <h4 className="font-bold text-primary-dark text-sm sm:text-base">{doc.name}</h4>
-                                                <p className="text-xs text-neutral-400 font-medium uppercase tracking-wider">
-                                                    {new Date(doc.created_at).toLocaleDateString()}
-                                                </p>
-                                            </div>
+                    <div className="animate-fade-in space-y-8">
+                        {/* BENTO GRID: Financial KPIs */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {/* Card 1: Balance Total */}
+                            <div className="bg-primary-dark rounded-[2.5rem] p-8 text-white relative overflow-hidden group shadow-2xl">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-accent/20 rounded-full -mr-16 -mt-16 blur-3xl transition-all group-hover:bg-accent/30"></div>
+                                <div className="relative z-10">
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center">
+                                            <DollarSign size={20} className="text-accent" />
                                         </div>
-                                        <div className="flex items-center gap-4">
-                                            {doc.status === 'pendiente' && (
-                                                <span className="px-2 py-1 bg-amber-50 text-amber-600 text-[10px] font-bold rounded-md border border-amber-100 uppercase tracking-tighter">Nuevo</span>
-                                            )}
-                                            <a
-                                                href={doc.file_url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="p-2.5 bg-neutral-50 text-neutral-400 rounded-xl hover:bg-accent hover:text-white transition-all cursor-pointer"
-                                            >
-                                                <Download size={18} />
-                                            </a>
-                                        </div>
+                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Liquididad Total</span>
                                     </div>
-                                )) : (
-                                    <div className="p-12 text-center text-neutral-400">
-                                        No hay documentos disponibles en este momento.
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="space-y-6 animate-fade-in delay-300">
-                        <div className="bg-primary-dark p-8 rounded-[2rem] text-white">
-                            <div className="flex items-center gap-4 mb-6">
-                                <div className="w-12 h-12 bg-accent rounded-full flex items-center justify-center text-white ring-4 ring-white/10">
-                                    <User size={24} />
+                                    <h3 className="text-4xl font-heading font-black mb-2 tracking-tighter">
+                                        ${records.reduce((acc, r) => acc + (Number(r.income) - Number(r.expense)), 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                    </h3>
+                                    <p className="text-xs text-white/30 font-medium">Suma de todas tus cuentas activas</p>
                                 </div>
+                            </div>
+
+                            {/* Card 2: Flujo Mensual */}
+                            {(() => {
+                                const currentMonth = new Date().toISOString().substring(0, 7);
+                                const monthRecords = records.filter(r => r.date.startsWith(currentMonth));
+                                const monthIncome = monthRecords.reduce((acc, r) => acc + Number(r.income), 0);
+                                const monthExpense = monthRecords.reduce((acc, r) => acc + Number(r.expense), 0);
+                                const savings = monthIncome - monthExpense;
+                                
+                                return (
+                                    <>
+                                        <div className="bg-white rounded-[2.5rem] p-8 border border-light-beige shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
+                                            <div className="absolute -bottom-10 -left-10 w-24 h-24 bg-green-500/5 rounded-full blur-2xl group-hover:bg-green-500/10 transition-all"></div>
+                                            <div className="relative z-10">
+                                                <div className="flex items-center justify-between mb-6">
+                                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400">Flujo de {new Date().toLocaleString('es', { month: 'long' })}</span>
+                                                    <TrendingUp size={18} className="text-green-500" />
+                                                </div>
+                                                <div className="space-y-4">
+                                                    <div className="flex justify-between items-end">
+                                                        <div>
+                                                            <p className="text-[10px] font-black text-neutral-300 uppercase mb-1">Ingresos</p>
+                                                            <p className="text-xl font-bold text-primary-dark">${monthIncome.toLocaleString('en-US')}</p>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <p className="text-[10px] font-black text-neutral-300 uppercase mb-1">Gastos</p>
+                                                            <p className="text-xl font-bold text-red-500">${monthExpense.toLocaleString('en-US')}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="w-full h-1.5 bg-neutral-100 rounded-full overflow-hidden flex">
+                                                        <div className="h-full bg-green-500" style={{ width: `${monthIncome > 0 ? (monthIncome / (monthIncome + monthExpense)) * 100 : 50}%` }}></div>
+                                                        <div className="h-full bg-red-500 opacity-30" style={{ width: `${monthExpense > 0 ? (monthExpense / (monthIncome + monthExpense)) * 100 : 50}%` }}></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-white rounded-[2.5rem] p-8 border border-light-beige shadow-sm hover:shadow-md transition-all flex flex-col justify-center relative overflow-hidden group">
+                                            <div className="absolute top-1/2 -translate-y-1/2 right-6 opacity-5 rotate-12 group-hover:scale-110 transition-transform">
+                                                <ShieldCheck size={80} />
+                                            </div>
+                                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 mb-2">Ahorro Neto</span>
+                                            <h3 className={`text-3xl font-heading font-black tracking-tighter ${savings >= 0 ? 'text-primary-dark' : 'text-red-600'}`}>
+                                                ${savings.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                            </h3>
+                                            <p className="text-xs text-neutral-400 mt-2 font-medium">Margen del {monthIncome > 0 ? ((savings / monthIncome) * 100).toFixed(1) : 0}% sobre ingresos</p>
+                                        </div>
+                                    </>
+                                );
+                            })()}
+                        </div>
+
+                        {/* THIRD ROW: Mini-Chart & Flow Trend */}
+                        <div className="bg-white rounded-[2.5rem] p-8 border border-light-beige shadow-sm">
+                            <div className="flex items-center justify-between mb-8">
                                 <div>
-                                    <h3 className="font-bold leading-tight">{profile?.full_name || 'Usuario CCI'}</h3>
-                                    <p className="text-xs text-white/50 uppercase tracking-wider">RFC: {profile?.rfc || 'No registrado'}</p>
+                                    <h3 className="text-sm font-bold text-primary-dark">Tendencia de Flujo</h3>
+                                    <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider mt-1">Últimos 7 movimientos</p>
+                                </div>
+                                <div className="flex gap-4">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 bg-accent rounded-full"></div>
+                                        <span className="text-[10px] font-bold text-neutral-400 uppercase">Ingresos</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 bg-red-400 rounded-full"></div>
+                                        <span className="text-[10px] font-bold text-neutral-400 uppercase">Gastos</span>
+                                    </div>
                                 </div>
                             </div>
-                            <div className="space-y-4 pt-4 border-t border-white/10">
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-white/50">Asesor:</span>
-                                    <span className="font-bold text-accent">{profile?.advisor_name || 'Administración'}</span>
-                                </div>
-                                <Button
-                                    primary
-                                    full
-                                    className="bg-white !text-primary-dark hover:bg-accent hover:!text-white border-none py-3 text-sm"
-                                    onClick={() => window.open('https://wa.me/5213121682366?text=Hola%20Adrián,%20soy%20un%20cliente%20registrado%20y%20necesito%20asesoría.', '_blank')}
-                                >
-                                    Contactar Asesor
-                                </Button>
+                            <div className="h-32 w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={records.slice(0, 7).reverse().map(r => ({
+                                        name: new Date(r.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }),
+                                        ingreso: Number(r.income),
+                                        gasto: Number(r.expense)
+                                    }))}>
+                                        <XAxis dataKey="name" hide />
+                                        <RechartsTooltip 
+                                            cursor={{ fill: '#f8f8f8' }}
+                                            content={({ active, payload }) => {
+                                                if (active && payload && payload.length) {
+                                                    return (
+                                                        <div className="bg-primary-dark text-white px-3 py-2 rounded-xl text-[10px] font-bold shadow-2xl border border-white/10">
+                                                            {payload[0].payload.ingreso > 0 
+                                                                ? `+$${payload[0].payload.ingreso.toLocaleString()}`
+                                                                : `-$${payload[0].payload.gasto.toLocaleString()}`
+                                                            }
+                                                        </div>
+                                                    );
+                                                }
+                                                return null;
+                                            }}
+                                        />
+                                        <Bar dataKey="ingreso" fill="#eab308" radius={[4, 4, 0, 0]} barSize={20} />
+                                        <Bar dataKey="gasto" fill="#f87171" radius={[4, 4, 0, 0]} barSize={20} />
+                                    </BarChart>
+                                </ResponsiveContainer>
                             </div>
                         </div>
 
-                        <div className="bg-white p-8 rounded-[2rem] border border-light-beige shadow-sm">
-                            <h3 className="font-bold text-primary-dark mb-6 flex items-center justify-between">
-                                Notificaciones
-                                <ChevronRight size={16} className="text-accent" />
-                            </h3>
+                        {/* FOURTH ROW: Activity & Documents */}
+                        <div className="grid lg:grid-cols-3 gap-8">
+                            {/* Recent Activity */}
+                            <div className="lg:col-span-2 space-y-6">
+                                <div className="bg-white rounded-[2.5rem] border border-light-beige shadow-sm overflow-hidden">
+                                    <div className="p-8 border-b border-light-beige flex items-center justify-between">
+                                        <h2 className="text-xl font-bold text-primary-dark">Actividad Reciente</h2>
+                                        <button onClick={() => setActiveTab('finance')} className="text-[10px] font-black uppercase tracking-widest text-accent hover:underline flex items-center gap-1 group">
+                                            Ver Todo <ChevronRight size={12} className="transition-transform group-hover:translate-x-0.5" />
+                                        </button>
+                                    </div>
+                                    <div className="divide-y divide-light-beige/50">
+                                        {records.slice(0, 6).map((record) => (
+                                            <div key={record.id} className="p-5 flex items-center justify-between hover:bg-neutral-50/50 transition-colors">
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${Number(record.income) > 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'}`}>
+                                                        {Number(record.income) > 0 ? <TrendingUp size={18} /> : <TrendingDown size={18} />}
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="font-bold text-primary-dark text-sm capitalize">{record.concept.toLowerCase()}</h4>
+                                                        <p className="text-[10px] text-neutral-400 font-black uppercase tracking-widest">{record.payment_method}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className={`font-black text-sm ${Number(record.income) > 0 ? 'text-green-600' : 'text-primary-dark'}`}>
+                                                        {Number(record.income) > 0 ? `+$${Number(record.income).toLocaleString()}` : `-$${Number(record.expense).toLocaleString()}`}
+                                                    </p>
+                                                    <p className="text-[10px] text-neutral-400 font-medium">
+                                                        {new Date(record.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Compact Dossier & Shortcuts */}
                             <div className="space-y-6">
-                                <div className="flex gap-4">
-                                    <div className="w-1.5 h-1.5 bg-accent rounded-full mt-1.5 shrink-0"></div>
-                                    <div>
-                                        <p className="text-sm text-primary-dark leading-snug mb-1">Bienvenido a su nuevo portal digital de CCI.</p>
-                                        <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">Hoy</p>
+                                <div className="bg-primary-dark/5 p-8 rounded-[2.5rem] border border-primary-dark/5 space-y-6">
+                                    <h3 className="font-black text-[10px] uppercase tracking-[0.2em] text-primary-dark/40">Acciones Rápidas</h3>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <button 
+                                            onClick={() => { setActiveTab('finance'); /* Trigger form open logic if possible or just navigate */ }}
+                                            className="bg-white p-4 rounded-2xl border border-light-beige shadow-sm hover:border-accent hover:scale-[1.02] transition-all text-center group"
+                                        >
+                                            <div className="w-10 h-10 bg-accent/10 text-accent rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-accent group-hover:text-white transition-all">
+                                                <Plus size={20} />
+                                            </div>
+                                            <span className="text-[10px] font-black uppercase tracking-wider text-primary-dark">Nuevo Gasto</span>
+                                        </button>
+                                        <button 
+                                            onClick={() => setActiveTab('tickets')}
+                                            className="bg-white p-4 rounded-2xl border border-light-beige shadow-sm hover:border-accent hover:scale-[1.02] transition-all text-center group"
+                                        >
+                                            <div className="w-10 h-10 bg-primary-dark/5 text-primary-dark rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-primary-dark group-hover:text-white transition-all">
+                                                <Upload size={20} />
+                                            </div>
+                                            <span className="text-[10px] font-black uppercase tracking-wider text-primary-dark">Subir Ticket</span>
+                                        </button>
+                                    </div>
+                                    <Button 
+                                        full 
+                                        primary 
+                                        className="py-4 text-[10px] font-black uppercase tracking-widest shadow-xl"
+                                        onClick={() => window.open('https://wa.me/5213121682366', '_blank')}
+                                    >
+                                        Contactar Asesor
+                                    </Button>
+                                </div>
+
+                                <div className="bg-white p-8 rounded-[2.5rem] border border-light-beige shadow-sm">
+                                    <h3 className="font-bold text-primary-dark mb-6 flex items-center justify-between">
+                                        Expediente Digital
+                                        <FileText size={16} className="text-accent" />
+                                    </h3>
+                                    <div className="space-y-4">
+                                        {docs.slice(0, 3).map(doc => (
+                                            <div key={doc.id} className="flex items-center justify-between group">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 bg-neutral-50 rounded-lg flex items-center justify-center text-neutral-300 group-hover:text-accent transition-colors">
+                                                        <FileText size={14} />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs font-bold text-primary-dark truncate max-w-[120px]">{doc.name}</p>
+                                                        <p className="text-[9px] text-neutral-400 font-medium">{new Date(doc.created_at).toLocaleDateString()}</p>
+                                                    </div>
+                                                </div>
+                                                <a href={doc.file_url} target="_blank" className="p-2 text-neutral-300 hover:text-accent transition-colors">
+                                                    <Download size={14} />
+                                                </a>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                </>
                 ) : activeTab === 'finance' ? (
                     <div className="animate-fade-in">
                         <FinanceTracker user={user} />
