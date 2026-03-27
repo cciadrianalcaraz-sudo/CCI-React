@@ -50,6 +50,10 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
     const [income, setIncome] = useState<number | ''>('');
     const [expense, setExpense] = useState<number | ''>('');
     const [description, setDescription] = useState('');
+    const [isTransfer, setIsTransfer] = useState(false);
+    const [destPaymentMethod, setDestPaymentMethod] = useState('');
+    const [initialBalanceAmount, setInitialBalanceAmount] = useState<number | ''>('');
+    const [initialBalancePM, setInitialBalancePM] = useState('');
     const [editingId, setEditingId] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -156,7 +160,10 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
         const filteredRecords = selectedMonth === 'all' ? records : records.filter(r => r.date.startsWith(selectedMonth));
         
         const grouped = filteredRecords
-            .filter(r => (r.concept || '').toUpperCase().trim() !== 'SALDO INICIAL')
+            .filter(r => {
+                const c = (r.concept || '').toUpperCase().trim();
+                return c !== 'SALDO INICIAL' && !c.includes('TRASPASO');
+            })
             .reduce((acc, curr) => {
                 const c = curr.concept || 'SIN CONCEPTO';
                 if (!acc[c]) {
@@ -180,7 +187,10 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
         const historicalMonthsCount = new Set(historicalRecords.map(r => r.date.substring(0, 7))).size || 1;
         
         const historicalExpenses = historicalRecords
-            .filter(r => (r.concept || '').toUpperCase().trim() !== 'SALDO INICIAL' && Number(r.expense) > 0)
+            .filter(r => {
+                const c = (r.concept || '').toUpperCase().trim();
+                return c !== 'SALDO INICIAL' && !c.includes('TRASPASO') && Number(r.expense) > 0;
+            })
             .reduce((acc, curr) => {
                 const c = curr.concept || 'SIN CONCEPTO';
                 if (!acc[c]) acc[c] = 0;
@@ -269,15 +279,16 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
             const numExpense = Number(expense) || 0;
 
             if (editingId) {
+                // Actualizar Registro Existente
                 const { error, data } = await supabase
                     .from('finance_records')
                     .update({
-                        concept,
+                        concept: isTransfer ? 'TRASPASO INTERNO' : concept,
                         date,
                         payment_method: paymentMethod,
-                        provider,
-                        income: numIncome,
-                        expense: numExpense,
+                        provider: isTransfer ? `Hacia: ${destPaymentMethod}` : provider,
+                        income: isTransfer ? 0 : numIncome,
+                        expense: isTransfer ? (numIncome || numExpense) : numExpense,
                         description
                     })
                     .eq('id', editingId)
@@ -289,7 +300,43 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                     resetForm();
                     setIsFormOpen(false);
                 }
+            } else if (isTransfer) {
+                // Modo Traspaso: Crear dos registros (salida y entrada)
+                const transferId = Math.random().toString(36).substring(2, 11);
+                
+                // Registro de Salida (Gasto)
+                const { error: outError } = await supabase.from('finance_records').insert([{
+                    user_id: user.id,
+                    concept: 'TRASPASO INTERNO',
+                    date,
+                    payment_method: paymentMethod,
+                    provider: `Hacia: ${destPaymentMethod}`,
+                    income: 0,
+                    expense: numIncome || 0,
+                    description: `${description} (Origen: ${paymentMethod} -> ${destPaymentMethod})`,
+                    id: `${transferId}_out`
+                }]);
+                if (outError) throw outError;
+
+                // Registro de Entrada (Ingreso)
+                const { error: inError } = await supabase.from('finance_records').insert([{
+                    user_id: user.id,
+                    concept: 'TRASPASO INTERNO',
+                    date,
+                    payment_method: destPaymentMethod,
+                    provider: `Desde: ${paymentMethod}`,
+                    income: numIncome || 0,
+                    expense: 0,
+                    description: `${description} (Destino: ${paymentMethod} -> ${destPaymentMethod})`,
+                    id: `${transferId}_in`
+                }]);
+                if (inError) throw inError;
+
+                loadRecords();
+                resetForm();
+                setIsFormOpen(false);
             } else {
+                // Registro Normal
                 const { data, error } = await supabase
                     .from('finance_records')
                     .insert([{
@@ -317,6 +364,36 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
         }
     };
 
+    const handleAddInitialBalance = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!initialBalancePM || initialBalanceAmount === '') {
+            alert("Por favor selecciona una cuenta y un monto.");
+            return;
+        }
+
+        try {
+            const { error } = await supabase.from('finance_records').insert([{
+                user_id: user.id,
+                concept: 'SALDO INICIAL',
+                date: new Date().toISOString().split('T')[0],
+                payment_method: initialBalancePM,
+                income: Number(initialBalanceAmount) >= 0 ? Number(initialBalanceAmount) : 0,
+                expense: Number(initialBalanceAmount) < 0 ? Math.abs(Number(initialBalanceAmount)) : 0,
+                provider: 'SISTEMA',
+                description: 'Carga inicial de saldo'
+            }]);
+
+            if (error) throw error;
+            setInitialBalanceAmount('');
+            setInitialBalancePM('');
+            loadRecords();
+            alert("Saldo inicial registrado correctamente.");
+        } catch (error) {
+            console.error("Error setting initial balance:", error);
+            alert("Error al guardar saldo inicial.");
+        }
+    };
+
     const handleDelete = async (id: string) => {
         if (!window.confirm("¿Seguro que deseas eliminar este registro?")) return;
         try {
@@ -340,6 +417,8 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
         setIncome('');
         setExpense('');
         setDescription('');
+        setIsTransfer(false);
+        setDestPaymentMethod('');
         setEditingId(null);
     };
 
@@ -512,7 +591,7 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
             const dataToExport = displayRecords.map((r, index) => ({
                 'NO.': index + 1,
                 'CONCEPTO': r.concept,
-                'FECHA': new Date(r.date).toLocaleDateString(),
+                'FECHA': r.date.split('-').reverse().join('/'),
                 'FORMA DE PAGO': r.payment_method || 'SIN ESPECIFICAR',
                 'PROVEEDOR': r.provider || '',
                 'INGRESO': Number(r.income) || 0,
@@ -547,23 +626,18 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
         }
     };
 
+    const filteredRecords = selectedMonth === 'all' 
+        ? records 
+        : records.filter(r => r.date.startsWith(selectedMonth));
+
     let runningBalance = 0;
-    const recordsWithBalance = records.map(record => {
-        const isInitialBalance = (record.concept || '').toUpperCase().trim() === 'SALDO INICIAL';
-        
-        if (!isInitialBalance) {
-            runningBalance = runningBalance + Number(record.income) - Number(record.expense);
-        }
-        
+    const displayRecords = filteredRecords.map(record => {
+        runningBalance = runningBalance + Number(record.income) - Number(record.expense);
         return {
             ...record,
             balance: runningBalance
         };
     });
-
-    const displayRecords = selectedMonth === 'all' 
-        ? recordsWithBalance 
-        : recordsWithBalance.filter(r => r.date.startsWith(selectedMonth));
 
     return (
         <div className="bg-white rounded-[2rem] border border-light-beige shadow-sm overflow-hidden animate-fade-in">
@@ -653,33 +727,68 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                     </datalist>
 
                     <form onSubmit={handleAddRecord} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div className="space-y-1">
-                            <label className="text-xs font-bold text-primary-dark">Concepto</label>
-                            <input list="concept-options" type="text" required value={concept} onChange={e => setConcept(e.target.value)} placeholder="Ej. FIESTA ANGELITO" className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent bg-white" />
+                        <div className="lg:col-span-4 flex items-center gap-4 mb-2 pb-2 border-b border-light-beige/50">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input 
+                                    type="checkbox" 
+                                    checked={isTransfer} 
+                                    onChange={e => {
+                                        setIsTransfer(e.target.checked);
+                                        if (e.target.checked) setConcept('TRASPASO INTERNO');
+                                        else setConcept('');
+                                    }}
+                                    className="rounded border-light-beige text-accent focus:ring-accent"
+                                />
+                                <span className="text-sm font-bold text-primary-dark uppercase tracking-wider">Es un traspaso entre cuentas</span>
+                            </label>
                         </div>
+                        
+                        {!isTransfer && (
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-primary-dark">Concepto</label>
+                                <input list="concept-options" type="text" required value={concept} onChange={e => setConcept(e.target.value)} placeholder="Ej. FIESTA ANGELITO" className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent bg-white" />
+                            </div>
+                        )}
+                        
                         <div className="space-y-1">
                             <label className="text-xs font-bold text-primary-dark">Fecha</label>
                             <input type="date" required value={date} onChange={e => setDate(e.target.value)} className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent" />
                         </div>
+                        
                         <div className="space-y-1">
-                            <label className="text-xs font-bold text-primary-dark">Forma de pago</label>
+                            <label className="text-xs font-bold text-primary-dark">{isTransfer ? 'Cuenta Origen' : 'Forma de pago'}</label>
                             <input list="payment-options" type="text" required value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} placeholder="Ej. Efectivo Laura" className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent bg-white" />
                         </div>
+
+                        {isTransfer && (
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-primary-dark">Cuenta Destino</label>
+                                <input list="payment-options" type="text" required value={destPaymentMethod} onChange={e => setDestPaymentMethod(e.target.value)} placeholder="Ej. Banco" className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent bg-white" />
+                            </div>
+                        )}
+                        
+                        {!isTransfer && (
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-primary-dark">Proveedor</label>
+                                <input type="text" required value={provider} onChange={e => setProvider(e.target.value)} placeholder="Ej. BODEGA" className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent" />
+                            </div>
+                        )}
+                        
                         <div className="space-y-1">
-                            <label className="text-xs font-bold text-primary-dark">Proveedor</label>
-                            <input type="text" required value={provider} onChange={e => setProvider(e.target.value)} placeholder="Ej. BODEGA" className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent" />
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-xs font-bold text-primary-dark">Ingreso ($)</label>
+                            <label className="text-xs font-bold text-primary-dark">{isTransfer ? 'Monto a Traspasar ($)' : 'Ingreso ($)'}</label>
                             <input type="number" step="0.01" value={income} onChange={e => setIncome(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0.00" className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent" />
                         </div>
-                        <div className="space-y-1">
-                            <label className="text-xs font-bold text-primary-dark">Gasto ($)</label>
-                            <input type="number" step="0.01" value={expense} onChange={e => setExpense(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0.00" className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent" />
-                        </div>
+                        
+                        {!isTransfer && (
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-primary-dark">Gasto ($)</label>
+                                <input type="number" step="0.01" value={expense} onChange={e => setExpense(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0.00" className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent" />
+                            </div>
+                        )}
+                        
                         <div className="space-y-1 lg:col-span-2">
                             <label className="text-xs font-bold text-primary-dark">Descripción</label>
-                            <input type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="Ej. TOMATE, CHILE SERRANO Y CEBOLLA" className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent" />
+                            <input type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="Ej. Traspaso por falta de fondos" className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent" />
                         </div>
                         <div className="lg:col-span-4 flex justify-end gap-3 mt-2">
                             <Button outline type="button" onClick={() => { setIsFormOpen(false); resetForm(); }} className="text-sm py-2">Cancelar</Button>
@@ -774,7 +883,9 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                                             {record.concept}
                                             {isInitialBalance && <span className="ml-2 text-[9px] bg-primary/10 text-primary-dark px-1 py-0.5 rounded uppercase tracking-wider">Ajuste</span>}
                                         </td>
-                                        <td className="p-4 whitespace-nowrap">{new Date(record.date).toLocaleDateString()}</td>
+                                        <td className="p-4 whitespace-nowrap">
+                                            {record.date.split('-').reverse().join('/')}
+                                        </td>
                                         <td className="p-4 whitespace-nowrap">
                                             <span className="bg-neutral-100 px-2 py-1 rounded text-xs">{record.payment_method}</span>
                                         </td>
@@ -1145,63 +1256,82 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                         )}
                         {/* Tabla Balance por Forma de Pago */}
                         {paymentBalancesData.length > 0 && (
-                            <div className="bg-white overflow-hidden rounded-md shadow-sm border border-neutral-200">
-                                <h4 className="text-xl font-bold text-center text-primary-dark p-6 bg-neutral-50 border-b border-light-beige">
-                                    Control de Efectivo por Cuenta
-                                </h4>
-                                <table className="w-full text-left">
-                                    <thead>
-                                        <tr className="bg-neutral-100 text-neutral-600 uppercase text-xs tracking-wider">
-                                            <th className="p-4 border-b border-neutral-200 font-bold whitespace-nowrap">Forma de Pago</th>
-                                            <th className="p-4 border-b border-neutral-200 font-bold text-right whitespace-nowrap">Saldo Inicial</th>
-                                            <th className="p-4 border-b border-neutral-200 font-bold text-right whitespace-nowrap">Ingresos</th>
-                                            <th className="p-4 border-b border-neutral-200 font-bold text-right whitespace-nowrap">Gastos</th>
-                                            <th className="p-4 border-b border-neutral-200 font-bold text-right whitespace-nowrap">Saldo Final</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-neutral-100">
-                                        {paymentBalancesData.map((row) => (
-                                            <tr key={row.method} className="hover:bg-neutral-50 transition-colors">
-                                                <td className="p-4 font-bold text-primary-dark text-sm">{row.method}</td>
-                                                <td className="p-4 text-right text-sm text-neutral-600">
-                                                    <span className="opacity-50 font-normal mr-1">$</span>
-                                                    {row.initialBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                </td>
-                                                <td className="p-4 text-right text-sm text-green-600 font-medium">
-                                                    {row.income > 0 ? <><span className="opacity-50 font-normal mr-1">$</span>{row.income.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</> : '-'}
-                                                </td>
-                                                <td className="p-4 text-right text-sm text-red-600 font-medium">
-                                                    {row.expense > 0 ? <><span className="opacity-50 font-normal mr-1">$</span>{row.expense.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</> : '-'}
-                                                </td>
-                                                <td className={`p-4 text-right text-sm font-bold ${row.finalBalance < 0 ? 'text-red-600' : 'text-primary-dark'}`}>
-                                                    <span className="opacity-50 font-normal mr-1">$</span>
-                                                    {row.finalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                    <tfoot className="bg-[#f8f9fa] border-t-[3px] border-double border-neutral-800">
-                                        <tr>
-                                            <td className="p-4 font-black text-primary-dark text-sm uppercase text-right">Totales Acumulados</td>
-                                            <td className="p-4 text-right font-black text-neutral-700 text-sm">
-                                                <span className="opacity-50 font-normal mr-1">$</span>
-                                                {paymentBalancesData.reduce((acc, r) => acc + r.initialBalance, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                            </td>
-                                            <td className="p-4 text-right font-black text-green-600 text-sm">
-                                                <span className="opacity-50 font-normal mr-1">$</span>
-                                                {paymentBalancesData.reduce((acc, r) => acc + r.income, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                            </td>
-                                            <td className="p-4 text-right font-black text-red-600 text-sm">
-                                                <span className="opacity-50 font-normal mr-1">$</span>
-                                                {paymentBalancesData.reduce((acc, r) => acc + r.expense, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                            </td>
-                                            <td className="p-4 text-right font-black text-primary-dark text-sm">
-                                                <span className="opacity-50 font-normal mr-1">$</span>
-                                                {paymentBalancesData.reduce((acc, r) => acc + r.finalBalance, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                            </td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
+                            <div className="grid gap-6 lg:grid-cols-3">
+                                <div className="lg:col-span-2 bg-white overflow-hidden rounded-3xl border border-light-beige shadow-sm">
+                                    <h4 className="text-xl font-bold text-center text-primary-dark p-6 bg-neutral-50 border-b border-light-beige">
+                                        Control de Efectivo por Cuenta
+                                    </h4>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left">
+                                            <thead>
+                                                <tr className="bg-neutral-100 text-neutral-600 uppercase text-xs tracking-wider">
+                                                    <th className="p-4 border-b border-neutral-200 font-bold whitespace-nowrap">Forma de Pago</th>
+                                                    <th className="p-4 border-b border-neutral-200 font-bold text-right whitespace-nowrap">Inicial</th>
+                                                    <th className="p-4 border-b border-neutral-200 font-bold text-right whitespace-nowrap">Ingresos</th>
+                                                    <th className="p-4 border-b border-neutral-200 font-bold text-right whitespace-nowrap">Gastos</th>
+                                                    <th className="p-4 border-b border-neutral-200 font-bold text-right whitespace-nowrap">Saldo Final</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-neutral-100">
+                                                {paymentBalancesData.map((row) => (
+                                                    <tr key={row.method} className="hover:bg-neutral-50 transition-colors">
+                                                        <td className="p-4 font-bold text-primary-dark text-sm">{row.method}</td>
+                                                        <td className="p-4 text-right text-sm text-neutral-600">
+                                                            {row.initialBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                        </td>
+                                                        <td className="p-4 text-right text-sm text-green-600 font-medium">
+                                                            {row.income > 0 ? row.income.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
+                                                        </td>
+                                                        <td className="p-4 text-right text-sm text-red-600 font-medium">
+                                                            {row.expense > 0 ? row.expense.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
+                                                        </td>
+                                                        <td className={`p-4 text-right text-sm font-bold ${row.finalBalance < 0 ? 'text-red-600' : 'text-primary-dark'}`}>
+                                                            {row.finalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                {/* Formulario de Saldo Inicial */}
+                                <div className="bg-primary-dark rounded-3xl p-8 text-white shadow-xl flex flex-col justify-center">
+                                    <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
+                                        <DollarSign size={24} className="text-accent" />
+                                        Saldo Inicial
+                                    </h3>
+                                    <p className="text-white/60 text-sm mb-8 font-medium">Establece el balance de partida para esta cuenta.</p>
+                                    
+                                    <form onSubmit={handleAddInitialBalance} className="space-y-6">
+                                        <div>
+                                            <label className="text-xs font-bold uppercase tracking-widest text-white/40 mb-2 block">Cuenta / Banco</label>
+                                            <input 
+                                                list="payment-options"
+                                                required
+                                                value={initialBalancePM}
+                                                onChange={e => setInitialBalancePM(e.target.value)}
+                                                placeholder="Selecciona cuenta..."
+                                                className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-accent placeholder:text-white/20 transition-all font-bold"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold uppercase tracking-widest text-white/40 mb-2 block">Monto Inicial ($)</label>
+                                            <input 
+                                                type="number"
+                                                step="0.01"
+                                                required
+                                                value={initialBalanceAmount}
+                                                onChange={e => setInitialBalanceAmount(e.target.value === '' ? '' : Number(e.target.value))}
+                                                placeholder="0.00"
+                                                className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-accent placeholder:text-white/20 transition-all font-bold"
+                                            />
+                                        </div>
+                                        <Button primary type="submit" className="w-full py-4 text-lg shadow-lg hover:translate-y-[-2px] transition-all">
+                                            Guardar Saldo
+                                        </Button>
+                                    </form>
+                                </div>
                             </div>
                         )}
                     </div>
