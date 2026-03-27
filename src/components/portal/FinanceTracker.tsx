@@ -150,7 +150,9 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
         const today = new Date();
         for (let i = 0; i <= 12; i++) {
             const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
-            futureMonths.push(d.toISOString().substring(0, 7));
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            futureMonths.push(`${yyyy}-${mm}`);
         }
 
         // 3. Combinar, ordenar y formatear
@@ -169,7 +171,7 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
         
         // Inicializar mes seleccionado si está vacíoo (usar el mes actual si existe en la lista)
         if (!selectedMonth && formattedMonths.length > 0) {
-            const currentMonthStr = today.toISOString().substring(0, 7);
+            const currentMonthStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
             const hasCurrentMonth = formattedMonths.some(m => m.value === currentMonthStr);
             setSelectedMonth(hasCurrentMonth ? currentMonthStr : formattedMonths[0].value);
         }
@@ -228,19 +230,19 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
         const budgetArr = Array.from(allConcepts)
             .filter(c => c && c.trim() !== '')
             .map(concept => {
-            const totalHistorical = historicalExpenses[concept] || 0;
-            const histAvg = totalHistorical / historicalMonthsCount;
-            const currentExp = grouped[concept]?.expense || 0;
-            const definedBudget = manualBudgets[concept] !== undefined ? manualBudgets[concept] : histAvg;
-            
-            return {
-                concept,
-                avgBudget: definedBudget,
-                currentExpense: currentExp,
-                difference: definedBudget - currentExp
-            };
-        }).filter(b => b.avgBudget > 0 || b.currentExpense > 0)
-          .sort((a,b) => b.avgBudget - a.avgBudget);
+                const totalHistorical = historicalExpenses[concept] || 0;
+                const histAvg = totalHistorical / historicalMonthsCount;
+                const currentExp = grouped[concept]?.expense || 0;
+                const definedBudget = manualBudgets[concept] !== undefined ? manualBudgets[concept] : histAvg;
+                
+                return {
+                    concept,
+                    avgBudget: definedBudget,
+                    currentExpense: currentExp,
+                    difference: definedBudget - currentExp
+                };
+            })
+            .sort((a,b) => b.avgBudget - a.avgBudget);
           
         setBudgetData(budgetArr);
         // =========================================================================
