@@ -50,12 +50,19 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
     const [income, setIncome] = useState<number | ''>('');
     const [expense, setExpense] = useState<number | ''>('');
     const [description, setDescription] = useState('');
-    const [isTransfer, setIsTransfer] = useState(false);
-    const [destPaymentMethod, setDestPaymentMethod] = useState('');
-    const [initialBalanceAmount, setInitialBalanceAmount] = useState<number | ''>('');
-    const [initialBalancePM, setInitialBalancePM] = useState('');
     const [editingId, setEditingId] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
+    
+    // Account management states (Saldos tab)
+    const [initialBalanceAmount, setInitialBalanceAmount] = useState<number | ''>('');
+    const [initialBalancePM, setInitialBalancePM] = useState('');
+    const [transferAmount, setTransferAmount] = useState<number | ''>('');
+    const [transferOrigin, setTransferOrigin] = useState('');
+    const [transferDest, setTransferDest] = useState('');
+    const [transferDate, setTransferDate] = useState(new Date().toISOString().split('T')[0]);
+    const [transferDesc, setTransferDesc] = useState('');
+    const [accMgmtTab, setAccMgmtTab] = useState<'initial' | 'transfer'>('initial');
+
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -283,12 +290,12 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                 const { error, data } = await supabase
                     .from('finance_records')
                     .update({
-                        concept: isTransfer ? 'TRASPASO INTERNO' : concept,
+                        concept,
                         date,
                         payment_method: paymentMethod,
-                        provider: isTransfer ? `Hacia: ${destPaymentMethod}` : provider,
-                        income: isTransfer ? 0 : numIncome,
-                        expense: isTransfer ? (numIncome || numExpense) : numExpense,
+                        provider,
+                        income: numIncome,
+                        expense: numExpense,
                         description
                     })
                     .eq('id', editingId)
@@ -300,41 +307,6 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                     resetForm();
                     setIsFormOpen(false);
                 }
-            } else if (isTransfer) {
-                // Modo Traspaso: Crear dos registros (salida y entrada)
-                const transferId = Math.random().toString(36).substring(2, 11);
-                
-                // Registro de Salida (Gasto)
-                const { error: outError } = await supabase.from('finance_records').insert([{
-                    user_id: user.id,
-                    concept: 'TRASPASO INTERNO',
-                    date,
-                    payment_method: paymentMethod,
-                    provider: `Hacia: ${destPaymentMethod}`,
-                    income: 0,
-                    expense: numIncome || 0,
-                    description: `${description} (Origen: ${paymentMethod} -> ${destPaymentMethod})`,
-                    id: `${transferId}_out`
-                }]);
-                if (outError) throw outError;
-
-                // Registro de Entrada (Ingreso)
-                const { error: inError } = await supabase.from('finance_records').insert([{
-                    user_id: user.id,
-                    concept: 'TRASPASO INTERNO',
-                    date,
-                    payment_method: destPaymentMethod,
-                    provider: `Desde: ${paymentMethod}`,
-                    income: numIncome || 0,
-                    expense: 0,
-                    description: `${description} (Destino: ${paymentMethod} -> ${destPaymentMethod})`,
-                    id: `${transferId}_in`
-                }]);
-                if (inError) throw inError;
-
-                loadRecords();
-                resetForm();
-                setIsFormOpen(false);
             } else {
                 // Registro Normal
                 const { data, error } = await supabase
@@ -394,6 +366,54 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
         }
     };
 
+    const handleTransfer = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!transferOrigin || !transferDest || !transferAmount || transferOrigin === transferDest) {
+            alert("Por favor selecciona cuentas de origen y destino válidas y un monto.");
+            return;
+        }
+
+        try {
+            const numAmount = Number(transferAmount);
+
+            // Registro de Salida
+            const { error: outErr } = await supabase.from('finance_records').insert([{
+                user_id: user.id,
+                concept: 'TRASPASO INTERNO',
+                date: transferDate,
+                payment_method: transferOrigin,
+                provider: `Hacia: ${transferDest}`,
+                income: 0,
+                expense: numAmount,
+                description: `${transferDesc} (Traspaso: ${transferOrigin} -> ${transferDest})`
+            }]);
+            if (outErr) throw outErr;
+
+            // Registro de Entrada
+            const { error: inErr } = await supabase.from('finance_records').insert([{
+                user_id: user.id,
+                concept: 'TRASPASO INTERNO',
+                date: transferDate,
+                payment_method: transferDest,
+                provider: `Desde: ${transferOrigin}`,
+                income: numAmount,
+                expense: 0,
+                description: `${transferDesc} (Traspaso: ${transferOrigin} -> ${transferDest})`
+            }]);
+            if (inErr) throw inErr;
+
+            setTransferAmount('');
+            setTransferOrigin('');
+            setTransferDest('');
+            setTransferDesc('');
+            loadRecords();
+            alert("Traspaso registrado correctamente.");
+        } catch (error) {
+            console.error("Error creating transfer:", error);
+            alert("No se pudo realizar el traspaso.");
+        }
+    };
+
     const handleDelete = async (id: string) => {
         if (!window.confirm("¿Seguro que deseas eliminar este registro?")) return;
         try {
@@ -417,8 +437,6 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
         setIncome('');
         setExpense('');
         setDescription('');
-        setIsTransfer(false);
-        setDestPaymentMethod('');
         setEditingId(null);
     };
 
@@ -727,28 +745,10 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                     </datalist>
 
                     <form onSubmit={handleAddRecord} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div className="lg:col-span-4 flex items-center gap-4 mb-2 pb-2 border-b border-light-beige/50">
-                            <label className="flex items-center gap-2 cursor-pointer">
-                                <input 
-                                    type="checkbox" 
-                                    checked={isTransfer} 
-                                    onChange={e => {
-                                        setIsTransfer(e.target.checked);
-                                        if (e.target.checked) setConcept('TRASPASO INTERNO');
-                                        else setConcept('');
-                                    }}
-                                    className="rounded border-light-beige text-accent focus:ring-accent"
-                                />
-                                <span className="text-sm font-bold text-primary-dark uppercase tracking-wider">Es un traspaso entre cuentas</span>
-                            </label>
+                        <div className="space-y-1">
+                            <label className="text-xs font-bold text-primary-dark">Concepto</label>
+                            <input list="concept-options" type="text" required value={concept} onChange={e => setConcept(e.target.value)} placeholder="Ej. FIESTA ANGELITO" className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent bg-white" />
                         </div>
-                        
-                        {!isTransfer && (
-                            <div className="space-y-1">
-                                <label className="text-xs font-bold text-primary-dark">Concepto</label>
-                                <input list="concept-options" type="text" required value={concept} onChange={e => setConcept(e.target.value)} placeholder="Ej. FIESTA ANGELITO" className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent bg-white" />
-                            </div>
-                        )}
                         
                         <div className="space-y-1">
                             <label className="text-xs font-bold text-primary-dark">Fecha</label>
@@ -756,39 +756,28 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                         </div>
                         
                         <div className="space-y-1">
-                            <label className="text-xs font-bold text-primary-dark">{isTransfer ? 'Cuenta Origen' : 'Forma de pago'}</label>
+                            <label className="text-xs font-bold text-primary-dark">Forma de pago</label>
                             <input list="payment-options" type="text" required value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} placeholder="Ej. Efectivo Laura" className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent bg-white" />
                         </div>
 
-                        {isTransfer && (
-                            <div className="space-y-1">
-                                <label className="text-xs font-bold text-primary-dark">Cuenta Destino</label>
-                                <input list="payment-options" type="text" required value={destPaymentMethod} onChange={e => setDestPaymentMethod(e.target.value)} placeholder="Ej. Banco" className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent bg-white" />
-                            </div>
-                        )}
-                        
-                        {!isTransfer && (
-                            <div className="space-y-1">
-                                <label className="text-xs font-bold text-primary-dark">Proveedor</label>
-                                <input type="text" required value={provider} onChange={e => setProvider(e.target.value)} placeholder="Ej. BODEGA" className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent" />
-                            </div>
-                        )}
+                        <div className="space-y-1">
+                            <label className="text-xs font-bold text-primary-dark">Proveedor</label>
+                            <input type="text" required value={provider} onChange={e => setProvider(e.target.value)} placeholder="Ej. BODEGA" className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent" />
+                        </div>
                         
                         <div className="space-y-1">
-                            <label className="text-xs font-bold text-primary-dark">{isTransfer ? 'Monto a Traspasar ($)' : 'Ingreso ($)'}</label>
+                            <label className="text-xs font-bold text-primary-dark">Ingreso ($)</label>
                             <input type="number" step="0.01" value={income} onChange={e => setIncome(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0.00" className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent" />
                         </div>
                         
-                        {!isTransfer && (
-                            <div className="space-y-1">
-                                <label className="text-xs font-bold text-primary-dark">Gasto ($)</label>
-                                <input type="number" step="0.01" value={expense} onChange={e => setExpense(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0.00" className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent" />
-                            </div>
-                        )}
+                        <div className="space-y-1">
+                            <label className="text-xs font-bold text-primary-dark">Gasto ($)</label>
+                            <input type="number" step="0.01" value={expense} onChange={e => setExpense(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0.00" className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent" />
+                        </div>
                         
                         <div className="space-y-1 lg:col-span-2">
                             <label className="text-xs font-bold text-primary-dark">Descripción</label>
-                            <input type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="Ej. Traspaso por falta de fondos" className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent" />
+                            <input type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="Ej. TOMATE, CHILE SERRANO Y CEBOLLA" className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent" />
                         </div>
                         <div className="lg:col-span-4 flex justify-end gap-3 mt-2">
                             <Button outline type="button" onClick={() => { setIsFormOpen(false); resetForm(); }} className="text-sm py-2">Cancelar</Button>
@@ -1255,38 +1244,38 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                             </h3>
                         )}
                         {/* Tabla Balance por Forma de Pago */}
-                        {paymentBalancesData.length > 0 && (
-                            <div className="grid gap-6 lg:grid-cols-3">
+                        {viewMode === 'balances' && paymentBalancesData.length > 0 && (
+                            <div className="grid gap-6 lg:grid-cols-3 p-8">
                                 <div className="lg:col-span-2 bg-white overflow-hidden rounded-3xl border border-light-beige shadow-sm">
-                                    <h4 className="text-xl font-bold text-center text-primary-dark p-6 bg-neutral-50 border-b border-light-beige">
-                                        Control de Efectivo por Cuenta
+                                    <h4 className="text-xl font-bold text-center text-primary-dark p-6 bg-neutral-50 border-b border-light-beige uppercase tracking-widest text-xs">
+                                        Estado Actual de Cuentas
                                     </h4>
                                     <div className="overflow-x-auto">
                                         <table className="w-full text-left">
                                             <thead>
-                                                <tr className="bg-neutral-100 text-neutral-600 uppercase text-xs tracking-wider">
-                                                    <th className="p-4 border-b border-neutral-200 font-bold whitespace-nowrap">Forma de Pago</th>
-                                                    <th className="p-4 border-b border-neutral-200 font-bold text-right whitespace-nowrap">Inicial</th>
-                                                    <th className="p-4 border-b border-neutral-200 font-bold text-right whitespace-nowrap">Ingresos</th>
-                                                    <th className="p-4 border-b border-neutral-200 font-bold text-right whitespace-nowrap">Gastos</th>
-                                                    <th className="p-4 border-b border-neutral-200 font-bold text-right whitespace-nowrap">Saldo Final</th>
+                                                <tr className="bg-neutral-100 text-neutral-600 uppercase text-[10px] tracking-wider font-bold">
+                                                    <th className="p-4 border-b border-neutral-200">Forma de Pago</th>
+                                                    <th className="p-4 border-b border-neutral-200 text-right">Inicial</th>
+                                                    <th className="p-4 border-b border-neutral-200 text-right">Entradas</th>
+                                                    <th className="p-4 border-b border-neutral-200 text-right">Salidas</th>
+                                                    <th className="p-4 border-b border-neutral-200 text-right">Saldo Final</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-neutral-100">
                                                 {paymentBalancesData.map((row) => (
                                                     <tr key={row.method} className="hover:bg-neutral-50 transition-colors">
                                                         <td className="p-4 font-bold text-primary-dark text-sm">{row.method}</td>
-                                                        <td className="p-4 text-right text-sm text-neutral-600">
-                                                            {row.initialBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                        <td className="p-4 text-right text-sm text-neutral-400">
+                                                            ${row.initialBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                         </td>
                                                         <td className="p-4 text-right text-sm text-green-600 font-medium">
-                                                            {row.income > 0 ? row.income.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
+                                                            {row.income > 0 ? `$${row.income.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
                                                         </td>
                                                         <td className="p-4 text-right text-sm text-red-600 font-medium">
-                                                            {row.expense > 0 ? row.expense.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
+                                                            {row.expense > 0 ? `$${row.expense.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
                                                         </td>
                                                         <td className={`p-4 text-right text-sm font-bold ${row.finalBalance < 0 ? 'text-red-600' : 'text-primary-dark'}`}>
-                                                            {row.finalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                            ${row.finalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                         </td>
                                                     </tr>
                                                 ))}
@@ -1295,42 +1284,93 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                                     </div>
                                 </div>
 
-                                {/* Formulario de Saldo Inicial */}
-                                <div className="bg-primary-dark rounded-3xl p-8 text-white shadow-xl flex flex-col justify-center">
-                                    <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
-                                        <DollarSign size={24} className="text-accent" />
-                                        Saldo Inicial
-                                    </h3>
-                                    <p className="text-white/60 text-sm mb-8 font-medium">Establece el balance de partida para esta cuenta.</p>
-                                    
-                                    <form onSubmit={handleAddInitialBalance} className="space-y-6">
-                                        <div>
-                                            <label className="text-xs font-bold uppercase tracking-widest text-white/40 mb-2 block">Cuenta / Banco</label>
-                                            <input 
-                                                list="payment-options"
-                                                required
-                                                value={initialBalancePM}
-                                                onChange={e => setInitialBalancePM(e.target.value)}
-                                                placeholder="Selecciona cuenta..."
-                                                className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-accent placeholder:text-white/20 transition-all font-bold"
-                                            />
+                                {/* Gestión de Cuentas Paneles */}
+                                <div className="bg-primary-dark rounded-3xl p-6 text-white shadow-xl">
+                                    <div className="flex bg-white/10 p-1 rounded-xl mb-6">
+                                        <button 
+                                            onClick={() => setAccMgmtTab('initial')}
+                                            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${accMgmtTab === 'initial' ? 'bg-white text-primary-dark shadow-sm' : 'text-white/60 hover:text-white'}`}
+                                        >
+                                            Saldo Inicial
+                                        </button>
+                                        <button 
+                                            onClick={() => setAccMgmtTab('transfer')}
+                                            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${accMgmtTab === 'transfer' ? 'bg-white text-primary-dark shadow-sm' : 'text-white/60 hover:text-white'}`}
+                                        >
+                                            Traspaso
+                                        </button>
+                                    </div>
+
+                                    {accMgmtTab === 'initial' ? (
+                                        <div className="animate-fade-in">
+                                            <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
+                                                <DollarSign size={20} className="text-accent" />
+                                                Ajustar Saldo
+                                            </h3>
+                                            <p className="text-white/50 text-xs mb-6 font-medium">Define el balance de partida para una cuenta específica.</p>
+                                            
+                                            <form onSubmit={handleAddInitialBalance} className="space-y-4">
+                                                <div>
+                                                    <label className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1 block">Cuenta / Banco</label>
+                                                    <input 
+                                                        list="payment-options"
+                                                        required
+                                                        value={initialBalancePM}
+                                                        onChange={e => setInitialBalancePM(e.target.value)}
+                                                        placeholder="Selecciona cuenta..."
+                                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-accent placeholder:text-white/10 transition-all"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1 block">Monto Inicial ($)</label>
+                                                    <input 
+                                                        type="number"
+                                                        step="0.01"
+                                                        required
+                                                        value={initialBalanceAmount}
+                                                        onChange={e => setInitialBalanceAmount(e.target.value === '' ? '' : Number(e.target.value))}
+                                                        placeholder="0.00"
+                                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-accent placeholder:text-white/10 transition-all"
+                                                    />
+                                                </div>
+                                                <Button primary type="submit" className="w-full py-3 text-sm shadow-lg mt-2">
+                                                    Guardar Ajuste
+                                                </Button>
+                                            </form>
                                         </div>
-                                        <div>
-                                            <label className="text-xs font-bold uppercase tracking-widest text-white/40 mb-2 block">Monto Inicial ($)</label>
-                                            <input 
-                                                type="number"
-                                                step="0.01"
-                                                required
-                                                value={initialBalanceAmount}
-                                                onChange={e => setInitialBalanceAmount(e.target.value === '' ? '' : Number(e.target.value))}
-                                                placeholder="0.00"
-                                                className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white outline-none focus:border-accent placeholder:text-white/20 transition-all font-bold"
-                                            />
+                                    ) : (
+                                        <div className="animate-fade-in">
+                                            <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
+                                                <TrendingUp size={20} className="text-accent" />
+                                                Nuevo Traspaso
+                                            </h3>
+                                            <p className="text-white/50 text-xs mb-6 font-medium">Mueve fondos entre tus cuentas registradas.</p>
+                                            
+                                            <form onSubmit={handleTransfer} className="space-y-3">
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <label className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1 block">Origen</label>
+                                                        <input list="payment-options" required value={transferOrigin} onChange={e => setTransferOrigin(e.target.value)} placeholder="De..." className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-accent" />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1 block">Destino</label>
+                                                        <input list="payment-options" required value={transferDest} onChange={e => setTransferDest(e.target.value)} placeholder="A..." className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-accent" />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1 block">Monto ($)</label>
+                                                    <input type="number" step="0.01" required value={transferAmount} onChange={e => setTransferAmount(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0.00" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-accent" />
+                                                </div>
+                                                <div>
+                                                    <label className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1 block">Fecha</label>
+                                                    <input type="date" required value={transferDate} onChange={e => setTransferDate(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-accent" />
+                                                </div>
+                                                <Button primary type="submit" className="w-full py-3 text-sm shadow-lg mt-2 font-bold">
+                                                    Realizar Traspaso
+                                                </Button>
+                                            </form>
                                         </div>
-                                        <Button primary type="submit" className="w-full py-4 text-lg shadow-lg hover:translate-y-[-2px] transition-all">
-                                            Guardar Saldo
-                                        </Button>
-                                    </form>
+                                    )}
                                 </div>
                             </div>
                         )}
