@@ -648,12 +648,15 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
         ? records 
         : records.filter(r => r.date.startsWith(selectedMonth));
 
-    let runningBalance = 0;
+    let runningBalanceFlow = 0;
     const displayRecords = filteredRecords.map(record => {
-        runningBalance = runningBalance + Number(record.income) - Number(record.expense);
+        const isAdjustment = (record.concept || '').toUpperCase().trim() === 'SALDO INICIAL';
+        if (!isAdjustment) {
+            runningBalanceFlow = runningBalanceFlow + Number(record.income) - Number(record.expense);
+        }
         return {
             ...record,
-            balance: runningBalance
+            balance: runningBalanceFlow
         };
     });
 
