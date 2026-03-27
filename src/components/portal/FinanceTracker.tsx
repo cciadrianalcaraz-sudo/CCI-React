@@ -348,8 +348,8 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
         setDate(record.date.split('T')[0]);
         setPaymentMethod(record.payment_method || '');
         setProvider(record.provider || '');
-        setIncome((record.income && Number(record.income) > 0) ? Number(record.income) : '');
-        setExpense((record.expense && Number(record.expense) > 0) ? Number(record.expense) : '');
+        setIncome((record.income && Number(record.income) !== 0) ? Number(record.income) : '');
+        setExpense((record.expense && Number(record.expense) !== 0) ? Number(record.expense) : '');
         setDescription(record.description || '');
         setEditingId(record.id);
         setIsFormOpen(true);
@@ -422,7 +422,7 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                     }
                     
                     const parsed = Number(str);
-                    return isNaN(parsed) ? 0 : Math.abs(parsed); // Usamos Math.abs porque a veces los gastos vienen con signo negativo
+                    return isNaN(parsed) ? 0 : parsed; // Permitimos valores negativos para devoluciones
                 };
 
                 // Mejorar detección de fecha
@@ -780,10 +780,10 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                                         </td>
                                         <td className="p-4 whitespace-nowrap">{record.provider}</td>
                                         <td className="p-4 text-right whitespace-nowrap text-green-600 font-medium">
-                                            {isInitialBalance ? '-' : (Number(record.income) > 0 ? `$${Number(record.income).toFixed(2)}` : '-')}
+                                            {isInitialBalance ? '-' : (Number(record.income) !== 0 ? `$${Number(record.income).toFixed(2)}` : '-')}
                                         </td>
                                         <td className="p-4 text-right whitespace-nowrap text-red-600 font-medium">
-                                            {isInitialBalance ? '-' : (Number(record.expense) > 0 ? `$${Number(record.expense).toFixed(2)}` : '-')}
+                                            {isInitialBalance ? '-' : (Number(record.expense) !== 0 ? `$${Number(record.expense).toFixed(2)}` : '-')}
                                         </td>
                                         <td className={`p-4 text-right whitespace-nowrap font-bold ${Number(record.balance) < 0 ? 'text-red-600' : 'text-primary-dark'}`}>
                                             ${Number(record.balance).toFixed(2)}
