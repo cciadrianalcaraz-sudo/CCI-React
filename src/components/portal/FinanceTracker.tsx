@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Plus, Trash2, Search, TrendingUp, TrendingDown, DollarSign, Edit2, Upload } from 'lucide-react';
+import { Plus, Trash2, Search, TrendingUp, TrendingDown, DollarSign, Edit2, Upload, Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import Button from '../ui/Button';
@@ -499,6 +499,53 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
             }
         }
     };
+    
+    const handleExportExcel = () => {
+        if (displayRecords.length === 0) {
+            alert("No hay registros para exportar en el mes seleccionado.");
+            return;
+        }
+
+        console.log(`Exportando ${displayRecords.length} registros a Excel...`);
+        
+        try {
+            const dataToExport = displayRecords.map((r, index) => ({
+                'NO.': index + 1,
+                'CONCEPTO': r.concept,
+                'FECHA': new Date(r.date).toLocaleDateString(),
+                'FORMA DE PAGO': r.payment_method || 'SIN ESPECIFICAR',
+                'PROVEEDOR': r.provider || '',
+                'INGRESO': Number(r.income) || 0,
+                'GASTO': Number(r.expense) || 0,
+                'SALDO': Number(r.balance) || 0,
+                'DESCRIPCION': r.description || ''
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(dataToExport);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Finanzas");
+            
+            // Ajustar anchos de columna (opcional pero recomendado)
+            const wscols = [
+                {wch: 5},  // No.
+                {wch: 25}, // Concepto
+                {wch: 12}, // Fecha
+                {wch: 20}, // Forma de pago
+                {wch: 20}, // Proveedor
+                {wch: 10}, // Ingreso
+                {wch: 10}, // Gasto
+                {wch: 12}, // Saldo
+                {wch: 40}  // Descripcion
+            ];
+            ws['!cols'] = wscols;
+
+            const fileName = `Finanzas_${selectedMonth === 'all' ? 'Completo' : selectedMonth}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+        } catch (error) {
+            console.error("Error exporting to Excel:", error);
+            alert("No se pudo generar el archivo Excel.");
+        }
+    };
 
     let runningBalance = 0;
     const recordsWithBalance = records.map(record => {
@@ -535,6 +582,9 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                     />
                     <Button outline className="text-sm py-2 flex items-center gap-2" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
                         <Upload size={16} /> {isUploading ? 'Importando...' : 'Importar Excel'}
+                    </Button>
+                    <Button outline className="text-sm py-2 flex items-center gap-2" onClick={handleExportExcel} disabled={displayRecords.length === 0}>
+                        <Download size={16} /> Exportar Excel
                     </Button>
                     <Button outline className="text-sm py-2" onClick={() => loadRecords()}>
                         Actualizar
