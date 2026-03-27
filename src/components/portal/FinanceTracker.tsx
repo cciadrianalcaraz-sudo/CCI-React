@@ -1,8 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Plus, Trash2, Search, TrendingUp, TrendingDown, DollarSign, Edit2, Upload, Download } from 'lucide-react';
+import { Plus, Trash2, Search, TrendingUp, 
+    TrendingDown, 
+    DollarSign, 
+    Edit2, 
+    Upload, 
+    Download, 
+    Calendar
+} from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import Button from '../ui/Button';
 
 interface FinanceRecord {
@@ -688,7 +695,7 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                     <h2 className="text-xl font-bold text-primary-dark">Registro de Finanzas Personales</h2>
                     <p className="text-sm text-neutral-500 mt-1">Control de ingresos, gastos y saldo al día.</p>
                 </div>
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-wrap gap-3">
                     <input 
                         type="file" 
                         accept=".xlsx, .xls" 
@@ -696,24 +703,29 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                         className="hidden" 
                         onChange={handleFileUpload} 
                     />
-                    <Button outline className="text-sm py-2 flex items-center gap-2" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
-                        <Upload size={16} /> {isUploading ? 'Importando...' : 'Importar Excel'}
+                    <Button outline className="text-[10px] font-black uppercase tracking-widest py-2.5 px-5 flex items-center gap-2 border-neutral-200 hover:border-primary-dark transition-all" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                        <Upload size={14} className="text-primary-dark" /> {isUploading ? 'Importando...' : 'Importar Excel'}
                     </Button>
-                    <Button outline className="text-sm py-2 flex items-center gap-2" onClick={handleExportExcel} disabled={displayRecords.length === 0}>
-                        <Download size={16} /> Exportar Excel
+                    <Button outline className="text-[10px] font-black uppercase tracking-widest py-2.5 px-5 flex items-center gap-2 border-neutral-200 hover:border-primary-dark transition-all" onClick={handleExportExcel} disabled={displayRecords.length === 0}>
+                        <Download size={14} className="text-primary-dark" /> Exportar
                     </Button>
-                    <Button outline className="text-sm py-2" onClick={() => loadRecords()}>
-                        Actualizar
-                    </Button>
-                    <Button primary className="text-sm py-2 flex items-center gap-2" onClick={() => setIsFormOpen(!isFormOpen)}>
-                        <Plus size={16} /> Nuevo Registro
+                    <Button primary className="text-[10px] font-black uppercase tracking-widest py-2.5 px-6 flex items-center gap-2 shadow-lg hover:scale-[1.02] transition-all" onClick={() => setIsFormOpen(!isFormOpen)}>
+                        <Plus size={14} /> {isFormOpen ? 'Cerrar Panel' : 'Nuevo Registro'}
                     </Button>
                 </div>
             </div>
 
             {isFormOpen && (
-                <div className="p-8 border-b border-light-beige bg-neutral-50 animate-slide-in">
+                <div className="mb-10 bg-white/70 backdrop-blur-sm p-8 rounded-[32px] border border-white shadow-sm animate-fade-in relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 rounded-full -mr-32 -mt-32 blur-3xl pointer-events-none"></div>
                     
+                    <h3 className="text-xl font-heading font-black text-primary-dark mb-8 flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-primary-dark flex items-center justify-center text-white">
+                            <Plus size={20} />
+                        </div>
+                        {editingId ? 'Editar Movimiento' : 'Registrar Nuevo Movimiento'}
+                    </h3>
+
                     <datalist id="concept-options">
                         <option value="SALDO INICIAL" />
                         <option value="ALIMENTOS" />
@@ -768,84 +780,118 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                         <option value="CASHI" />
                     </datalist>
 
-                    <form onSubmit={handleAddRecord} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div className="space-y-1">
-                            <label className="text-xs font-bold text-primary-dark">Concepto</label>
-                            <input list="concept-options" type="text" required value={concept} onChange={e => setConcept(e.target.value)} placeholder="Ej. FIESTA ANGELITO" className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent bg-white" />
+                    <form onSubmit={handleAddRecord} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 block ml-1">Concepto</label>
+                            <input list="concept-options" type="text" required value={concept} onChange={e => setConcept(e.target.value)} placeholder="Seleccione concepto..." className="w-full bg-white border border-neutral-200 rounded-2xl px-5 py-3 text-sm font-medium outline-none focus:border-accent transition-all shadow-sm" />
                         </div>
                         
-                        <div className="space-y-1">
-                            <label className="text-xs font-bold text-primary-dark">Fecha</label>
-                            <input type="date" required value={date} onChange={e => setDate(e.target.value)} className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent" />
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 block ml-1">Fecha</label>
+                            <input type="date" required value={date} onChange={e => setDate(e.target.value)} className="w-full bg-white border border-neutral-200 rounded-2xl px-5 py-3 text-sm font-medium outline-none focus:border-accent transition-all shadow-sm" />
                         </div>
                         
-                        <div className="space-y-1">
-                            <label className="text-xs font-bold text-primary-dark">Forma de pago</label>
-                            <input list="payment-options" type="text" required value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} placeholder="Ej. Efectivo Laura" className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent bg-white" />
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 block ml-1">Forma de pago</label>
+                            <input list="payment-options" type="text" required value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} placeholder="Seleccione pago..." className="w-full bg-white border border-neutral-200 rounded-2xl px-5 py-3 text-sm font-medium outline-none focus:border-accent transition-all shadow-sm" />
                         </div>
 
-                        <div className="space-y-1">
-                            <label className="text-xs font-bold text-primary-dark">Proveedor</label>
-                            <input type="text" required value={provider} onChange={e => setProvider(e.target.value)} placeholder="Ej. BODEGA" className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent" />
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 block ml-1">Proveedor / Tienda</label>
+                            <input type="text" required value={provider} onChange={e => setProvider(e.target.value)} placeholder="Ej. Amazon, Walmart..." className="w-full bg-white border border-neutral-200 rounded-2xl px-5 py-3 text-sm font-medium outline-none focus:border-accent transition-all shadow-sm" />
                         </div>
                         
-                        <div className="space-y-1">
-                            <label className="text-xs font-bold text-primary-dark">Ingreso ($)</label>
-                            <input type="number" step="0.01" value={income} onChange={e => setIncome(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0.00" className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent" />
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 block ml-1">Ingreso ($)</label>
+                            <div className="relative">
+                                <span className="absolute left-5 top-1/2 -translate-y-1/2 text-green-600 font-black">$</span>
+                                <input type="number" step="0.01" value={income} onChange={e => setIncome(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0.00" className="w-full bg-white border border-neutral-200 rounded-2xl pl-10 pr-5 py-3 text-sm font-black text-green-600 outline-none focus:border-accent transition-all shadow-sm" />
+                            </div>
                         </div>
                         
-                        <div className="space-y-1">
-                            <label className="text-xs font-bold text-primary-dark">Gasto ($)</label>
-                            <input type="number" step="0.01" value={expense} onChange={e => setExpense(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0.00" className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent" />
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 block ml-1">Gasto ($)</label>
+                            <div className="relative">
+                                <span className="absolute left-5 top-1/2 -translate-y-1/2 text-red-500 font-black">$</span>
+                                <input type="number" step="0.01" value={expense} onChange={e => setExpense(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0.00" className="w-full bg-white border border-neutral-200 rounded-2xl pl-10 pr-5 py-3 text-sm font-black text-red-500 outline-none focus:border-accent transition-all shadow-sm" />
+                            </div>
                         </div>
                         
-                        <div className="space-y-1 lg:col-span-2">
-                            <label className="text-xs font-bold text-primary-dark">Descripción</label>
-                            <input type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="Ej. TOMATE, CHILE SERRANO Y CEBOLLA" className="w-full text-sm border border-light-beige rounded-xl px-3 py-2 outline-none focus:border-accent" />
+                        <div className="space-y-2 lg:col-span-2">
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 block ml-1">Descripción / Notas</label>
+                            <input type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="Detalles adicionales del movimiento..." className="w-full bg-white border border-neutral-200 rounded-2xl px-5 py-3 text-sm font-medium outline-none focus:border-accent transition-all shadow-sm" />
                         </div>
-                        <div className="lg:col-span-4 flex justify-end gap-3 mt-2">
-                            <Button outline type="button" onClick={() => { setIsFormOpen(false); resetForm(); }} className="text-sm py-2">Cancelar</Button>
-                            <Button primary type="submit" className="text-sm py-2">{editingId ? 'Actualizar Registro' : 'Guardar Registro'}</Button>
+                        <div className="lg:col-span-4 flex justify-end gap-3 pt-6 border-t border-neutral-100/50">
+                            <Button outline type="button" onClick={() => { setIsFormOpen(false); resetForm(); }} className="text-[10px] font-black uppercase tracking-widest py-3 px-8 border-neutral-200">Cancelar</Button>
+                            <Button primary type="submit" className="text-[10px] font-black uppercase tracking-widest py-3 px-10 shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all">
+                                {editingId ? 'Actualizar Registro' : 'Confirmar Registro'}
+                            </Button>
                         </div>
                     </form>
                 </div>
             )}
 
-            <div className="p-6 border-b border-light-beige bg-white flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex bg-neutral-100 p-1 rounded-xl w-fit">
+            {/* NEW GLOBAL KPI BAR */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <div className="bg-white/40 backdrop-blur-md p-4 rounded-2xl border border-white/20 shadow-sm flex flex-col justify-center relative overflow-hidden group hover:bg-white/60 transition-all">
+                    <div className="absolute top-1/2 -translate-y-1/2 right-3 opacity-5 text-green-600 group-hover:scale-110 transition-transform"><TrendingUp size={40} /></div>
+                    <p className="text-neutral-500 font-bold uppercase tracking-widest text-[10px] mb-1">Ingresos</p>
+                    <p className="text-xl font-heading font-black text-green-600">
+                        ${summaryData.reduce((acc, row) => acc + row.income, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </p>
+                </div>
+                <div className="bg-white/40 backdrop-blur-md p-4 rounded-2xl border border-white/20 shadow-sm flex flex-col justify-center relative overflow-hidden group hover:bg-white/60 transition-all">
+                    <div className="absolute top-1/2 -translate-y-1/2 right-3 opacity-5 text-red-600 group-hover:scale-110 transition-transform"><TrendingDown size={40} /></div>
+                    <p className="text-neutral-500 font-bold uppercase tracking-widest text-[10px] mb-1">Gastos</p>
+                    <p className="text-xl font-heading font-black text-red-500">
+                        ${summaryData.reduce((acc, row) => acc + row.expense, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </p>
+                </div>
+                <div className="bg-gradient-to-br from-primary-dark to-[#3d686d] p-4 rounded-2xl shadow-sm flex flex-col justify-center relative overflow-hidden group hover:shadow-md transition-all">
+                    <div className="absolute top-1/2 -translate-y-1/2 right-3 opacity-10 text-white group-hover:rotate-12 transition-transform"><DollarSign size={40} /></div>
+                    <p className="text-white/70 font-bold uppercase tracking-widest text-[10px] mb-1">Balance</p>
+                    <p className="text-xl font-heading font-black text-white">
+                        ${(summaryData.reduce((acc, row) => acc + row.income, 0) - summaryData.reduce((acc, row) => acc + row.expense, 0)).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </p>
+                </div>
+            </div>
+
+            <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-10 bg-neutral-100/50 p-2 rounded-[24px] border border-neutral-200">
+                <div className="flex bg-white/80 p-1.5 rounded-full shadow-sm border border-neutral-200 w-full md:w-auto overflow-x-auto no-scrollbar">
                     <button 
                         onClick={() => setViewMode('detailed')}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'detailed' ? 'bg-white shadow-sm text-primary-dark' : 'text-neutral-500 hover:text-primary-dark'}`}
+                        className={`px-6 py-2.5 rounded-full text-xs font-black tracking-widest uppercase transition-all whitespace-nowrap ${viewMode === 'detailed' ? 'bg-primary-dark text-white shadow-lg scale-[1.02]' : 'text-neutral-400 hover:text-primary-dark hover:bg-neutral-50'}`}
                     >
-                        Registro Detallado
+                        Registro
                     </button>
                     <button 
                         onClick={() => setViewMode('summary')}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'summary' ? 'bg-white shadow-sm text-primary-dark' : 'text-neutral-500 hover:text-primary-dark'}`}
+                        className={`px-6 py-2.5 rounded-full text-xs font-black tracking-widest uppercase transition-all whitespace-nowrap ${viewMode === 'summary' ? 'bg-primary-dark text-white shadow-lg scale-[1.02]' : 'text-neutral-400 hover:text-primary-dark hover:bg-neutral-50'}`}
                     >
-                        Resumen por Mes
+                        Resumen
                     </button>
                     <button 
                         onClick={() => setViewMode('balances')}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'balances' ? 'bg-white shadow-sm text-primary-dark' : 'text-neutral-500 hover:text-primary-dark'}`}
+                        className={`px-6 py-2.5 rounded-full text-xs font-black tracking-widest uppercase transition-all whitespace-nowrap ${viewMode === 'balances' ? 'bg-primary-dark text-white shadow-lg scale-[1.02]' : 'text-neutral-400 hover:text-primary-dark hover:bg-neutral-50'}`}
                     >
                         Saldos
                     </button>
                     <button 
                         onClick={() => setViewMode('budget')}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'budget' ? 'bg-white shadow-sm text-primary-dark' : 'text-neutral-500 hover:text-primary-dark'}`}
+                        className={`px-6 py-2.5 rounded-full text-xs font-black tracking-widest uppercase transition-all whitespace-nowrap ${viewMode === 'budget' ? 'bg-primary-dark text-white shadow-lg scale-[1.02]' : 'text-neutral-400 hover:text-primary-dark hover:bg-neutral-50'}`}
                     >
                         Presupuesto
                     </button>
                 </div>
                 
                 {uniqueMonths.length > 0 && (
-                    <div className="flex items-center gap-3">
-                        <label className="text-sm font-bold text-primary-dark uppercase tracking-wider">Mes:</label>
+                    <div className="flex items-center gap-2 bg-white/80 px-4 py-2 rounded-full border border-neutral-200 shadow-sm transition-all hover:border-accent group">
+                        <Calendar size={16} className="text-neutral-400 group-hover:text-accent transition-colors" />
                         <select 
                             value={selectedMonth} 
                             onChange={(e) => setSelectedMonth(e.target.value)}
-                            className="bg-white border border-light-beige rounded-xl px-4 py-2 text-sm font-bold text-accent outline-none focus:border-accent capitalize"
+                            className="bg-transparent text-sm font-black text-primary-dark outline-none cursor-pointer capitalize appearance-none pr-6 relative"
+                            style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%234A7C82\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right center', backgroundSize: '16px' }}
                         >
                             {uniqueMonths.map(m => (
                                 <option key={m.value} value={m.value}>{m.label}</option>
@@ -854,7 +900,7 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                     </div>
                 )}
             </div>
-
+       
             <div className="overflow-x-auto">
                 {loading ? (
                     <div className="p-12 flex justify-center">
@@ -872,131 +918,98 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                             <p className="text-sm">Comienza agregando tu primer movimiento.</p>
                         </div>
                     ) : (
-                        <table className="w-full text-left border-collapse animate-fade-in delay-100">
-                            <thead>
-                                <tr className="bg-primary/5 text-primary-dark text-xs uppercase tracking-wider">
-                                    <th className="p-4 border-b border-light-beige font-bold whitespace-nowrap">No.</th>
-                                    <th className="p-4 border-b border-light-beige font-bold whitespace-nowrap">Concepto</th>
-                                    <th className="p-4 border-b border-light-beige font-bold whitespace-nowrap">Fecha</th>
-                                    <th className="p-4 border-b border-light-beige font-bold whitespace-nowrap">Forma de pago</th>
-                                    <th className="p-4 border-b border-light-beige font-bold whitespace-nowrap">Proveedor</th>
-                                    <th className="p-4 border-b border-light-beige font-bold text-right whitespace-nowrap">Ingreso</th>
-                                    <th className="p-4 border-b border-light-beige font-bold text-right whitespace-nowrap">Gasto</th>
-                                    <th className="p-4 border-b border-light-beige font-bold text-right whitespace-nowrap">Saldo</th>
-                                    <th className="p-4 border-b border-light-beige font-bold max-w-xs">Descripción</th>
-                                    <th className="p-4 border-b border-light-beige font-bold text-center">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-light-beige/50">
-                                {displayRecords.map((record, index) => {
-                                    const isInitialBalance = record.concept.toUpperCase() === 'SALDO INICIAL';
-                                    return (
-                                        <tr key={record.id} className={`hover:bg-[#faf7f2]/50 transition-colors text-sm text-neutral-700 ${isInitialBalance ? 'bg-amber-50/10 opacity-75' : ''}`}>
-                                            <td className="p-4 whitespace-nowrap text-neutral-400 font-medium">{index + 1}</td>
-                                            <td className="p-4 whitespace-nowrap font-medium text-primary-dark">
-                                                {record.concept}
-                                                {isInitialBalance && <span className="ml-2 text-[9px] bg-primary/10 text-primary-dark px-1 py-0.5 rounded uppercase tracking-wider">Ajuste</span>}
-                                            </td>
-                                            <td className="p-4 whitespace-nowrap">
-                                                {record.date.split('-').reverse().join('/')}
-                                            </td>
-                                            <td className="p-4 whitespace-nowrap">
-                                                <span className="bg-neutral-100 px-2 py-1 rounded text-xs">{record.payment_method}</span>
-                                            </td>
-                                            <td className="p-4 whitespace-nowrap">{record.provider}</td>
-                                            <td className="p-4 text-right whitespace-nowrap text-green-600 font-medium">
-                                                {isInitialBalance ? '-' : (Number(record.income) !== 0 ? `$${Number(record.income).toFixed(2)}` : '-')}
-                                            </td>
-                                            <td className="p-4 text-right whitespace-nowrap text-red-600 font-medium">
-                                                {isInitialBalance ? '-' : (Number(record.expense) !== 0 ? `$${Number(record.expense).toFixed(2)}` : '-')}
-                                            </td>
-                                            <td className={`p-4 text-right whitespace-nowrap font-bold ${Number(record.balance) < 0 ? 'text-red-600' : 'text-primary-dark'}`}>
-                                                ${Number(record.balance).toFixed(2)}
-                                            </td>
-                                            <td className="p-4 break-words min-w-[200px] text-xs leading-relaxed text-neutral-500">
-                                                {record.description}
-                                            </td>
-                                            <td className="p-4 text-center">
-                                                <div className="flex justify-center gap-2">
-                                                    <button 
-                                                        type="button"
-                                                        onClick={() => handleEditClick(record)}
-                                                        className="px-3 py-1.5 flex items-center gap-1.5 text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors text-xs font-bold shadow-sm"
-                                                        title="Editar"
-                                                    >
-                                                        <Edit2 size={14} /> Editar
-                                                    </button>
-                                                    <button 
-                                                        type="button"
-                                                        onClick={() => handleDelete(record.id)}
-                                                        className="px-3 py-1.5 flex items-center gap-1.5 text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors text-xs font-bold shadow-sm"
-                                                        title="Eliminar"
-                                                    >
-                                                        <Trash2 size={14} /> Eliminar
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                            <tfoot className="bg-neutral-50/50">
-                                <tr>
-                                    <td colSpan={5} className="p-4 text-right font-bold text-primary-dark text-sm uppercase">Total Mostrado <span className="text-[10px] text-neutral-400 block normal-case">(Excluye Saldos Iniciales)</span></td>
-                                    <td className="p-4 text-right font-bold text-green-600">
-                                        ${displayRecords.filter(r => r.concept.toUpperCase() !== 'SALDO INICIAL').reduce((acc, curr) => acc + Number(curr.income), 0).toFixed(2)}
-                                    </td>
-                                    <td className="p-4 text-right font-bold text-red-600">
-                                        ${displayRecords.filter(r => r.concept.toUpperCase() !== 'SALDO INICIAL').reduce((acc, curr) => acc + Number(curr.expense), 0).toFixed(2)}
-                                    </td>
-                                    <td colSpan={3}></td>
-                                </tr>
-                            </tfoot>
-                        </table>
+                        <div className="bg-white/70 backdrop-blur-sm rounded-[32px] border border-white shadow-sm overflow-hidden">
+                            <table className="w-full text-left border-collapse animate-fade-in delay-100">
+                                <thead>
+                                    <tr className="bg-primary-dark/5 text-primary-dark text-[10px] font-black uppercase tracking-[0.2em] border-b border-light-beige">
+                                        <th className="p-5 whitespace-nowrap">ID</th>
+                                        <th className="p-5 whitespace-nowrap">Concepto</th>
+                                        <th className="p-5 whitespace-nowrap">Fecha</th>
+                                        <th className="p-5 whitespace-nowrap">Pago</th>
+                                        <th className="p-5 whitespace-nowrap">Proveedor</th>
+                                        <th className="p-5 text-right whitespace-nowrap">Ingreso</th>
+                                        <th className="p-5 text-right whitespace-nowrap">Gasto</th>
+                                        <th className="p-5 text-right whitespace-nowrap font-black">Saldo</th>
+                                        <th className="p-5 whitespace-nowrap max-w-xs">Descripción</th>
+                                        <th className="p-5 text-center whitespace-nowrap">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-neutral-100/50">
+                                    {displayRecords.map((record, index) => {
+                                        const isInitialBalance = record.concept.toUpperCase() === 'SALDO INICIAL';
+                                        return (
+                                            <tr key={record.id} className={`hover:bg-white transition-colors group ${isInitialBalance ? 'bg-amber-50/20' : ''}`}>
+                                                <td className="p-4 px-5 whitespace-nowrap text-neutral-400 font-bold text-[10px]">{index + 1}</td>
+                                                <td className="p-4 px-5 whitespace-nowrap">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-black text-xs text-primary-dark uppercase tracking-wider">{record.concept}</span>
+                                                        {isInitialBalance && <span className="text-[8px] bg-accent/20 text-accent-dark px-1.5 py-0.5 rounded-full font-black uppercase tracking-widest">Ajuste</span>}
+                                                    </div>
+                                                </td>
+                                                <td className="p-4 px-5 whitespace-nowrap text-xs text-neutral-500 font-medium">
+                                                    {record.date.split('-').reverse().join('/')}
+                                                </td>
+                                                <td className="p-4 px-5 whitespace-nowrap">
+                                                    <span className="bg-neutral-100 text-neutral-600 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter">{record.payment_method}</span>
+                                                </td>
+                                                <td className="p-4 px-5 whitespace-nowrap text-xs font-medium text-neutral-600">{record.provider}</td>
+                                                <td className="p-4 px-5 text-right whitespace-nowrap text-green-600 font-bold text-sm">
+                                                    {isInitialBalance ? '-' : (Number(record.income) !== 0 ? `$${Number(record.income).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-')}
+                                                </td>
+                                                <td className="p-4 px-5 text-right whitespace-nowrap text-red-500 font-bold text-sm">
+                                                    {isInitialBalance ? '-' : (Number(record.expense) !== 0 ? `$${Number(record.expense).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-')}
+                                                </td>
+                                                <td className={`p-4 px-5 text-right whitespace-nowrap font-black text-sm ${Number(record.balance) < 0 ? 'text-red-500' : 'text-primary-dark'}`}>
+                                                    ${Number(record.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                                </td>
+                                                <td className="p-4 px-5 text-xs text-neutral-400 max-w-xs truncate italic">{record.description}</td>
+                                                <td className="p-4 px-5">
+                                                    <div className="flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button 
+                                                            onClick={() => handleEditClick(record)}
+                                                            className="p-1.5 hover:bg-primary/10 rounded-lg text-primary-dark transition-colors"
+                                                            title="Editar"
+                                                        >
+                                                            <Edit2 size={14} />
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => handleDelete(record.id)}
+                                                            className="p-1.5 hover:bg-red-50 rounded-lg text-red-400 transition-colors"
+                                                            title="Eliminar"
+                                                        >
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
                     )
                 ) : viewMode === 'summary' ? (
                     <div className="p-8 max-w-7xl mx-auto animate-fade-in delay-100">
                         {selectedMonth && (
-                            <h3 className="text-2xl font-bold font-heading text-center text-primary-dark mb-10 capitalize decoration-accent underline underline-offset-8">
-                                {uniqueMonths.find(m => m.value === selectedMonth)?.label}
+                            <h3 className="text-2xl font-black font-heading text-center text-primary-dark mb-10 capitalize flex items-center justify-center gap-4">
+                                <div className="h-px bg-neutral-200 flex-1"></div>
+                                <span className="bg-white px-6 py-2 rounded-2xl border border-neutral-100 shadow-sm">
+                                    {uniqueMonths.find(m => m.value === selectedMonth)?.label}
+                                </span>
+                                <div className="h-px bg-neutral-200 flex-1"></div>
                             </h3>
                         )}
 
                         {summaryData.length > 0 ? (
                             <>
-                                {/* Tarjetas de Resumen Rápido (KPIs) */}
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                                    <div className="bg-white p-6 rounded-3xl border border-light-beige shadow-sm flex flex-col justify-center relative overflow-hidden group hover:shadow-md transition-shadow">
-                                        <div className="absolute top-1/2 -translate-y-1/2 right-4 opacity-10 text-green-500 group-hover:scale-110 transition-transform"><TrendingUp size={64} /></div>
-                                        <p className="text-neutral-500 font-bold uppercase tracking-wider text-xs mb-2 z-10">Ingresos Totales</p>
-                                        <p className="text-3xl font-heading font-extrabold text-green-600 z-10">
-                                            <span className="text-xl font-normal opacity-70 mr-1">$</span>
-                                            {summaryData.reduce((acc, row) => acc + row.income, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                        </p>
-                                    </div>
-                                    <div className="bg-white p-6 rounded-3xl border border-light-beige shadow-sm flex flex-col justify-center relative overflow-hidden group hover:shadow-md transition-shadow">
-                                        <div className="absolute top-1/2 -translate-y-1/2 right-4 opacity-5 text-red-500 group-hover:scale-110 transition-transform"><TrendingDown size={64} /></div>
-                                        <p className="text-neutral-500 font-bold uppercase tracking-wider text-xs mb-2 z-10">Gastos Totales</p>
-                                        <p className="text-3xl font-heading font-extrabold text-red-500 z-10">
-                                            <span className="text-xl font-normal opacity-70 mr-1">$</span>
-                                            {summaryData.reduce((acc, row) => acc + row.expense, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                        </p>
-                                    </div>
-                                    <div className="bg-gradient-to-br from-primary-dark to-[#3d686d] p-6 rounded-3xl shadow-md flex flex-col justify-center relative overflow-hidden group hover:shadow-lg transition-shadow">
-                                        <div className="absolute -right-4 -bottom-4 opacity-10 text-white group-hover:rotate-12 transition-transform"><DollarSign size={96} /></div>
-                                        <p className="text-white/70 font-bold uppercase tracking-wider text-xs mb-2 z-10">Balance Neto</p>
-                                        <p className="text-3xl font-heading font-extrabold text-white z-10">
-                                            <span className="text-xl font-normal opacity-50 mr-1">$</span>
-                                            {(summaryData.reduce((acc, row) => acc + row.income, 0) - summaryData.reduce((acc, row) => acc + row.expense, 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                        </p>
-                                    </div>
-                                </div>
-
                                 {/* Gráficas Primera Fila */}
-                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                                     {/* Ingresos - Pastel Pequeño */}
-                                    <div className="bg-white p-6 rounded-3xl border border-light-beige shadow-sm">
-                                        <h4 className="text-xl font-bold font-heading text-center text-primary-dark mb-6">Ingresos</h4>
+                                    <div className="bg-white/70 backdrop-blur-sm p-8 rounded-[32px] border border-white shadow-sm hover:shadow-md transition-all">
+                                        <h4 className="text-sm font-black uppercase tracking-widest text-primary-dark mb-8 flex items-center gap-2">
+                                            <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]"></div>
+                                            Distribución de Ingresos
+                                        </h4>
                                         <div className="h-64">
                                             {summaryData.filter(d => d.income > 0).length > 0 ? (
                                                 <ResponsiveContainer width="100%" height="100%">
@@ -1006,399 +1019,363 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                                                             dataKey="income" 
                                                             nameKey="concept" 
                                                             cx="50%" cy="50%" 
-                                                            innerRadius={50} outerRadius={90} 
-                                                            paddingAngle={2}
+                                                            innerRadius={60} outerRadius={80} 
+                                                            paddingAngle={5}
                                                         >
                                                             {summaryData.filter(d => d.income > 0).sort((a,b) => b.income - a.income).map((_, index) => (
                                                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                                             ))}
                                                         </Pie>
                                                         <Tooltip formatter={(value) => `$${Number(value).toLocaleString('en-US', { minimumFractionDigits: 2 })}`} />
-                                                        <Legend />
                                                     </PieChart>
                                                 </ResponsiveContainer>
                                             ) : (
-                                                <div className="h-full flex items-center justify-center text-neutral-400 text-sm">Sin ingresos</div>
+                                                <div className="h-full flex items-center justify-center text-neutral-400 text-sm italic">Sin ingresos</div>
                                             )}
                                         </div>
                                     </div>
-                                    
-                                    {/* Gastos - Barras */}
-                                    <div className="bg-white p-6 rounded-3xl border border-light-beige shadow-sm lg:col-span-2">
-                                        <h4 className="text-xl font-bold font-heading text-center text-primary-dark mb-6">Gastos por Concepto</h4>
-                                        <div className="h-[280px]">
+
+                                    {/* Gastos - Dona Grande */}
+                                    <div className="lg:col-span-2 bg-white/70 backdrop-blur-sm p-8 rounded-[32px] border border-white shadow-sm hover:shadow-md transition-all relative">
+                                        <h4 className="text-sm font-black uppercase tracking-widest text-primary-dark mb-8 flex items-center gap-2">
+                                            <div className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]"></div>
+                                            Análisis de Gastos por Categoría
+                                        </h4>
+                                        <div className="h-[400px]">
                                             {summaryData.filter(d => d.expense > 0).length > 0 ? (
                                                 <ResponsiveContainer width="100%" height="100%">
-                                                    <BarChart data={summaryData.filter(d => d.expense > 0).sort((a,b) => b.expense - a.expense)} margin={{ top: 10, right: 30, left: 10, bottom: 65 }}>
-                                                        <defs>
-                                                            <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
-                                                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={1}/>
-                                                                <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.8}/>
-                                                            </linearGradient>
-                                                        </defs>
-                                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                                                        <XAxis dataKey="concept" angle={-45} textAnchor="end" height={60} tick={{fontSize: 9, fill: '#6B7280', fontWeight: 'bold'}} interval={0} />
-                                                        <YAxis tickFormatter={(val) => `$${val}`} tick={{fontSize: 11, fill: '#6B7280'}} width={80} />
-                                                        <Tooltip 
-                                                            formatter={(value) => `$${Number(value).toLocaleString('en-US', { minimumFractionDigits: 2 })}`} 
-                                                            cursor={{fill: '#f3f4f6'}}
-                                                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                                        />
-                                                        <Bar dataKey="expense" radius={[6, 6, 0, 0]} fill="url(#colorExpense)">
-                                                        </Bar>
-                                                    </BarChart>
+                                                    <PieChart>
+                                                        <Pie 
+                                                            data={summaryData.filter(d => d.expense > 0).sort((a,b) => b.expense - a.expense)} 
+                                                            dataKey="expense" 
+                                                            nameKey="concept" 
+                                                            cx="50%" cy="50%" 
+                                                            innerRadius={110} outerRadius={170} 
+                                                            paddingAngle={1}
+                                                            label={({ name, percent }: any) => `${name} ${(percent * 100).toFixed(1)}%`}
+                                                            labelLine={{stroke: '#9ca3af', strokeWidth: 1}}
+                                                        >
+                                                            {summaryData.filter(d => d.expense > 0).sort((a,b) => b.expense - a.expense).map((_, index) => (
+                                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                            ))}
+                                                        </Pie>
+                                                        <Tooltip formatter={(value) => `$${Number(value).toLocaleString('en-US', { minimumFractionDigits: 2 })}`} />
+                                                    </PieChart>
                                                 </ResponsiveContainer>
                                             ) : (
-                                                <div className="h-full flex items-center justify-center text-neutral-400 text-sm">Sin gastos</div>
+                                                <div className="h-full flex items-center justify-center text-neutral-400 text-sm italic">Sin gastos</div>
                                             )}
+                                        </div>
+                                        
+                                        {/* Centro decorativo de la dona */}
+                                        <div className="absolute top-[60%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center text-center -mt-4 pointer-events-none">
+                                            <span className="text-neutral-400 text-[10px] uppercase tracking-widest font-black">Total Gastos</span>
+                                            <span className="text-4xl font-heading font-black text-red-500 mt-2">
+                                                ${summaryData.reduce((a, b) => a + b.expense, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
-                                
-                                {/* Gastos - Dona Gigante */}
-                                <div className="bg-white p-8 rounded-3xl border border-light-beige shadow-sm mb-12 relative overflow-hidden">
-                                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-accent to-accent-light"></div>
-                                    <h4 className="text-3xl font-bold font-heading text-center text-primary-dark mt-4 mb-1">Gastos</h4>
-                                    <p className="text-center text-neutral-500 text-sm mb-8 font-medium">Distribución porcentual de los gastos en el mes</p>
-                                    
-                                    <div className="h-[450px]">
-                                        {summaryData.filter(d => d.expense > 0).length > 0 ? (
-                                            <ResponsiveContainer width="100%" height="100%">
-                                                <PieChart>
-                                                    <Pie 
-                                                        data={summaryData.filter(d => d.expense > 0).sort((a,b) => b.expense - a.expense)} 
-                                                        dataKey="expense" 
-                                                        nameKey="concept" 
-                                                        cx="50%" cy="50%" 
-                                                        innerRadius={110} outerRadius={170} 
-                                                        paddingAngle={1}
-                                                        label={({ name, percent }: any) => `${name} ${(percent * 100).toFixed(1)}%`}
-                                                        labelLine={{stroke: '#9ca3af', strokeWidth: 1}}
-                                                    >
-                                                        {summaryData.filter(d => d.expense > 0).sort((a,b) => b.expense - a.expense).map((_, index) => (
-                                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                                        ))}
-                                                    </Pie>
-                                                    <Tooltip formatter={(value) => `$${Number(value).toLocaleString('en-US', { minimumFractionDigits: 2 })}`} />
-                                                </PieChart>
-                                            </ResponsiveContainer>
-                                        ) : (
-                                            <div className="h-full flex items-center justify-center text-neutral-400 text-sm">Sin gastos registrados</div>
-                                        )}
-                                    </div>
-                                    
-                                    {/* Centro decorativo de la dona */}
-                                    <div className="absolute top-[60%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center text-center -mt-4 pointer-events-none">
-                                        <span className="text-neutral-400 text-sm uppercase tracking-widest font-bold">Total Gastos</span>
-                                        <span className="text-3xl font-heading font-extrabold text-[#ef4444] mt-1">
-                                            ${summaryData.reduce((a, b) => a + b.expense, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                        </span>
-                                    </div>
+
+                                {/* Tabla de Resumen por Concepto */}
+                                <div className="mt-12 overflow-hidden rounded-[32px] border border-neutral-200 shadow-sm bg-white/50 backdrop-blur-sm">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr className="bg-primary-dark text-white text-[10px] uppercase tracking-[0.2em] font-black">
+                                                <th className="p-5 border-r border-white/10">Concepto</th>
+                                                <th className="p-5 border-r border-white/10 text-right w-48 font-bold">Total Ingreso</th>
+                                                <th className="p-5 text-right w-48 font-bold">Total Gasto</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-neutral-100">
+                                            {summaryData.map((row) => (
+                                                <tr key={row.concept} className="hover:bg-white transition-colors">
+                                                    <td className="p-4 px-6 font-black text-xs text-primary-dark uppercase tracking-wider">{row.concept}</td>
+                                                    <td className="p-4 px-6 text-right font-bold text-sm text-green-600">
+                                                        {row.income > 0 ? `$${row.income.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-'}
+                                                    </td>
+                                                    <td className="p-4 px-6 text-right font-bold text-sm text-red-500">
+                                                        {row.expense > 0 ? `$${row.expense.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-'}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                        <tfoot className="bg-primary-dark/5 font-black border-t-2 border-primary-dark/10">
+                                            <tr>
+                                                <td className="p-5 px-6 text-[10px] uppercase tracking-widest text-primary-dark opacity-50">Totales del Periodo</td>
+                                                <td className="p-5 px-6 text-right text-green-600 border-r border-primary-dark/10">
+                                                    ${summaryData.reduce((acc, row) => acc + row.income, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                                </td>
+                                                <td className="p-5 px-6 text-right text-red-500">
+                                                    ${summaryData.reduce((acc, row) => acc + row.expense, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                                </td>
+                                            </tr>
+                                            <tr className="bg-primary-dark text-white">
+                                                <td colSpan={2} className="p-4 px-6 text-xs uppercase tracking-[0.15em]">Balance Neto del Mes</td>
+                                                <td className="p-4 px-6 text-right font-black text-lg">
+                                                    ${(summaryData.reduce((acc, row) => acc + row.income, 0) - summaryData.reduce((acc, row) => acc + row.expense, 0)).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                                </td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
                                 </div>
                             </>
                         ) : (
-                            <div className="p-12 text-center text-neutral-400">
-                                <div className="flex justify-center mb-4">
-                                    <div className="w-16 h-16 bg-primary/5 rounded-full flex items-center justify-center text-primary/30">
-                                        <Search size={24} />
-                                    </div>
+                            <div className="p-16 text-center bg-white/40 backdrop-blur-sm rounded-[32px] border border-white/20">
+                                <div className="w-20 h-20 bg-primary/5 rounded-full flex items-center justify-center text-primary/30 mx-auto mb-6">
+                                    <Search size={32} />
                                 </div>
-                                <p className="font-bold text-primary-dark mb-1">Sin movimientos en este mes</p>
-                                <p className="text-sm">No hay registros de ingresos o gastos para el periodo seleccionado.</p>
-                            </div>
-                        )}
-                        
-                        {/* Tabla de Resumen por Concepto */}
-                        {summaryData.length > 0 && (
-                            <div className="border-t-[3px] border-b-[3px] border-[#4a7c82] overflow-hidden rounded-md shadow-sm mb-12">
-                                <table className="w-full text-left">
-                                    <thead>
-                                        <tr className="bg-[#4a7c82] text-white">
-                                            <th className="p-3 font-extrabold tracking-wider border-r border-[#3d686d] text-sm">Concepto</th>
-                                            <th className="p-3 font-extrabold tracking-wider border-r border-[#3d686d] text-sm text-right w-32">SUM de Ingreso</th>
-                                            <th className="p-3 font-extrabold tracking-wider text-sm text-right w-32">SUM de Gasto</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white">
-                                        {summaryData.map((row) => (
-                                            <tr key={row.concept} className="hover:bg-neutral-50 font-bold border-b border-neutral-200">
-                                                <td className="py-1 px-3 border-r border-neutral-200 text-sm text-neutral-700 uppercase">{row.concept}</td>
-                                                <td className="py-1 px-3 border-r border-neutral-200 text-sm text-right text-gray-800">
-                                                    <div className="flex justify-between">
-                                                        <span className="text-neutral-400 font-normal">$</span>
-                                                        <span>{row.income > 0 ? row.income.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="py-1 px-3 text-sm text-right text-gray-800">
-                                                    <div className="flex justify-between">
-                                                        <span className="text-neutral-400 font-normal">$</span>
-                                                        <span>{row.expense > 0 ? row.expense.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</span>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                    <tfoot>
-                                        <tr className="bg-[#e2e8f0] border-t-[3px] border-double border-neutral-800 font-extrabold">
-                                            <td className="p-3 border-r border-neutral-300 text-sm uppercase">Suma total</td>
-                                            <td className="p-3 border-r border-neutral-300 text-sm text-right text-gray-900">
-                                                <div className="flex justify-between">
-                                                    <span className="text-neutral-500 font-normal">$</span>
-                                                    <span>{summaryData.reduce((acc, row) => acc + row.income, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                                </div>
-                                            </td>
-                                            <td className="p-3 text-sm text-right text-gray-900">
-                                                <div className="flex justify-between">
-                                                    <span className="text-neutral-500 font-normal">$</span>
-                                                    <span>{summaryData.reduce((acc, row) => acc + row.expense, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr className="bg-white">
-                                            <td className="p-2 border-r border-neutral-200"></td>
-                                            <td className="p-2 border-r border-neutral-200"></td>
-                                            <td className="p-2 text-sm text-right font-extrabold text-neutral-800 flex justify-between">
-                                                <span className="text-neutral-500 font-normal">$</span>
-                                                <span>
-                                                    {(summaryData.reduce((acc, row) => acc + row.income, 0) - summaryData.reduce((acc, row) => acc + row.expense, 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
+                                <p className="font-heading font-black text-primary-dark text-xl mb-2">Sin movimientos en este periodo</p>
+                                <p className="text-neutral-500 max-w-sm mx-auto">No hay registros de ingresos o gastos para el mes seleccionado. Comienza agregando uno nuevo.</p>
                             </div>
                         )}
                     </div>
                 ) : viewMode === 'budget' ? (
                     <div className="p-8 max-w-7xl mx-auto animate-fade-in delay-100">
-                        <div className="flex justify-between items-center mb-8">
-                            <h3 className="text-2xl font-bold font-heading text-primary-dark uppercase tracking-wider">
-                                Control de Presupuesto
-                            </h3>
+                        <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-10">
+                            <div>
+                                <h3 className="text-3xl font-black font-heading text-primary-dark uppercase tracking-tighter">
+                                    Control de Presupuesto
+                                </h3>
+                                <p className="text-neutral-500 text-xs mt-1 font-medium tracking-wide">Planeación vs Gasto Real del periodo seleccionado.</p>
+                            </div>
                             <Button 
                                 outline={!isEditingBudget}
                                 primary={isEditingBudget}
-                                className="text-sm py-2 px-6 flex items-center gap-2"
+                                className={`text-[10px] font-black uppercase tracking-widest py-3 px-8 shadow-xl transition-all ${isEditingBudget ? 'scale-105' : 'hover:scale-105'}`}
                                 onClick={() => setIsEditingBudget(!isEditingBudget)}
                             >
-                                {isEditingBudget ? 'Finalizar Edición' : 'Editar Presupuestos'}
+                                {isEditingBudget ? 'Finalizar Edición' : 'Personalizar Presupuesto'}
                             </Button>
                         </div>
 
                         {isEditingBudget && (
-                            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl text-blue-800 text-sm flex gap-3">
-                                <TrendingUp className="text-blue-500 shrink-0" size={20} />
-                                <p>Modifica los valores en la columna <strong>Presupuesto Objetivo</strong>. Los cambios se guardan automáticamente al terminar de escribir.</p>
+                            <div className="mb-8 p-6 bg-primary-dark rounded-[24px] text-white shadow-xl flex gap-4 items-start animate-slide-in relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-accent/20 rounded-full -mr-16 -mt-16 blur-3xl"></div>
+                                <div className="bg-white/10 p-2 rounded-xl">
+                                    <TrendingUp className="text-accent" size={20} />
+                                </div>
+                                <div className="relative z-10">
+                                    <p className="font-black text-[10px] uppercase tracking-widest mb-1 opacity-60">Modo Edición Activo</p>
+                                    <p className="text-sm font-medium leading-relaxed">Modifica los montos en la columna <strong className="text-accent">Presupuesto Objetivo</strong>. Los valores se sincronizarán al cambiar de campo.</p>
+                                </div>
                             </div>
                         )}
 
-                        <div className="border border-neutral-200 overflow-hidden rounded-2xl shadow-sm bg-white">
-                            <table className="w-full text-left">
+                        <div className="bg-white/70 backdrop-blur-sm overflow-hidden rounded-[32px] border border-white shadow-sm">
+                            <table className="w-full text-left border-collapse">
                                 <thead>
-                                    <tr className="bg-neutral-800 text-white">
-                                        <th className="p-4 font-bold tracking-wider text-xs uppercase border-r border-neutral-700">Concepto</th>
-                                        <th className="p-4 font-bold tracking-wider text-xs uppercase border-r border-neutral-700 text-right w-48">Presupuesto Objetivo</th>
-                                        <th className="p-4 font-bold tracking-wider text-xs uppercase border-r border-neutral-700 text-right w-48">Gasto Real ({uniqueMonths.find(m => m.value === selectedMonth)?.label || 'Mes'})</th>
-                                        <th className="p-4 font-bold tracking-wider text-xs uppercase text-right w-48">Diferencia</th>
+                                    <tr className="bg-primary-dark/5 text-primary-dark text-[10px] font-black uppercase tracking-[0.2em] border-b border-light-beige">
+                                        <th className="p-5 border-r border-light-beige/30">Concepto</th>
+                                        <th className="p-5 border-r border-light-beige/30 text-right w-48">Presupuesto</th>
+                                        <th className="p-5 border-r border-light-beige/30 text-right w-64">Gasto Real</th>
+                                        <th className="p-5 text-right w-40">Estado</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-neutral-100">
-                                    {budgetData.length > 0 ? budgetData.map((row) => (
-                                        <tr key={row.concept} className="hover:bg-neutral-50 transition-colors">
-                                            <td className="p-4 font-bold text-sm text-neutral-700 uppercase">{row.concept}</td>
-                                            <td className="p-4 border-l border-neutral-100 bg-neutral-50/30">
-                                                {isEditingBudget ? (
-                                                    <div className="flex items-center gap-1 bg-white border border-neutral-300 rounded-lg px-2 py-1 shadow-sm focus-within:border-accent transition-all">
-                                                        <span className="text-neutral-400 text-xs">$</span>
-                                                        <input 
-                                                            type="number"
-                                                            defaultValue={row.avgBudget}
-                                                            onBlur={(e) => handleSaveBudget(row.concept, Number(e.target.value))}
-                                                            className="w-full text-right outline-none text-sm font-bold text-primary-dark"
-                                                        />
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex justify-between text-sm font-bold text-gray-600">
-                                                        <span className="text-neutral-400 font-normal">$</span>
-                                                        <span>{row.avgBudget.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                                    </div>
-                                                )}
-                                            </td>
-                                            <td className="p-4 text-right border-l border-neutral-100">
-                                                <div className="flex justify-between text-sm font-bold text-red-600">
-                                                    <span className="text-neutral-400 font-normal">$</span>
-                                                    <span>{row.currentExpense.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                                </div>
-                                            </td>
-                                            <td className={`p-4 text-right border-l border-neutral-100 font-black text-sm ${row.difference >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                <div className="flex justify-between">
-                                                    <span className="text-neutral-400 font-normal">$</span>
-                                                    <span>{row.difference.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )) : (
+                                <tbody className="divide-y divide-neutral-100/50">
+                                    {budgetData.length > 0 ? (
+                                        budgetData.map((row) => {
+                                            const percentSpent = row.avgBudget > 0 ? (row.currentExpense / row.avgBudget) * 100 : 0;
+                                            const isOverBudget = percentSpent > 100;
+                                            const progressColor = percentSpent > 100 ? 'bg-red-500' : percentSpent > 85 ? 'bg-amber-500' : 'bg-green-500';
+                                            
+                                            return (
+                                                <tr key={row.concept} className="hover:bg-white transition-colors group">
+                                                    <td className="p-5 font-black text-xs text-primary-dark uppercase tracking-wider">{row.concept}</td>
+                                                    <td className="p-5 border-l border-neutral-100/50 bg-neutral-50/20 text-right">
+                                                        {isEditingBudget ? (
+                                                            <div className="flex items-center gap-2 bg-white border border-neutral-200 rounded-xl px-4 py-1.5 shadow-sm focus-within:border-accent transition-all group-hover:border-accent/40">
+                                                                <span className="text-accent font-black">$</span>
+                                                                <input 
+                                                                    type="number" 
+                                                                    className="w-full bg-transparent outline-none text-right font-black text-sm text-primary-dark"
+                                                                    defaultValue={row.avgBudget}
+                                                                    onBlur={(e) => handleSaveBudget(row.concept, parseFloat(e.target.value) || 0)}
+                                                                />
+                                                            </div>
+                                                        ) : (
+                                                            <span className="font-black text-sm text-primary-dark">
+                                                                ${row.avgBudget.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                    <td className="p-5 border-l border-neutral-100/50">
+                                                        <div className="space-y-2">
+                                                            <div className="flex justify-between items-center px-1">
+                                                                <span className="text-[10px] font-black text-neutral-400">{percentSpent.toFixed(0)}% Utilizado</span>
+                                                                <span className="text-sm font-black text-primary-dark">${row.currentExpense.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                                                            </div>
+                                                            <div className="w-full h-2 bg-neutral-100 rounded-full overflow-hidden">
+                                                                <div 
+                                                                    className={`h-full transition-all duration-700 ease-out rounded-full ${progressColor}`}
+                                                                    style={{ width: `${Math.min(percentSpent, 100)}%` }}
+                                                                ></div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-5 text-right font-bold">
+                                                        <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${isOverBudget ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-green-50 text-green-600 border border-green-100'}`}>
+                                                            {isOverBudget ? 'Excedido' : 'En Control'}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
+                                    ) : (
                                         <tr>
-                                            <td colSpan={4} className="py-12 text-center text-neutral-400 italic">No hay suficientes datos para mostrar el control de presupuesto.</td>
+                                            <td colSpan={4} className="p-16 text-center text-neutral-400 italic text-sm">
+                                                No hay suficientes datos para mostrar el presupuesto en este periodo.
+                                            </td>
                                         </tr>
                                     )}
                                 </tbody>
-                                <tfoot className="bg-neutral-50 font-extrabold border-t-2 border-neutral-200">
-                                    <tr>
-                                        <td className="p-4 text-xs uppercase text-right tracking-widest text-neutral-500">Totales Globales</td>
-                                        <td className="p-4 text-right text-gray-900 border-l border-neutral-200">
-                                            <div className="flex justify-between text-sm">
-                                                <span className="text-neutral-400 font-normal">$</span>
-                                                <span>{budgetData.reduce((acc, row) => acc + row.avgBudget, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                            </div>
-                                        </td>
-                                        <td className="p-4 text-right text-red-700 border-l border-neutral-200">
-                                            <div className="flex justify-between text-sm">
-                                                <span className="text-neutral-400 font-normal">$</span>
-                                                <span>{budgetData.reduce((acc, row) => acc + row.currentExpense, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                            </div>
-                                        </td>
-                                        <td className={`p-4 text-right border-l border-neutral-200 text-sm ${budgetData.reduce((acc, row) => acc + row.difference, 0) >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                                            <div className="flex justify-between">
-                                                <span className="text-neutral-400 font-normal">$</span>
-                                                <span>{budgetData.reduce((acc, row) => acc + row.difference, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tfoot>
                             </table>
                         </div>
                     </div>
                 ) : viewMode === 'balances' ? (
                     <div className="p-8 max-w-7xl mx-auto animate-fade-in delay-100">
                         {selectedMonth && (
-                            <h3 className="text-2xl font-bold font-heading text-center text-primary-dark mb-10 capitalize decoration-accent underline underline-offset-8">
-                                {uniqueMonths.find(m => m.value === selectedMonth)?.label}
+                            <h3 className="text-2xl font-black font-heading text-center text-primary-dark mb-10 capitalize flex items-center justify-center gap-4">
+                                <div className="h-px bg-neutral-200 flex-1"></div>
+                                <span className="bg-white px-6 py-2 rounded-2xl border border-neutral-100 shadow-sm">
+                                    {uniqueMonths.find(m => m.value === selectedMonth)?.label}
+                                </span>
+                                <div className="h-px bg-neutral-200 flex-1"></div>
                             </h3>
                         )}
-                        {/* Tabla Balance por Forma de Pago */}
-                        {viewMode === 'balances' && paymentBalancesData.length > 0 && (
-                            <div className="grid gap-6 lg:grid-cols-3 p-8">
-                                <div className="lg:col-span-2 bg-white overflow-hidden rounded-3xl border border-light-beige shadow-sm">
-                                    <h4 className="text-xl font-bold text-center text-primary-dark p-6 bg-neutral-50 border-b border-light-beige uppercase tracking-widest text-xs">
-                                        Estado Actual de Cuentas
-                                    </h4>
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-left">
-                                            <thead>
-                                                <tr className="bg-neutral-100 text-neutral-600 uppercase text-[10px] tracking-wider font-bold">
-                                                    <th className="p-4 border-b border-neutral-200">Forma de Pago</th>
-                                                    <th className="p-4 border-b border-neutral-200 text-right">Inicial</th>
-                                                    <th className="p-4 border-b border-neutral-200 text-right">Entradas</th>
-                                                    <th className="p-4 border-b border-neutral-200 text-right">Salidas</th>
-                                                    <th className="p-4 border-b border-neutral-200 text-right">Saldo Final</th>
+                        
+                        <div className="grid gap-8 lg:grid-cols-3">
+                            {/* Tabla Balance por Forma de Pago */}
+                            <div className="lg:col-span-2 bg-white/70 backdrop-blur-sm overflow-hidden rounded-[32px] border border-white shadow-sm">
+                                <h4 className="text-[10px] font-black text-center text-primary-dark p-6 bg-primary-dark/5 border-b border-light-beige uppercase tracking-[0.2em]">
+                                    Estado Actual de Cuentas
+                                </h4>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left">
+                                        <thead>
+                                            <tr className="border-b border-light-beige">
+                                                <th className="p-5 font-black text-[10px] uppercase tracking-widest text-neutral-400">Cuenta</th>
+                                                <th className="p-5 font-black text-[10px] uppercase tracking-widest text-neutral-400 text-right">Inicial</th>
+                                                <th className="p-5 font-black text-[10px] uppercase tracking-widest text-neutral-400 text-right">Entradas</th>
+                                                <th className="p-5 font-black text-[10px] uppercase tracking-widest text-neutral-400 text-right">Salidas</th>
+                                                <th className="p-5 font-black text-[10px] uppercase tracking-widest text-primary-dark text-right">Final</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-neutral-100/50">
+                                            {paymentBalancesData.map((row) => (
+                                                <tr key={row.method} className="hover:bg-white transition-colors group">
+                                                    <td className="p-5 font-black text-primary-dark text-xs uppercase tracking-wider">{row.method}</td>
+                                                    <td className="p-5 text-right text-sm text-neutral-400 font-medium">
+                                                        ${row.initialBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                                    </td>
+                                                    <td className="p-5 text-right text-sm text-green-600 font-bold">
+                                                        {row.income > 0 ? `$${row.income.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-'}
+                                                    </td>
+                                                    <td className="p-5 text-right text-sm text-red-500 font-bold">
+                                                        {row.expense > 0 ? `$${row.expense.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-'}
+                                                    </td>
+                                                    <td className={`p-5 text-right text-sm font-black ${row.finalBalance < 0 ? 'text-red-600' : 'text-primary-dark'}`}>
+                                                        ${row.finalBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                                    </td>
                                                 </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-neutral-100">
-                                                {paymentBalancesData.map((row) => (
-                                                    <tr key={row.method} className="hover:bg-neutral-50 transition-colors">
-                                                        <td className="p-4 font-bold text-primary-dark text-sm">{row.method}</td>
-                                                        <td className="p-4 text-right text-sm text-neutral-400">
-                                                            ${row.initialBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                        </td>
-                                                        <td className="p-4 text-right text-sm text-green-600 font-medium">
-                                                            {row.income > 0 ? `$${row.income.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
-                                                        </td>
-                                                        <td className="p-4 text-right text-sm text-red-600 font-medium">
-                                                            {row.expense > 0 ? `$${row.expense.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
-                                                        </td>
-                                                        <td className={`p-4 text-right text-sm font-bold ${row.finalBalance < 0 ? 'text-red-600' : 'text-primary-dark'}`}>
-                                                            ${row.finalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            {/* Gestión de Cuentas Paneles */}
+                            <div className="bg-primary-dark rounded-[32px] p-8 text-white shadow-xl relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 rounded-full -mr-16 -mt-16 blur-3xl transition-all group-hover:bg-accent/20"></div>
+                                
+                                <div className="flex bg-white/10 p-1.5 rounded-2xl mb-8 border border-white/5 relative z-10">
+                                    <button 
+                                        onClick={() => setAccMgmtTab('initial')}
+                                        className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${accMgmtTab === 'initial' ? 'bg-white text-primary-dark shadow-lg scale-[1.02]' : 'text-white/40 hover:text-white'}`}
+                                    >
+                                        Saldo Inicial
+                                    </button>
+                                    <button 
+                                        onClick={() => setAccMgmtTab('transfer')}
+                                        className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${accMgmtTab === 'transfer' ? 'bg-white text-primary-dark shadow-lg scale-[1.02]' : 'text-white/40 hover:text-white'}`}
+                                    >
+                                        Traspaso
+                                    </button>
                                 </div>
 
-                                {/* Gestión de Cuentas Paneles */}
-                                <div className="bg-primary-dark rounded-3xl p-6 text-white shadow-xl">
-                                    <div className="flex bg-white/10 p-1 rounded-xl mb-6">
-                                        <button 
-                                            onClick={() => setAccMgmtTab('initial')}
-                                            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${accMgmtTab === 'initial' ? 'bg-white text-primary-dark shadow-sm' : 'text-white/60 hover:text-white'}`}
-                                        >
-                                            Saldo Inicial
-                                        </button>
-                                        <button 
-                                            onClick={() => setAccMgmtTab('transfer')}
-                                            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${accMgmtTab === 'transfer' ? 'bg-white text-primary-dark shadow-sm' : 'text-white/60 hover:text-white'}`}
-                                        >
-                                            Traspaso
-                                        </button>
-                                    </div>
-
+                                <div className="relative z-10">
                                     {accMgmtTab === 'initial' ? (
                                         <div className="animate-fade-in">
-                                            <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
-                                                <DollarSign size={20} className="text-accent" />
+                                            <h3 className="text-xl font-heading font-black mb-2 flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-xl bg-accent/20 flex items-center justify-center">
+                                                    <DollarSign size={18} className="text-accent" />
+                                                </div>
                                                 Ajustar Saldo
                                             </h3>
-                                            <p className="text-white/50 text-xs mb-6 font-medium">Define el balance de partida para una cuenta específica.</p>
+                                            <p className="text-white/40 text-[10px] mb-8 font-black uppercase tracking-widest">Balance de partida por cuenta</p>
                                             
-                                            <form onSubmit={handleAddInitialBalance} className="space-y-4">
-                                                <div>
-                                                    <label className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1 block">Cuenta / Banco</label>
+                                            <form onSubmit={handleAddInitialBalance} className="space-y-6">
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 block ml-1">Cuenta / Banco</label>
                                                     <input 
                                                         list="payment-options"
                                                         required
                                                         value={initialBalancePM}
                                                         onChange={e => setInitialBalancePM(e.target.value)}
-                                                        placeholder="Selecciona cuenta..."
-                                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-accent placeholder:text-white/10 transition-all"
+                                                        placeholder="Selecciona..."
+                                                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-sm text-white outline-none focus:border-accent placeholder:text-white/20 transition-all font-medium"
                                                     />
                                                 </div>
-                                                <div>
-                                                    <label className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1 block">Monto Inicial ($)</label>
-                                                    <input 
-                                                        type="number"
-                                                        step="0.01"
-                                                        required
-                                                        value={initialBalanceAmount}
-                                                        onChange={e => setInitialBalanceAmount(e.target.value === '' ? '' : Number(e.target.value))}
-                                                        placeholder="0.00"
-                                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-accent placeholder:text-white/10 transition-all"
-                                                    />
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 block ml-1">Monto Inicial</label>
+                                                    <div className="relative group">
+                                                        <span className="absolute left-5 top-1/2 -translate-y-1/2 text-accent font-black">$</span>
+                                                        <input 
+                                                            type="number"
+                                                            step="0.01"
+                                                            required
+                                                            value={initialBalanceAmount}
+                                                            onChange={e => setInitialBalanceAmount(e.target.value === '' ? '' : Number(e.target.value))}
+                                                            placeholder="0.00"
+                                                            className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-5 py-3.5 text-sm font-black text-white outline-none focus:border-accent placeholder:text-white/20 transition-all"
+                                                        />
+                                                    </div>
                                                 </div>
-                                                <Button primary type="submit" className="w-full py-3 text-sm shadow-lg mt-2">
+                                                <Button primary type="submit" className="w-full py-4 text-xs font-black uppercase tracking-widest shadow-2xl mt-4 hover:scale-[1.02] active:scale-[0.98] transition-all">
                                                     Guardar Ajuste
                                                 </Button>
                                             </form>
                                         </div>
                                     ) : (
                                         <div className="animate-fade-in">
-                                            <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
-                                                <TrendingUp size={20} className="text-accent" />
+                                            <h3 className="text-xl font-heading font-black mb-2 flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-xl bg-accent/20 flex items-center justify-center">
+                                                    <TrendingUp size={18} className="text-accent" />
+                                                </div>
                                                 Nuevo Traspaso
                                             </h3>
-                                            <p className="text-white/50 text-xs mb-6 font-medium">Mueve fondos entre tus cuentas registradas.</p>
+                                            <p className="text-white/40 text-[10px] mb-8 font-black uppercase tracking-widest">Movimiento entre cuentas</p>
                                             
-                                            <form onSubmit={handleTransfer} className="space-y-3">
-                                                <div className="grid grid-cols-2 gap-3">
-                                                    <div>
-                                                        <label className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1 block">Origen</label>
-                                                        <input list="payment-options" required value={transferOrigin} onChange={e => setTransferOrigin(e.target.value)} placeholder="De..." className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-accent" />
+                                            <form onSubmit={handleTransfer} className="space-y-4">
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="space-y-2">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-white/30 block ml-1">Origen</label>
+                                                        <input list="payment-options" required value={transferOrigin} onChange={e => setTransferOrigin(e.target.value)} placeholder="De..." className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-xs text-white outline-none focus:border-accent font-medium" />
                                                     </div>
-                                                    <div>
-                                                        <label className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1 block">Destino</label>
-                                                        <input list="payment-options" required value={transferDest} onChange={e => setTransferDest(e.target.value)} placeholder="A..." className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-accent" />
+                                                    <div className="space-y-2">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-white/30 block ml-1">Destino</label>
+                                                        <input list="payment-options" required value={transferDest} onChange={e => setTransferDest(e.target.value)} placeholder="A..." className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-xs text-white outline-none focus:border-accent font-medium" />
                                                     </div>
                                                 </div>
-                                                <div>
-                                                    <label className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1 block">Monto ($)</label>
-                                                    <input type="number" step="0.01" required value={transferAmount} onChange={e => setTransferAmount(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0.00" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-accent" />
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black uppercase tracking-widest text-white/30 block ml-1">Monto ($)</label>
+                                                    <input type="number" step="0.01" required value={transferAmount} onChange={e => setTransferAmount(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0.00" className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 text-sm font-black text-white outline-none focus:border-accent" />
                                                 </div>
-                                                <div>
-                                                    <label className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1 block">Fecha</label>
-                                                    <input type="date" required value={transferDate} onChange={e => setTransferDate(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-accent" />
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black uppercase tracking-widest text-white/30 block ml-1">Fecha</label>
+                                                    <input type="date" required value={transferDate} onChange={e => setTransferDate(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white outline-none focus:border-accent" />
                                                 </div>
-                                                <Button primary type="submit" className="w-full py-3 text-sm shadow-lg mt-2 font-bold">
+                                                <Button primary type="submit" className="w-full py-4 text-xs font-black uppercase tracking-widest shadow-2xl mt-4 hover:scale-[1.02] active:scale-[0.98] transition-all">
                                                     Realizar Traspaso
                                                 </Button>
                                             </form>
@@ -1406,7 +1383,7 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                                     )}
                                 </div>
                             </div>
-                        )}
+                        </div>
                     </div>
                 ) : null}
             </div>
