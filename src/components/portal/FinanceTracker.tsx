@@ -118,6 +118,7 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
             const { data, error } = await supabase
                 .from('finance_records')
                 .select('*')
+                .eq('user_id', user.id)
                 .order('date', { ascending: true })
                 .order('created_at', { ascending: true });
 
@@ -285,7 +286,7 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                     .select();
 
                 if (error) throw error;
-                if (data) {
+                if (data && data.length > 0) {
                     loadRecords();
                     resetForm();
                     setIsFormOpen(false);
@@ -306,7 +307,7 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                     .select();
 
                 if (error) throw error;
-                if (data) {
+                if (data && data.length > 0) {
                     loadRecords();
                     resetForm();
                     setIsFormOpen(false);
