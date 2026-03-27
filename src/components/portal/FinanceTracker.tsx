@@ -860,98 +860,100 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                     <div className="p-12 flex justify-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-accent"></div>
                     </div>
-                ) : displayRecords.length === 0 ? (
-                    <div className="p-12 text-center text-neutral-400">
-                        <div className="flex justify-center mb-4">
-                            <div className="w-16 h-16 bg-primary/5 rounded-full flex items-center justify-center text-primary/30">
-                                <Search size={24} />
-                            </div>
-                        </div>
-                        <p className="font-bold text-primary-dark mb-1">Sin registros financieros</p>
-                        <p className="text-sm">Comienza agregando tu primer movimiento.</p>
-                    </div>
                 ) : viewMode === 'detailed' ? (
-                    <table className="w-full text-left border-collapse animate-fade-in delay-100">
-                        <thead>
-                            <tr className="bg-primary/5 text-primary-dark text-xs uppercase tracking-wider">
-                                <th className="p-4 border-b border-light-beige font-bold whitespace-nowrap">No.</th>
-                                <th className="p-4 border-b border-light-beige font-bold whitespace-nowrap">Concepto</th>
-                                <th className="p-4 border-b border-light-beige font-bold whitespace-nowrap">Fecha</th>
-                                <th className="p-4 border-b border-light-beige font-bold whitespace-nowrap">Forma de pago</th>
-                                <th className="p-4 border-b border-light-beige font-bold whitespace-nowrap">Proveedor</th>
-                                <th className="p-4 border-b border-light-beige font-bold text-right whitespace-nowrap">Ingreso</th>
-                                <th className="p-4 border-b border-light-beige font-bold text-right whitespace-nowrap">Gasto</th>
-                                <th className="p-4 border-b border-light-beige font-bold text-right whitespace-nowrap">Saldo</th>
-                                <th className="p-4 border-b border-light-beige font-bold max-w-xs">Descripción</th>
-                                <th className="p-4 border-b border-light-beige font-bold text-center">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-light-beige/50">
-                            {displayRecords.map((record, index) => {
-                                const isInitialBalance = record.concept.toUpperCase() === 'SALDO INICIAL';
-                                return (
-                                    <tr key={record.id} className={`hover:bg-[#faf7f2]/50 transition-colors text-sm text-neutral-700 ${isInitialBalance ? 'bg-amber-50/10 opacity-75' : ''}`}>
-                                        <td className="p-4 whitespace-nowrap text-neutral-400 font-medium">{index + 1}</td>
-                                        <td className="p-4 whitespace-nowrap font-medium text-primary-dark">
-                                            {record.concept}
-                                            {isInitialBalance && <span className="ml-2 text-[9px] bg-primary/10 text-primary-dark px-1 py-0.5 rounded uppercase tracking-wider">Ajuste</span>}
-                                        </td>
-                                        <td className="p-4 whitespace-nowrap">
-                                            {record.date.split('-').reverse().join('/')}
-                                        </td>
-                                        <td className="p-4 whitespace-nowrap">
-                                            <span className="bg-neutral-100 px-2 py-1 rounded text-xs">{record.payment_method}</span>
-                                        </td>
-                                        <td className="p-4 whitespace-nowrap">{record.provider}</td>
-                                        <td className="p-4 text-right whitespace-nowrap text-green-600 font-medium">
-                                            {isInitialBalance ? '-' : (Number(record.income) !== 0 ? `$${Number(record.income).toFixed(2)}` : '-')}
-                                        </td>
-                                        <td className="p-4 text-right whitespace-nowrap text-red-600 font-medium">
-                                            {isInitialBalance ? '-' : (Number(record.expense) !== 0 ? `$${Number(record.expense).toFixed(2)}` : '-')}
-                                        </td>
-                                        <td className={`p-4 text-right whitespace-nowrap font-bold ${Number(record.balance) < 0 ? 'text-red-600' : 'text-primary-dark'}`}>
-                                            ${Number(record.balance).toFixed(2)}
-                                        </td>
-                                        <td className="p-4 break-words min-w-[200px] text-xs leading-relaxed text-neutral-500">
-                                            {record.description}
-                                        </td>
-                                        <td className="p-4 text-center">
-                                            <div className="flex justify-center gap-2">
-                                                <button 
-                                                    type="button"
-                                                    onClick={() => handleEditClick(record)}
-                                                    className="px-3 py-1.5 flex items-center gap-1.5 text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors text-xs font-bold shadow-sm"
-                                                    title="Editar"
-                                                >
-                                                    <Edit2 size={14} /> Editar
-                                                </button>
-                                                <button 
-                                                    type="button"
-                                                    onClick={() => handleDelete(record.id)}
-                                                    className="px-3 py-1.5 flex items-center gap-1.5 text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors text-xs font-bold shadow-sm"
-                                                    title="Eliminar"
-                                                >
-                                                    <Trash2 size={14} /> Eliminar
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                        <tfoot className="bg-neutral-50/50">
-                            <tr>
-                                <td colSpan={5} className="p-4 text-right font-bold text-primary-dark text-sm uppercase">Total Mostrado <span className="text-[10px] text-neutral-400 block normal-case">(Excluye Saldos Iniciales)</span></td>
-                                <td className="p-4 text-right font-bold text-green-600">
-                                    ${displayRecords.filter(r => r.concept.toUpperCase() !== 'SALDO INICIAL').reduce((acc, curr) => acc + Number(curr.income), 0).toFixed(2)}
-                                </td>
-                                <td className="p-4 text-right font-bold text-red-600">
-                                    ${displayRecords.filter(r => r.concept.toUpperCase() !== 'SALDO INICIAL').reduce((acc, curr) => acc + Number(curr.expense), 0).toFixed(2)}
-                                </td>
-                                <td colSpan={3}></td>
-                            </tr>
-                        </tfoot>
-                    </table>
+                    displayRecords.length === 0 ? (
+                        <div className="p-12 text-center text-neutral-400">
+                            <div className="flex justify-center mb-4">
+                                <div className="w-16 h-16 bg-primary/5 rounded-full flex items-center justify-center text-primary/30">
+                                    <Search size={24} />
+                                </div>
+                            </div>
+                            <p className="font-bold text-primary-dark mb-1">Sin registros financieros</p>
+                            <p className="text-sm">Comienza agregando tu primer movimiento.</p>
+                        </div>
+                    ) : (
+                        <table className="w-full text-left border-collapse animate-fade-in delay-100">
+                            <thead>
+                                <tr className="bg-primary/5 text-primary-dark text-xs uppercase tracking-wider">
+                                    <th className="p-4 border-b border-light-beige font-bold whitespace-nowrap">No.</th>
+                                    <th className="p-4 border-b border-light-beige font-bold whitespace-nowrap">Concepto</th>
+                                    <th className="p-4 border-b border-light-beige font-bold whitespace-nowrap">Fecha</th>
+                                    <th className="p-4 border-b border-light-beige font-bold whitespace-nowrap">Forma de pago</th>
+                                    <th className="p-4 border-b border-light-beige font-bold whitespace-nowrap">Proveedor</th>
+                                    <th className="p-4 border-b border-light-beige font-bold text-right whitespace-nowrap">Ingreso</th>
+                                    <th className="p-4 border-b border-light-beige font-bold text-right whitespace-nowrap">Gasto</th>
+                                    <th className="p-4 border-b border-light-beige font-bold text-right whitespace-nowrap">Saldo</th>
+                                    <th className="p-4 border-b border-light-beige font-bold max-w-xs">Descripción</th>
+                                    <th className="p-4 border-b border-light-beige font-bold text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-light-beige/50">
+                                {displayRecords.map((record, index) => {
+                                    const isInitialBalance = record.concept.toUpperCase() === 'SALDO INICIAL';
+                                    return (
+                                        <tr key={record.id} className={`hover:bg-[#faf7f2]/50 transition-colors text-sm text-neutral-700 ${isInitialBalance ? 'bg-amber-50/10 opacity-75' : ''}`}>
+                                            <td className="p-4 whitespace-nowrap text-neutral-400 font-medium">{index + 1}</td>
+                                            <td className="p-4 whitespace-nowrap font-medium text-primary-dark">
+                                                {record.concept}
+                                                {isInitialBalance && <span className="ml-2 text-[9px] bg-primary/10 text-primary-dark px-1 py-0.5 rounded uppercase tracking-wider">Ajuste</span>}
+                                            </td>
+                                            <td className="p-4 whitespace-nowrap">
+                                                {record.date.split('-').reverse().join('/')}
+                                            </td>
+                                            <td className="p-4 whitespace-nowrap">
+                                                <span className="bg-neutral-100 px-2 py-1 rounded text-xs">{record.payment_method}</span>
+                                            </td>
+                                            <td className="p-4 whitespace-nowrap">{record.provider}</td>
+                                            <td className="p-4 text-right whitespace-nowrap text-green-600 font-medium">
+                                                {isInitialBalance ? '-' : (Number(record.income) !== 0 ? `$${Number(record.income).toFixed(2)}` : '-')}
+                                            </td>
+                                            <td className="p-4 text-right whitespace-nowrap text-red-600 font-medium">
+                                                {isInitialBalance ? '-' : (Number(record.expense) !== 0 ? `$${Number(record.expense).toFixed(2)}` : '-')}
+                                            </td>
+                                            <td className={`p-4 text-right whitespace-nowrap font-bold ${Number(record.balance) < 0 ? 'text-red-600' : 'text-primary-dark'}`}>
+                                                ${Number(record.balance).toFixed(2)}
+                                            </td>
+                                            <td className="p-4 break-words min-w-[200px] text-xs leading-relaxed text-neutral-500">
+                                                {record.description}
+                                            </td>
+                                            <td className="p-4 text-center">
+                                                <div className="flex justify-center gap-2">
+                                                    <button 
+                                                        type="button"
+                                                        onClick={() => handleEditClick(record)}
+                                                        className="px-3 py-1.5 flex items-center gap-1.5 text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors text-xs font-bold shadow-sm"
+                                                        title="Editar"
+                                                    >
+                                                        <Edit2 size={14} /> Editar
+                                                    </button>
+                                                    <button 
+                                                        type="button"
+                                                        onClick={() => handleDelete(record.id)}
+                                                        className="px-3 py-1.5 flex items-center gap-1.5 text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors text-xs font-bold shadow-sm"
+                                                        title="Eliminar"
+                                                    >
+                                                        <Trash2 size={14} /> Eliminar
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                            <tfoot className="bg-neutral-50/50">
+                                <tr>
+                                    <td colSpan={5} className="p-4 text-right font-bold text-primary-dark text-sm uppercase">Total Mostrado <span className="text-[10px] text-neutral-400 block normal-case">(Excluye Saldos Iniciales)</span></td>
+                                    <td className="p-4 text-right font-bold text-green-600">
+                                        ${displayRecords.filter(r => r.concept.toUpperCase() !== 'SALDO INICIAL').reduce((acc, curr) => acc + Number(curr.income), 0).toFixed(2)}
+                                    </td>
+                                    <td className="p-4 text-right font-bold text-red-600">
+                                        ${displayRecords.filter(r => r.concept.toUpperCase() !== 'SALDO INICIAL').reduce((acc, curr) => acc + Number(curr.expense), 0).toFixed(2)}
+                                    </td>
+                                    <td colSpan={3}></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    )
                 ) : viewMode === 'summary' ? (
                     <div className="p-8 max-w-7xl mx-auto animate-fade-in delay-100">
                         {selectedMonth && (
@@ -960,7 +962,7 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                             </h3>
                         )}
 
-                        {summaryData.length > 0 && (
+                        {summaryData.length > 0 ? (
                             <>
                                 {/* Tarjetas de Resumen Rápido (KPIs) */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
@@ -1094,71 +1096,78 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                                     </div>
                                 </div>
                             </>
+                        ) : (
+                            <div className="p-12 text-center text-neutral-400">
+                                <div className="flex justify-center mb-4">
+                                    <div className="w-16 h-16 bg-primary/5 rounded-full flex items-center justify-center text-primary/30">
+                                        <Search size={24} />
+                                    </div>
+                                </div>
+                                <p className="font-bold text-primary-dark mb-1">Sin movimientos en este mes</p>
+                                <p className="text-sm">No hay registros de ingresos o gastos para el periodo seleccionado.</p>
+                            </div>
                         )}
                         
                         {/* Tabla de Resumen por Concepto */}
-                        <div className="border-t-[3px] border-b-[3px] border-[#4a7c82] overflow-hidden rounded-md shadow-sm mb-12">
-                            <table className="w-full text-left">
-                                <thead>
-                                    <tr className="bg-[#4a7c82] text-white">
-                                        <th className="p-3 font-extrabold tracking-wider border-r border-[#3d686d] text-sm">Concepto</th>
-                                        <th className="p-3 font-extrabold tracking-wider border-r border-[#3d686d] text-sm text-right w-32">SUM de Ingreso</th>
-                                        <th className="p-3 font-extrabold tracking-wider text-sm text-right w-32">SUM de Gasto</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white">
-                                    {summaryData.length > 0 ? summaryData.map((row) => (
-                                        <tr key={row.concept} className="hover:bg-neutral-50 font-bold border-b border-neutral-200">
-                                            <td className="py-1 px-3 border-r border-neutral-200 text-sm text-neutral-700 uppercase">{row.concept}</td>
-                                            <td className="py-1 px-3 border-r border-neutral-200 text-sm text-right text-gray-800">
+                        {summaryData.length > 0 && (
+                            <div className="border-t-[3px] border-b-[3px] border-[#4a7c82] overflow-hidden rounded-md shadow-sm mb-12">
+                                <table className="w-full text-left">
+                                    <thead>
+                                        <tr className="bg-[#4a7c82] text-white">
+                                            <th className="p-3 font-extrabold tracking-wider border-r border-[#3d686d] text-sm">Concepto</th>
+                                            <th className="p-3 font-extrabold tracking-wider border-r border-[#3d686d] text-sm text-right w-32">SUM de Ingreso</th>
+                                            <th className="p-3 font-extrabold tracking-wider text-sm text-right w-32">SUM de Gasto</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-white">
+                                        {summaryData.map((row) => (
+                                            <tr key={row.concept} className="hover:bg-neutral-50 font-bold border-b border-neutral-200">
+                                                <td className="py-1 px-3 border-r border-neutral-200 text-sm text-neutral-700 uppercase">{row.concept}</td>
+                                                <td className="py-1 px-3 border-r border-neutral-200 text-sm text-right text-gray-800">
+                                                    <div className="flex justify-between">
+                                                        <span className="text-neutral-400 font-normal">$</span>
+                                                        <span>{row.income > 0 ? row.income.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="py-1 px-3 text-sm text-right text-gray-800">
+                                                    <div className="flex justify-between">
+                                                        <span className="text-neutral-400 font-normal">$</span>
+                                                        <span>{row.expense > 0 ? row.expense.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</span>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr className="bg-[#e2e8f0] border-t-[3px] border-double border-neutral-800 font-extrabold">
+                                            <td className="p-3 border-r border-neutral-300 text-sm uppercase">Suma total</td>
+                                            <td className="p-3 border-r border-neutral-300 text-sm text-right text-gray-900">
                                                 <div className="flex justify-between">
-                                                    <span className="text-neutral-400 font-normal">$</span>
-                                                    <span>{row.income > 0 ? row.income.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</span>
+                                                    <span className="text-neutral-500 font-normal">$</span>
+                                                    <span>{summaryData.reduce((acc, row) => acc + row.income, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                                 </div>
                                             </td>
-                                            <td className="py-1 px-3 text-sm text-right text-gray-800">
+                                            <td className="p-3 text-sm text-right text-gray-900">
                                                 <div className="flex justify-between">
-                                                    <span className="text-neutral-400 font-normal">$</span>
-                                                    <span>{row.expense > 0 ? row.expense.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</span>
+                                                    <span className="text-neutral-500 font-normal">$</span>
+                                                    <span>{summaryData.reduce((acc, row) => acc + row.expense, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                                 </div>
                                             </td>
                                         </tr>
-                                    )) : (
-                                        <tr>
-                                            <td colSpan={3} className="py-8 text-center text-neutral-400 font-normal">No hay movimientos en este mes.</td>
+                                        <tr className="bg-white">
+                                            <td className="p-2 border-r border-neutral-200"></td>
+                                            <td className="p-2 border-r border-neutral-200"></td>
+                                            <td className="p-2 text-sm text-right font-extrabold text-neutral-800 flex justify-between">
+                                                <span className="text-neutral-500 font-normal">$</span>
+                                                <span>
+                                                    {(summaryData.reduce((acc, row) => acc + row.income, 0) - summaryData.reduce((acc, row) => acc + row.expense, 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                </span>
+                                            </td>
                                         </tr>
-                                    )}
-                                </tbody>
-                                <tfoot>
-                                    <tr className="bg-[#e2e8f0] border-t-[3px] border-double border-neutral-800 font-extrabold">
-                                        <td className="p-3 border-r border-neutral-300 text-sm uppercase">Suma total</td>
-                                        <td className="p-3 border-r border-neutral-300 text-sm text-right text-gray-900">
-                                            <div className="flex justify-between">
-                                                <span className="text-neutral-500 font-normal">$</span>
-                                                <span>{summaryData.reduce((acc, row) => acc + row.income, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                            </div>
-                                        </td>
-                                        <td className="p-3 text-sm text-right text-gray-900">
-                                            <div className="flex justify-between">
-                                                <span className="text-neutral-500 font-normal">$</span>
-                                                <span>{summaryData.reduce((acc, row) => acc + row.expense, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr className="bg-white">
-                                        <td className="p-2 border-r border-neutral-200"></td>
-                                        <td className="p-2 border-r border-neutral-200"></td>
-                                        <td className="p-2 text-sm text-right font-extrabold text-neutral-800 flex justify-between">
-                                            <span className="text-neutral-500 font-normal">$</span>
-                                            <span>
-                                                {(summaryData.reduce((acc, row) => acc + row.income, 0) - summaryData.reduce((acc, row) => acc + row.expense, 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-
+                                    </tfoot>
+                                </table>
+                            </div>
+                        )}
                     </div>
                 ) : viewMode === 'budget' ? (
                     <div className="p-8 max-w-7xl mx-auto animate-fade-in delay-100">
