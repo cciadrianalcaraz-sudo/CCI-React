@@ -127,7 +127,28 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
             }));
         } catch (error) {
             console.error("Error saving budget:", error);
-            alert("No se pudo guardar el presupuesto. ¿Ya creaste la tabla en Supabase?");
+            alert("No se pudo guardar el presupuesto.");
+        }
+    };
+
+    const handleDeleteBudget = async (concept: string) => {
+        if (!window.confirm(`¿Seguro que deseas eliminar el presupuesto personalizado para "${concept}"?`)) return;
+        try {
+            const { error } = await supabase
+                .from('finance_budgets')
+                .delete()
+                .eq('user_id', user.id)
+                .eq('concept', concept)
+                .eq('month', selectedMonth);
+
+            if (error) throw error;
+            
+            const newBudgets = { ...manualBudgets };
+            delete newBudgets[concept];
+            setManualBudgets(newBudgets);
+        } catch (error) {
+            console.error("Error deleting budget:", error);
+            alert("No se pudo eliminar el presupuesto.");
         }
     };
     const loadRecords = async () => {
@@ -709,6 +730,9 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                     <Button outline className="text-[10px] font-black uppercase tracking-widest py-2.5 px-5 flex items-center gap-2 border-neutral-200 hover:border-primary-dark transition-all" onClick={handleExportExcel} disabled={displayRecords.length === 0}>
                         <Download size={14} className="text-primary-dark" /> Exportar
                     </Button>
+                    <Button outline className="text-[10px] font-black uppercase tracking-widest py-2.5 px-5 flex items-center gap-2 border-neutral-200 hover:border-primary-dark transition-all" onClick={() => loadRecords()}>
+                        <Calendar size={14} className="text-primary-dark" /> Actualizar
+                    </Button>
                     <Button primary className="text-[10px] font-black uppercase tracking-widest py-2.5 px-6 flex items-center gap-2 shadow-lg hover:scale-[1.02] transition-all" onClick={() => setIsFormOpen(!isFormOpen)}>
                         <Plus size={14} /> {isFormOpen ? 'Cerrar Panel' : 'Nuevo Registro'}
                     </Button>
@@ -963,21 +987,21 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                                                     ${Number(record.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                                 </td>
                                                 <td className="p-4 px-5 text-xs text-neutral-400 max-w-xs truncate italic">{record.description}</td>
-                                                <td className="p-4 px-5">
-                                                    <div className="flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                 <td className="p-4 px-5">
+                                                    <div className="flex justify-center gap-2">
                                                         <button 
-                                                            onClick={() => handleEditClick(record)}
-                                                            className="p-1.5 hover:bg-primary/10 rounded-lg text-primary-dark transition-colors"
+                                                            onClick={(e) => { e.stopPropagation(); handleEditClick(record); }}
+                                                            className="p-2 hover:bg-primary-dark/10 rounded-xl text-primary-dark transition-all hover:scale-110 active:scale-95"
                                                             title="Editar"
                                                         >
-                                                            <Edit2 size={14} />
+                                                            <Edit2 size={15} />
                                                         </button>
                                                         <button 
-                                                            onClick={() => handleDelete(record.id)}
-                                                            className="p-1.5 hover:bg-red-50 rounded-lg text-red-400 transition-colors"
+                                                            onClick={(e) => { e.stopPropagation(); handleDelete(record.id); }}
+                                                            className="p-2 hover:bg-red-50 rounded-xl text-red-500 transition-all hover:scale-110 active:scale-95"
                                                             title="Eliminar"
                                                         >
-                                                            <Trash2 size={14} />
+                                                            <Trash2 size={15} />
                                                         </button>
                                                     </div>
                                                 </td>
@@ -1184,14 +1208,21 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                                                     <td className="p-5 font-black text-xs text-primary-dark uppercase tracking-wider">{row.concept}</td>
                                                     <td className="p-5 border-l border-neutral-100/50 bg-neutral-50/20 text-right">
                                                         {isEditingBudget ? (
-                                                            <div className="flex items-center gap-2 bg-white border border-neutral-200 rounded-xl px-4 py-1.5 shadow-sm focus-within:border-accent transition-all group-hover:border-accent/40">
+                                                            <div className="flex items-center gap-2 bg-white border border-neutral-200 rounded-xl pl-4 pr-1.5 py-1.5 shadow-sm focus-within:border-accent transition-all group-hover:border-accent/40">
                                                                 <span className="text-accent font-black">$</span>
                                                                 <input 
                                                                     type="number" 
-                                                                    className="w-full bg-transparent outline-none text-right font-black text-sm text-primary-dark"
+                                                                    className="w-8/12 bg-transparent outline-none text-right font-black text-sm text-primary-dark"
                                                                     defaultValue={row.avgBudget}
                                                                     onBlur={(e) => handleSaveBudget(row.concept, parseFloat(e.target.value) || 0)}
                                                                 />
+                                                                <button 
+                                                                    onClick={() => handleDeleteBudget(row.concept)}
+                                                                    className="p-1.5 hover:bg-red-50 text-red-400 rounded-lg transition-colors ml-auto"
+                                                                    title="Reiniciar a promedio histórico"
+                                                                >
+                                                                    <Trash2 size={12} />
+                                                                </button>
                                                             </div>
                                                         ) : (
                                                             <span className="font-black text-sm text-primary-dark">
