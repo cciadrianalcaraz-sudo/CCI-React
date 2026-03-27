@@ -142,10 +142,21 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
     };
 
     useEffect(() => {
-        if (records.length === 0) return;
+        // 1. Obtener meses de los registros reales
+        const recordMonths = Array.from(new Set(records.map(r => r.date.substring(0, 7))));
         
-        const months = Array.from(new Set(records.map(r => r.date.substring(0, 7)))).sort().reverse();
-        const formattedMonths = months.map(m => {
+        // 2. Generar meses futuros (próximos 12 meses desde hoy)
+        const futureMonths: string[] = [];
+        const today = new Date();
+        for (let i = 0; i <= 12; i++) {
+            const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
+            futureMonths.push(d.toISOString().substring(0, 7));
+        }
+
+        // 3. Combinar, ordenar y formatear
+        const allMonths = Array.from(new Set([...recordMonths, ...futureMonths])).sort().reverse();
+        
+        const formattedMonths = allMonths.map(m => {
             const [year, month] = m.split('-');
             const date = new Date(Number(year), Number(month) - 1, 1);
             return {
@@ -156,8 +167,11 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
         
         setUniqueMonths([{label: 'Todos los meses', value: 'all'}, ...formattedMonths]);
         
+        // Inicializar mes seleccionado si está vacíoo (usar el mes actual si existe en la lista)
         if (!selectedMonth && formattedMonths.length > 0) {
-            setSelectedMonth(formattedMonths[0].value);
+            const currentMonthStr = today.toISOString().substring(0, 7);
+            const hasCurrentMonth = formattedMonths.some(m => m.value === currentMonthStr);
+            setSelectedMonth(hasCurrentMonth ? currentMonthStr : formattedMonths[0].value);
         }
     }, [records]);
 
@@ -207,10 +221,13 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
             
         const allConcepts = new Set([
             ...Object.keys(historicalExpenses),
-            ...Object.keys(grouped).filter(c => grouped[c].expense > 0)
+            ...Object.keys(grouped).filter(c => (grouped[c]?.expense || 0) > 0),
+            ...Object.keys(manualBudgets)
         ]);
         
-        const budgetArr = Array.from(allConcepts).map(concept => {
+        const budgetArr = Array.from(allConcepts)
+            .filter(c => c && c.trim() !== '')
+            .map(concept => {
             const totalHistorical = historicalExpenses[concept] || 0;
             const histAvg = totalHistorical / historicalMonthsCount;
             const currentExp = grouped[concept]?.expense || 0;
