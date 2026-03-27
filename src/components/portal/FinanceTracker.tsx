@@ -221,9 +221,11 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                 return acc;
             }, {} as Record<string, number>);
             
+        const allEverConcepts = Array.from(new Set(records.map(r => (r.concept || '').toUpperCase().trim())))
+            .filter(c => c !== '' && c !== 'SALDO INICIAL' && !c.includes('TRASPASO'));
+
         const allConcepts = new Set([
-            ...Object.keys(historicalExpenses),
-            ...Object.keys(grouped).filter(c => (grouped[c]?.expense || 0) > 0),
+            ...allEverConcepts,
             ...Object.keys(manualBudgets)
         ]);
         
