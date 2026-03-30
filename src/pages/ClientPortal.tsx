@@ -220,7 +220,6 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                     const { data: recordsData } = await supabase
                         .from('finance_records')
                         .select('*')
-                        .eq('user_id', user.id)
                         .order('date', { ascending: false });
 
                     if (recordsData) {
@@ -359,8 +358,10 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                         <h3 className="text-5xl font-heading font-black mb-2 tracking-tighter leading-none">
                                             ${records
                                                 .filter(r => {
+                                                    // Normalize for comparison
+                                                    const rDate = r.date.includes('/') ? r.date.split('/').reverse().join('-') : r.date;
                                                     // Accumulate balance until the end of selected month
-                                                    return r.date.substring(0, 7) <= (selectedDashboardMonth || '9999-12');
+                                                    return rDate.substring(0, 7) <= (selectedDashboardMonth || '9999-12');
                                                 })
                                                 .reduce((acc, r) => acc + (Number(r.income) - Number(r.expense)), 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                         </h3>
@@ -512,7 +513,7 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                         const chartData = last6Months.map(m => {
                                             const monthMoves = records.filter(r => {
                                                 const c = (r.concept || '').toUpperCase().trim();
-                                                const normalizedDate = (r.date.includes('-')) ? r.date : r.date.split('/').reverse().join('-');
+                                                const normalizedDate = (r.date.includes('/')) ? r.date.split('/').reverse().join('-') : r.date;
                                                 return normalizedDate.startsWith(m.value) && c !== 'SALDO INICIAL' && !c.includes('TRASPASO');
                                             });
                                             return {
@@ -703,7 +704,7 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                 <div className="p-4 space-y-2">
                                      {records
                                         .filter(r => {
-                                            const normalizedDate = (r.date.includes('-')) ? r.date : r.date.split('/').reverse().join('-');
+                                            const normalizedDate = (r.date.includes('/')) ? r.date.split('/').reverse().join('-') : r.date;
                                             return normalizedDate.startsWith(selectedDashboardMonth || new Date().toISOString().substring(0, 7));
                                         })
                                         .slice(0, 8).map((record) => (

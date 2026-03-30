@@ -144,7 +144,6 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
             const { error } = await supabase
                 .from('finance_budgets')
                 .delete()
-                .eq('user_id', user.id)
                 .eq('concept', concept)
                 .eq('month', selectedMonth);
 
@@ -164,7 +163,6 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
             const { data, error } = await supabase
                 .from('finance_records')
                 .select('*')
-                .eq('user_id', user.id)
                 .order('date', { ascending: true })
                 .order('created_at', { ascending: true });
 
@@ -181,8 +179,11 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
     };
 
     useEffect(() => {
-        // 1. Obtener meses de los registros reales
-        const recordMonths = Array.from(new Set(records.map(r => r.date.substring(0, 7))));
+        // 1. Obtener meses de los registros reales (normalizando formato)
+        const recordMonths = Array.from(new Set(records.map(r => {
+            if (r.date.includes('/')) return r.date.split('/').reverse().join('-').substring(0, 7);
+            return r.date.substring(0, 7);
+        })));
         
         // 2. Generar meses futuros (próximos 12 meses desde hoy)
         const futureMonths: string[] = [];
@@ -219,7 +220,12 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
     useEffect(() => {
         if (!selectedMonth) return;
         
-        const filteredRecords = selectedMonth === 'all' ? records : records.filter(r => r.date.startsWith(selectedMonth));
+        const filteredRecords = selectedMonth === 'all' 
+            ? records 
+            : records.filter(r => {
+                const rDate = r.date.includes('/') ? r.date.split('/').reverse().join('-') : r.date;
+                return rDate.startsWith(selectedMonth);
+            });
         
         const grouped = filteredRecords
             .filter(r => {
@@ -244,9 +250,15 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
         // =========================================================================
         const historicalRecords = selectedMonth === 'all' 
             ? records 
-            : records.filter(r => r.date.substring(0, 7) < selectedMonth);
+            : records.filter(r => {
+                const rDate = r.date.includes('/') ? r.date.split('/').reverse().join('-') : r.date;
+                return rDate.substring(0, 7) < selectedMonth;
+            });
             
-        const historicalMonthsCount = new Set(historicalRecords.map(r => r.date.substring(0, 7))).size || 1;
+        const historicalMonthsCount = new Set(historicalRecords.map(r => {
+                const rDate = r.date.includes('/') ? r.date.split('/').reverse().join('-') : r.date;
+                return rDate.substring(0, 7);
+            })).size || 1;
         
         const historicalExpenses = historicalRecords
             .filter(r => {
