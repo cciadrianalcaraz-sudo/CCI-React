@@ -189,6 +189,8 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
     const [records, setRecords] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'dashboard' | 'finance' | 'tickets'>('dashboard');
+    const [selectedDashboardMonth, setSelectedDashboardMonth] = useState<string>('');
+    const [availableMonths, setAvailableMonths] = useState<{label: string, value: string}[]>([]);
 
     const isMaster = user.email === MASTER_EMAIL;
 
@@ -205,7 +207,7 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
 
                 if (profileData) setProfile(profileData);
 
-                // Fetch documents
+                // Fetch documents - Explicit user_id filter (if applicable to your schema, assuming documents has user_id)
                 const { data: docsData } = await supabase
                     .from('documents')
                     .select('*')
@@ -213,13 +215,38 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
 
                 if (docsData) setDocs(docsData);
 
-                // Fetch finance records for the dashboard
-                const { data: recordsData } = await supabase
-                    .from('finance_records')
-                    .select('*')
-                    .order('date', { ascending: false });
+                if (!isMaster) {
+                    // Fetch finance records for the dashboard - Explicit user_id filter
+                    const { data: recordsData } = await supabase
+                        .from('finance_records')
+                        .select('*')
+                        .eq('user_id', user.id)
+                        .order('date', { ascending: false });
 
-                if (recordsData) setRecords(recordsData);
+                    if (recordsData) {
+                        setRecords(recordsData);
+                        
+                        // Derive unique months for the filter
+                        const recordMonths = Array.from(new Set(recordsData.map(r => r.date.substring(0, 7)))).sort().reverse();
+                        const formatted = recordMonths.map(m => {
+                            const [year, month] = m.split('-');
+                            const date = new Date(Number(year), Number(month) - 1, 1);
+                            return {
+                                value: m,
+                                label: date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
+                            };
+                        });
+                        setAvailableMonths(formatted);
+                        
+                        // Set initial selected month to current if exists, else most recent
+                        const todayStr = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0');
+                        if (formatted.some(m => m.value === todayStr)) {
+                            setSelectedDashboardMonth(todayStr);
+                        } else if (formatted.length > 0) {
+                            setSelectedDashboardMonth(formatted[0].value);
+                        }
+                    }
+                }
             } catch (error) {
                 console.error("Error loading dashboard:", error);
             } finally {
@@ -228,7 +255,7 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
         }
 
         loadDashboardData();
-    }, [user.id]);
+    }, [user.id, isMaster]);
 
     if (loading) {
         return (
@@ -239,7 +266,7 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
     }
 
     return (
-        <div className="min-h-screen bg-[#faf7f2] pt-24 pb-20 px-[6vw] md:px-[8vw]">
+        <div className="min-h-screen bg-[#faf7f2] pt-32 md:pt-44 pb-20 px-[6vw] md:px-[8vw]">
             <div className="max-w-[1400px] mx-auto">
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6 animate-fade-in">
                     <div>
@@ -319,7 +346,9 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                             </div>
                                         </div>
                                         <h3 className="text-5xl font-heading font-black mb-2 tracking-tighter leading-none">
-                                            ${records.reduce((acc, r) => acc + (Number(r.income) - Number(r.expense)), 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                            ${records
+                                                .filter(r => !((r.concept || '').toUpperCase().trim() === 'SALDO INICIAL' || (r.concept || '').toUpperCase().includes('TRASPASO'))) // Filter if needed, usually Balance Total SHOULD include everything but transfers cancel. User specifically asked for "Performance" to be real.
+                                                .reduce((acc, r) => acc + (Number(r.income) - Number(r.expense)), 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                         </h3>
                                     </div>
                                     <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between">
@@ -333,8 +362,11 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
 
                             {/* Card 2: Flujo Mensual - Interactive Glass */}
                             {(() => {
-                                const currentMonth = new Date().toISOString().substring(0, 7);
-                                const monthRecords = records.filter(r => r.date.startsWith(currentMonth));
+                                const selectedMonth = selectedDashboardMonth || new Date().toISOString().substring(0, 7);
+                                const monthRecords = records.filter(r => {
+                                    const c = (r.concept || '').toUpperCase().trim();
+                                    return r.date.startsWith(selectedMonth) && c !== 'SALDO INICIAL' && !c.includes('TRASPASO');
+                                });
                                 const monthIncome = monthRecords.reduce((acc, r) => acc + Number(r.income), 0);
                                 const monthExpense = monthRecords.reduce((acc, r) => acc + Number(r.expense), 0);
                                 const savings = monthIncome - monthExpense;
@@ -346,7 +378,19 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                             <div className="relative z-10 h-full flex flex-col justify-between">
                                                 <div>
                                                     <div className="flex items-center justify-between mb-8">
-                                                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-400">Rendimiento {new Date().toLocaleString('es', { month: 'long' })}</span>
+                                                        <div>
+                                                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-400 block mb-1">Rendimiento</span>
+                                                            <select 
+                                                                value={selectedDashboardMonth} 
+                                                                onChange={(e) => setSelectedDashboardMonth(e.target.value)}
+                                                                className="bg-transparent text-[10px] font-black text-accent uppercase tracking-widest outline-none cursor-pointer appearance-none pr-4 capitalize border-none p-0 focus:ring-0"
+                                                                style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%23a3a3a3\' stroke-width=\'3\'%3E%3Cpath d=\'M19 9l-7 7-7-7\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right center', backgroundSize: '10px' }}
+                                                            >
+                                                                {availableMonths.map(m => (
+                                                                    <option key={m.value} value={m.value} className="text-primary-dark font-sans">{m.label}</option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
                                                         <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center text-green-500">
                                                             <TrendingUp size={16} />
                                                         </div>
@@ -405,13 +449,16 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                             <div className="bg-white/90 backdrop-blur-xl rounded-[3rem] border border-light-beige shadow-sm overflow-hidden flex flex-col group">
                                 <div className="p-10 border-b border-light-beige/50">
                                     <h2 className="text-xl font-black text-primary-dark tracking-tighter">Distribución de Gastos</h2>
-                                    <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider mt-1">Donde se concentra tu capital este mes</p>
+                                    <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider mt-1">Donde se concentra tu capital este periodo</p>
                                 </div>
                                 <div className="flex-1 flex flex-col md:flex-row items-center justify-center p-8 gap-8">
                                     <div className="w-full h-56 relative">
                                         {(() => {
-                                            const currentMonth = new Date().toISOString().substring(0, 7);
-                                            const monthExpenses = records.filter(r => r.date.startsWith(currentMonth) && Number(r.expense) > 0);
+                                            const selectedMonth = selectedDashboardMonth || new Date().toISOString().substring(0, 7);
+                                            const monthExpenses = records.filter(r => {
+                                                const c = (r.concept || '').toUpperCase().trim();
+                                                return r.date.startsWith(selectedMonth) && Number(r.expense) > 0 && c !== 'SALDO INICIAL' && !c.includes('TRASPASO');
+                                            });
                                             
                                             const categoryTotals: Record<string, number> = {};
                                             monthExpenses.forEach(r => {
@@ -435,7 +482,7 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                             if (pieData.length === 0) {
                                                 return (
                                                     <div className="h-full flex items-center justify-center text-neutral-300 text-[10px] font-black uppercase tracking-widest border-2 border-dashed border-neutral-100 rounded-full aspect-square max-h-48 mx-auto">
-                                                        Sin datos este mes
+                                                        Sin datos este periodo
                                                     </div>
                                                 );
                                             }
@@ -481,8 +528,11 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                     </div>
                                     <div className="flex-1 w-full space-y-3">
                                         {(() => {
-                                            const currentMonth = new Date().toISOString().substring(0, 7);
-                                            const monthExpenses = records.filter(r => r.date.startsWith(currentMonth) && Number(r.expense) > 0);
+                                            const selectedMonth = selectedDashboardMonth || new Date().toISOString().substring(0, 7);
+                                            const monthExpenses = records.filter(r => {
+                                                const c = (r.concept || '').toUpperCase().trim();
+                                                return r.date.startsWith(selectedMonth) && Number(r.expense) > 0 && c !== 'SALDO INICIAL' && !c.includes('TRASPASO');
+                                            });
                                             const totalMonthExpense = monthExpenses.reduce((acc, r) => acc + Number(r.expense), 0);
                                             
                                             const categoryTotals: Record<string, number> = {};
@@ -502,7 +552,7 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                                             <div className={`w-2 h-2 rounded-full ${COLORS[i % COLORS.length]}`}></div>
                                                             <span className="text-[10px] font-bold text-primary-dark uppercase truncate max-w-[100px]">{item.name}</span>
                                                         </div>
-                                                        <span className="text-[10px] font-black text-neutral-400">{((item.value / totalMonthExpense) * 100).toFixed(0)}%</span>
+                                                        <span className="text-[10px] font-black text-neutral-400">{totalMonthExpense > 0 ? ((item.value / totalMonthExpense) * 100).toFixed(0) : 0}%</span>
                                                     </div>
                                                 ));
                                         })()}

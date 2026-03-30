@@ -56,18 +56,21 @@ export default function Navbar() {
         );
     };
 
+    const isPortal = location.pathname === '/portal';
+
     return (
         <nav className={`
-            fixed top-0 left-0 right-0 z-50 px-[6vw] md:px-[8vw] py-4 transition-all duration-300
-            ${isMenuOpen ? "bg-transparent shadow-none border-transparent" : "bg-white/90 backdrop-blur-md shadow-sm border-b border-light-beige/50"}
+            fixed top-0 left-0 right-0 z-50 px-[6vw] md:px-[8vw] transition-all duration-300
+            ${isPortal ? 'py-2 bg-white/70 backdrop-blur-lg border-b border-light-beige/30' : 'py-4 bg-white/90 backdrop-blur-md border-b border-light-beige/50'}
+            ${isMenuOpen ? "bg-transparent shadow-none border-transparent" : "shadow-sm"}
         `}>
             <div className="flex items-center justify-between max-w-[1400px] mx-auto">
-                <Link to="/#top" className="flex flex-col gap-0.5 font-semibold group z-50">
+                <Link to="/#top" className="flex flex-col gap-0 font-semibold group z-50">
                     <img
-                        className="w-[160px] md:w-[220px] h-auto object-contain transition-transform group-hover:scale-[1.02]"
+                        className={`transition-all group-hover:scale-[1.02] object-contain ${isPortal ? 'w-[120px] md:w-[160px]' : 'w-[160px] md:w-[220px]'}`}
                         src={logo}
                         alt="CCI Consultoría Contable Integral" />
-                    <span className="text-[0.5rem] md:text-[0.6rem] text-muted uppercase tracking-[0.1rem]">Consultoría Contable Integral</span>
+                    {!isPortal && <span className="text-[0.5rem] md:text-[0.6rem] text-muted uppercase tracking-[0.1rem]">Consultoría Contable Integral</span>}
                 </Link>
 
                 {/* Desktop Navigation */}
@@ -81,9 +84,11 @@ export default function Navbar() {
                             />
                         ))}
                     </div>
-                    <Link to="/portal" className="bg-primary text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md hover:bg-primary-dark hover:scale-[1.02] transition-all">
-                        Portal Clientes
-                    </Link>
+                    {!isPortal && (
+                        <Link to="/portal" className="bg-primary text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md hover:bg-primary-dark hover:scale-[1.02] transition-all">
+                            Portal Clientes
+                        </Link>
+                    )}
                 </div>
 
                 {/* Mobile Menu Toggle */}
