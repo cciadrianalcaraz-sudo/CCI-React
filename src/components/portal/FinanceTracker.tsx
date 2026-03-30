@@ -882,16 +882,16 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                 </div>
             )}
 
-            {/* NEW GLOBAL KPI BAR - Now Sticky */}
-            <div className="sticky top-[70px] md:top-[85px] z-20 grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 pt-4 pb-2 bg-[#faf7f2]/95 backdrop-blur-md transition-all border-b border-light-beige/50 md:border-none">
-                <div className="bg-white/60 backdrop-blur-md p-4 rounded-2xl border border-white/40 shadow-sm flex flex-col justify-center relative overflow-hidden group hover:bg-white/80 transition-all">
+            {/* NEW GLOBAL KPI BAR - Now Sticky at top-0 */}
+            <div className="sticky top-0 z-30 grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 pt-6 pb-4 bg-[#faf7f2] transition-all border-b border-light-beige/50">
+                <div className="bg-white/80 backdrop-blur-md p-4 rounded-2xl border border-white/40 shadow-sm flex flex-col justify-center relative overflow-hidden group hover:bg-white/80 transition-all">
                     <div className="absolute top-1/2 -translate-y-1/2 right-3 opacity-5 text-green-600 group-hover:scale-110 transition-transform"><TrendingUp size={40} /></div>
                     <p className="text-neutral-500 font-bold uppercase tracking-widest text-[10px] mb-1">Ingresos</p>
                     <p className="text-xl font-heading font-black text-green-600">
                         ${summaryData.reduce((acc, row) => acc + row.income, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </p>
                 </div>
-                <div className="bg-white/60 backdrop-blur-md p-4 rounded-2xl border border-white/40 shadow-sm flex flex-col justify-center relative overflow-hidden group hover:bg-white/80 transition-all">
+                <div className="bg-white p-4 rounded-2xl border border-neutral-100 shadow-sm flex flex-col justify-center relative overflow-hidden group hover:shadow-md transition-all">
                     <div className="absolute top-1/2 -translate-y-1/2 right-3 opacity-5 text-red-600 group-hover:scale-110 transition-transform"><TrendingDown size={40} /></div>
                     <p className="text-neutral-500 font-bold uppercase tracking-widest text-[10px] mb-1">Gastos</p>
                     <p className="text-xl font-heading font-black text-red-500">
@@ -907,7 +907,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                 </div>
             </div>
 
-            <div className="sticky top-[152px] md:top-[170px] z-20 flex flex-col md:flex-row justify-between items-center gap-6 mb-10 bg-white/60 backdrop-blur-md p-2 rounded-[24px] border border-white/60 shadow-sm">
+            <div className="sticky top-[108px] md:top-[125px] z-30 flex flex-col md:flex-row justify-between items-center gap-6 mb-10 bg-[#faf7f2] p-2 py-4 border-b border-light-beige/50">
                 <div className="flex bg-white/80 p-1.5 rounded-full shadow-sm border border-neutral-200 w-full md:w-auto overflow-x-auto no-scrollbar">
                     <button 
                         onClick={() => setViewMode('detailed')}
@@ -973,16 +973,16 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                             <table className="w-full text-left border-collapse animate-fade-in delay-100">
                                 <thead>
                                     <tr className="border-b border-light-beige">
-                                        <th className="sticky top-[215px] md:top-[235px] z-10 p-5 whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">ID</th>
-                                        <th className="sticky top-[215px] md:top-[235px] z-10 p-5 whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Concepto</th>
-                                        <th className="sticky top-[215px] md:top-[235px] z-10 p-5 whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Fecha</th>
-                                        <th className="sticky top-[215px] md:top-[235px] z-10 p-5 whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Pago</th>
-                                        <th className="sticky top-[215px] md:top-[235px] z-10 p-5 whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Proveedor</th>
-                                        <th className="sticky top-[215px] md:top-[235px] z-10 p-5 text-right whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Ingreso</th>
-                                        <th className="sticky top-[215px] md:top-[235px] z-10 p-5 text-right whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Gasto</th>
-                                        <th className="sticky top-[215px] md:top-[235px] z-10 p-5 text-right whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Saldo</th>
-                                        <th className="sticky top-[215px] md:top-[235px] z-10 p-5 whitespace-nowrap max-w-xs bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Descripción</th>
-                                        <th className="sticky top-[215px] md:top-[235px] z-10 p-5 text-center whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Acciones</th>
+                                        <th className="sticky top-[185px] md:top-[200px] z-20 p-5 whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">ID</th>
+                                        <th className="sticky top-[185px] md:top-[200px] z-20 p-5 whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Concepto</th>
+                                        <th className="sticky top-[185px] md:top-[200px] z-20 p-5 whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Fecha</th>
+                                        <th className="sticky top-[185px] md:top-[200px] z-20 p-5 whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Pago</th>
+                                        <th className="sticky top-[185px] md:top-[200px] z-20 p-5 whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Proveedor</th>
+                                        <th className="sticky top-[185px] md:top-[200px] z-20 p-5 text-right whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Ingreso</th>
+                                        <th className="sticky top-[185px] md:top-[200px] z-20 p-5 text-right whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Gasto</th>
+                                        <th className="sticky top-[185px] md:top-[200px] z-20 p-5 text-right whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Saldo</th>
+                                        <th className="sticky top-[185px] md:top-[200px] z-20 p-5 whitespace-nowrap max-w-xs bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Descripción</th>
+                                        <th className="sticky top-[185px] md:top-[200px] z-20 p-5 text-center whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-neutral-100/50">
