@@ -27,10 +27,13 @@ interface FinanceRecord {
 
 interface FinanceTrackerProps {
     user: any;
+    records?: FinanceRecord[];
+    onRefresh?: () => void;
 }
 
-export default function FinanceTracker({ user }: FinanceTrackerProps) {
-    const [records, setRecords] = useState<FinanceRecord[]>([]);
+export default function FinanceTracker({ user, records: propsRecords, onRefresh }: FinanceTrackerProps) {
+    const [localRecords, setLocalRecords] = useState<FinanceRecord[]>([]);
+    const records = propsRecords || localRecords;
     const [loading, setLoading] = useState(true);
     const [isFormOpen, setIsFormOpen] = useState(false);
     
@@ -73,8 +76,12 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        loadRecords();
-    }, [user.id]);
+        if (!propsRecords) {
+            loadRecords();
+        } else {
+            setLoading(false);
+        }
+    }, [user.id, propsRecords]);
 
     useEffect(() => {
         if (selectedMonth) {
@@ -157,11 +164,15 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
             const { data, error } = await supabase
                 .from('finance_records')
                 .select('*')
+                .eq('user_id', user.id)
                 .order('date', { ascending: true })
                 .order('created_at', { ascending: true });
 
             if (error) throw error;
-            if (data) setRecords(data as FinanceRecord[]);
+            if (data) {
+                setLocalRecords(data as FinanceRecord[]);
+                if (onRefresh) onRefresh();
+            }
         } catch (error) {
             console.error("Error loading finance records:", error);
         } finally {
@@ -472,7 +483,11 @@ export default function FinanceTracker({ user }: FinanceTrackerProps) {
                 .eq('id', id);
 
             if (error) throw error;
-            setRecords(records.filter(r => r.id !== id));
+            if (onRefresh) {
+                onRefresh();
+            } else {
+                setLocalRecords(records.filter(r => r.id !== id));
+            }
         } catch (error) {
             console.error("Error deleting record:", error);
         }

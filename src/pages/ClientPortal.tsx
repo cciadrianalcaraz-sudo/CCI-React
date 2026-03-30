@@ -11,7 +11,8 @@ import AdminDashboard from "../components/portal/AdminDashboard";
 import TicketUploader from "../components/portal/TicketUploader";
 import { 
     ResponsiveContainer, Tooltip as RechartsTooltip,
-    PieChart as RechartsPieChart, Pie, Cell
+    PieChart as RechartsPieChart, Pie, Cell,
+    BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid
 } from 'recharts';
 
 const MASTER_EMAIL = 'cci.adrianalcaraz@gmail.com';
@@ -194,8 +195,7 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
 
     const isMaster = user.email === MASTER_EMAIL;
 
-    useEffect(() => {
-        async function loadDashboardData() {
+    const loadDashboardData = async () => {
             setLoading(true);
             try {
                 // Fetch profile
@@ -207,7 +207,7 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
 
                 if (profileData) setProfile(profileData);
 
-                // Fetch documents - Explicit user_id filter (if applicable to your schema, assuming documents has user_id)
+                // Fetch documents
                 const { data: docsData } = await supabase
                     .from('documents')
                     .select('*')
@@ -216,7 +216,7 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                 if (docsData) setDocs(docsData);
 
                 if (!isMaster) {
-                    // Fetch finance records for the dashboard - Explicit user_id filter
+                    // Fetch finance records for the dashboard
                     const { data: recordsData } = await supabase
                         .from('finance_records')
                         .select('*')
@@ -227,8 +227,16 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                         setRecords(recordsData);
                         
                         // Derive unique months for the filter
-                        const recordMonths = Array.from(new Set(recordsData.map(r => r.date.substring(0, 7)))).sort().reverse();
-                        const formatted = recordMonths.map(m => {
+                        const recordMonths = Array.from(new Set(recordsData.map(r => {
+                            // Normalize date format if needed (handle both YYYY-MM-DD and DD/MM/YYYY)
+                            const date = r.date;
+                            if (date.includes('-')) return date.substring(0, 7);
+                            const parts = date.split('/');
+                            if (parts.length === 3) return `${parts[2]}-${parts[1].padStart(2, '0')}`;
+                            return date;
+                        }))).sort().reverse();
+
+                        const formatted = recordMonths.filter(m => m && m.includes('-')).map(m => {
                             const [year, month] = m.split('-');
                             const date = new Date(Number(year), Number(month) - 1, 1);
                             return {
@@ -238,12 +246,14 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                         });
                         setAvailableMonths(formatted);
                         
-                        // Set initial selected month to current if exists, else most recent
-                        const todayStr = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0');
-                        if (formatted.some(m => m.value === todayStr)) {
-                            setSelectedDashboardMonth(todayStr);
-                        } else if (formatted.length > 0) {
-                            setSelectedDashboardMonth(formatted[0].value);
+                        // If no month selected or current month not in list, set it
+                        if (!selectedDashboardMonth) {
+                            const todayStr = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0');
+                            if (formatted.some(m => m.value === todayStr)) {
+                                setSelectedDashboardMonth(todayStr);
+                            } else if (formatted.length > 0) {
+                                setSelectedDashboardMonth(formatted[0].value);
+                            }
                         }
                     }
                 }
@@ -252,8 +262,9 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
             } finally {
                 setLoading(false);
             }
-        }
+        };
 
+    useEffect(() => {
         loadDashboardData();
     }, [user.id, isMaster]);
 
@@ -331,7 +342,7 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                     <div className="animate-fade-in space-y-10 pb-10">
                         {/* BENTO GRID: Financial KPIs 2.0 */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {/* Card 1: Balance Total - Core Premium */}
+                            {/* Card 1: Balance Total al cierre del periodo */}
                             <div className="bg-primary-dark rounded-[3rem] p-10 text-white relative overflow-hidden group shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] border border-white/5">
                                 <div className="absolute top-0 right-0 w-48 h-48 bg-accent/20 rounded-full -mr-20 -mt-20 blur-[80px] transition-all duration-700 group-hover:bg-accent/40 group-hover:scale-110"></div>
                                 <div className="relative z-10 h-full flex flex-col justify-between">
@@ -342,17 +353,20 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                             </div>
                                             <div>
                                                 <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 block">Liquididad</span>
-                                                <span className="text-[9px] font-bold text-accent uppercase tracking-wider">Total Acumulado</span>
+                                                <span className="text-[9px] font-bold text-accent uppercase tracking-wider">Cierre de {availableMonths.find(m => m.value === selectedDashboardMonth)?.label || 'Periodo'}</span>
                                             </div>
                                         </div>
                                         <h3 className="text-5xl font-heading font-black mb-2 tracking-tighter leading-none">
                                             ${records
-                                                .filter(r => !((r.concept || '').toUpperCase().trim() === 'SALDO INICIAL' || (r.concept || '').toUpperCase().includes('TRASPASO'))) // Filter if needed, usually Balance Total SHOULD include everything but transfers cancel. User specifically asked for "Performance" to be real.
+                                                .filter(r => {
+                                                    // Accumulate balance until the end of selected month
+                                                    return r.date.substring(0, 7) <= (selectedDashboardMonth || '9999-12');
+                                                })
                                                 .reduce((acc, r) => acc + (Number(r.income) - Number(r.expense)), 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                         </h3>
                                     </div>
                                     <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between">
-                                        <p className="text-xs text-white/30 font-medium">Patrimonio en cuentas activas</p>
+                                        <p className="text-xs text-white/30 font-medium">Patrimonio acumulado al periodo</p>
                                         <div className="flex items-center gap-1 text-accent text-[10px] font-black">
                                             SECURE <ShieldCheck size={12} />
                                         </div>
@@ -363,14 +377,30 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                             {/* Card 2: Flujo Mensual - Interactive Glass */}
                             {(() => {
                                 const selectedMonth = selectedDashboardMonth || new Date().toISOString().substring(0, 7);
+                                
+                                const normalizeDate = (dateStr: string) => {
+                                    if (dateStr.includes('-')) return dateStr;
+                                    const parts = dateStr.split('/');
+                                    if (parts.length === 3) return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                                    return dateStr;
+                                };
+
                                 const monthRecords = records.filter(r => {
                                     const c = (r.concept || '').toUpperCase().trim();
-                                    return r.date.startsWith(selectedMonth) && c !== 'SALDO INICIAL' && !c.includes('TRASPASO');
+                                    const normalizedDate = normalizeDate(r.date);
+                                    return normalizedDate.startsWith(selectedMonth) && c !== 'SALDO INICIAL' && !c.includes('TRASPASO');
                                 });
+                                
                                 const monthIncome = monthRecords.reduce((acc, r) => acc + Number(r.income), 0);
                                 const monthExpense = monthRecords.reduce((acc, r) => acc + Number(r.expense), 0);
                                 const savings = monthIncome - monthExpense;
+                                const savingsRate = monthIncome > 0 ? (savings / monthIncome) * 100 : 0;
                                 
+                                // Calculation for daily burn
+                                const isCurrentMonth = selectedMonth === new Date().toISOString().substring(0, 7);
+                                const daysInMonth = isCurrentMonth ? new Date().getDate() : new Date(Number(selectedMonth.split('-')[0]), Number(selectedMonth.split('-')[1]), 0).getDate();
+                                const dailyBurn = monthExpense / daysInMonth;
+
                                 return (
                                     <>
                                         <div className="bg-white/80 backdrop-blur-xl rounded-[3rem] p-10 border border-light-beige shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] hover:shadow-[0_30px_60px_-12px_rgba(0,0,0,0.08)] transition-all duration-500 relative overflow-hidden group">
@@ -379,7 +409,7 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                                 <div>
                                                     <div className="flex items-center justify-between mb-8">
                                                         <div>
-                                                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-400 block mb-1">Rendimiento</span>
+                                                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-400 block mb-1">Rendimiento Real</span>
                                                             <select 
                                                                 value={selectedDashboardMonth} 
                                                                 onChange={(e) => setSelectedDashboardMonth(e.target.value)}
@@ -399,11 +429,11 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                                         <div className="flex justify-between items-end">
                                                             <div>
                                                                 <p className="text-[9px] font-black text-neutral-300 uppercase mb-2 tracking-widest">Ingresos</p>
-                                                                <p className="text-3xl font-black text-primary-dark tracking-tighter">${monthIncome.toLocaleString('en-US')}</p>
+                                                                <p className="text-3xl font-black text-primary-dark tracking-tighter">${monthIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
                                                             </div>
                                                             <div className="text-right">
                                                                 <p className="text-[9px] font-black text-neutral-300 uppercase mb-2 tracking-widest">Gastos</p>
-                                                                <p className="text-2xl font-black text-red-500 tracking-tighter">${monthExpense.toLocaleString('en-US')}</p>
+                                                                <p className="text-2xl font-black text-red-500 tracking-tighter">${monthExpense.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
                                                             </div>
                                                         </div>
                                                         <div className="space-y-2">
@@ -412,8 +442,8 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                                                 <div className="h-full bg-red-400/30 rounded-full transition-all duration-1000 ml-1" style={{ width: `${monthExpense > 0 ? (monthExpense / (monthIncome + monthExpense)) * 100 : 50}%` }}></div>
                                                             </div>
                                                             <div className="flex justify-between text-[8px] font-black uppercase text-neutral-400 tracking-tighter">
-                                                                <span>Ratio Entrada</span>
-                                                                <span>Ratio Salida</span>
+                                                                <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-green-500"></div> Entrada</span>
+                                                                <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-red-400"></div> Salida</span>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -421,7 +451,7 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                             </div>
                                         </div>
 
-                                        <div className="bg-white/80 backdrop-blur-xl rounded-[3rem] p-10 border border-light-beige shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] hover:shadow-2xl transition-all duration-500 flex flex-col justify-center relative overflow-hidden group">
+                                        <div className="bg-white/80 backdrop-blur-xl rounded-[3rem] p-10 border border-light-beige shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] hover:shadow-2xl transition-all duration-500 flex flex-col justify-between relative overflow-hidden group">
                                             <div className="absolute -bottom-8 -right-8 opacity-[0.03] rotate-[15deg] group-hover:scale-110 group-hover:opacity-[0.05] transition-all duration-700">
                                                 <TrendingUp size={180} />
                                             </div>
@@ -430,17 +460,116 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                                 <h3 className={`text-4xl font-heading font-black tracking-tighter ${savings >= 0 ? 'text-primary-dark' : 'text-red-600'}`}>
                                                     ${savings.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                                 </h3>
-                                                <div className="mt-6 flex items-center gap-3">
-                                                    <div className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider ${savings >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                                        {monthIncome > 0 ? `${((savings / monthIncome) * 100).toFixed(1)}%` : '0%'} Margen
+                                                <div className="mt-6 space-y-4">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-[8px] font-black text-neutral-300 uppercase tracking-widest">Margen de Ahorro</span>
+                                                            <span className={`text-sm font-black ${savingsRate >= 20 ? 'text-green-600' : 'text-amber-500'}`}>{savingsRate.toFixed(1)}%</span>
+                                                        </div>
+                                                        <div className="flex flex-col text-right">
+                                                            <span className="text-[8px] font-black text-neutral-300 uppercase tracking-widest">Gasto Diario Promedio</span>
+                                                            <span className="text-sm font-black text-primary-dark">${dailyBurn.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
+                                                        </div>
                                                     </div>
-                                                    <p className="text-[10px] text-neutral-400 font-medium">Capacidad de ahorro</p>
+                                                    <div className="pt-4 border-t border-neutral-100 flex items-center justify-between">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-[8px] font-black text-neutral-300 uppercase tracking-widest">Estado</span>
+                                                            <div className={`mt-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider text-center ${savings >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                                                {savings >= 0 ? 'Superávit' : 'Déficit'}
+                                                            </div>
+                                                        </div>
+                                                        <p className="text-[9px] text-neutral-400 font-medium max-w-[100px] leading-tight text-right italic">"Invertir el excedente aumenta tu libertad financiera."</p>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </>
                                 );
                             })()}
+
+                            {/* Performance Bar Chart - NEW VISUALIZATION */}
+                            <div className="bg-white/90 backdrop-blur-xl rounded-[3rem] p-10 border border-light-beige shadow-sm col-span-1 md:col-span-3">
+                                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
+                                    <div>
+                                        <h2 className="text-xl font-black text-primary-dark tracking-tighter">Comparativa Mensual de Rendimiento</h2>
+                                        <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider mt-1">Evolución de flujo de caja en los últimos 6 meses</p>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-3 h-3 rounded-full bg-primary-dark"></div>
+                                            <span className="text-[10px] font-black uppercase text-neutral-600">Ingresos</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-3 h-3 rounded-full bg-accent"></div>
+                                            <span className="text-[10px] font-black uppercase text-neutral-600">Gastos</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="h-80 w-full overflow-hidden">
+                                    {(() => {
+                                        // Get last 6 months for comparison
+                                        const last6Months = availableMonths.slice(0, 6).reverse();
+                                        const chartData = last6Months.map(m => {
+                                            const monthMoves = records.filter(r => {
+                                                const c = (r.concept || '').toUpperCase().trim();
+                                                const normalizedDate = (r.date.includes('-')) ? r.date : r.date.split('/').reverse().join('-');
+                                                return normalizedDate.startsWith(m.value) && c !== 'SALDO INICIAL' && !c.includes('TRASPASO');
+                                            });
+                                            return {
+                                                month: m.label.split(' ')[0], // Just the month name
+                                                ingresos: monthMoves.reduce((acc, r) => acc + Number(r.income), 0),
+                                                gastos: monthMoves.reduce((acc, r) => acc + Number(r.expense), 0)
+                                            };
+                                        });
+
+                                        return (
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <RechartsBarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                                                    <XAxis 
+                                                        dataKey="month" 
+                                                        axisLine={false} 
+                                                        tickLine={false} 
+                                                        tick={{fill: '#a3a3a3', fontSize: 10, fontWeight: 900}} 
+                                                        tickFormatter={(val) => val.toUpperCase()}
+                                                    />
+                                                    <YAxis 
+                                                        axisLine={false} 
+                                                        tickLine={false} 
+                                                        tick={{fill: '#a3a3a3', fontSize: 10}}
+                                                        tickFormatter={(val) => `$${val.toLocaleString()}`}
+                                                    />
+                                                    <RechartsTooltip 
+                                                        cursor={{fill: '#f8f8f8'}}
+                                                        content={({ active, payload }) => {
+                                                            if (active && payload && payload.length) {
+                                                                return (
+                                                                    <div className="bg-primary-dark text-white p-4 rounded-2xl shadow-2xl border border-white/10 backdrop-blur-md">
+                                                                        <p className="text-[10px] font-black uppercase tracking-widest mb-3 opacity-50 border-b border-white/10 pb-2">{payload[0].payload.month}</p>
+                                                                        <div className="space-y-2">
+                                                                            <p className="flex items-center justify-between gap-8">
+                                                                                <span className="text-[10px] font-bold uppercase">Ingresos:</span>
+                                                                                <span className="text-sm font-black text-white">${payload[0].value?.toLocaleString()}</span>
+                                                                            </p>
+                                                                            <p className="flex items-center justify-between gap-8">
+                                                                                <span className="text-[10px] font-bold uppercase">Gastos:</span>
+                                                                                <span className="text-sm font-black text-accent">${payload[1].value?.toLocaleString()}</span>
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            }
+                                                            return null;
+                                                        }}
+                                                    />
+                                                    <Bar dataKey="ingresos" fill="#1a1a1a" radius={[6, 6, 0, 0]} barSize={24} />
+                                                    <Bar dataKey="gastos" fill="#EFA364" radius={[6, 6, 0, 0]} barSize={24} />
+                                                </RechartsBarChart>
+                                            </ResponsiveContainer>
+                                        );
+                                    })()}
+                                </div>
+                            </div>
                         </div>
 
                         {/* THIRD ROW: Insightful Donut & Recent Activity */}
@@ -572,29 +701,39 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                     </button>
                                 </div>
                                 <div className="p-4 space-y-2">
-                                    {records.slice(0, 5).map((record) => (
-                                        <div key={record.id} className="p-4 rounded-2xl hover:bg-neutral-50 flex items-center justify-between transition-all group/row">
-                                            <div className="flex items-center gap-4">
-                                                <div className={`w-11 h-11 rounded-1.5xl flex items-center justify-center transition-all group-hover/row:scale-110 ${Number(record.income) > 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'}`}>
-                                                    {Number(record.income) > 0 ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
-                                                </div>
-                                                <div>
-                                                    <h4 className="font-bold text-primary-dark text-sm capitalize">{record.concept.toLowerCase()}</h4>
-                                                    <div className="flex items-center gap-2 mt-0.5">
-                                                        <span className="text-[8px] font-black text-neutral-300 uppercase tracking-widest leading-none border-r border-neutral-100 pr-2">{record.payment_method}</span>
-                                                        <span className="text-[8px] font-bold text-neutral-400 uppercase tracking-tighter leading-none">{new Date(record.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className={`font-black text-sm tracking-tight ${Number(record.income) > 0 ? 'text-green-600' : 'text-primary-dark'}`}>
-                                                    {Number(record.income) > 0 ? `+$${Number(record.income).toLocaleString()}` : `-$${Number(record.expense).toLocaleString()}`}
-                                                </p>
-                                                <div className="h-1 w-0 bg-accent ml-auto mt-1 transition-all group-hover/row:w-full"></div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
+                                     {records
+                                        .filter(r => {
+                                            const normalizedDate = (r.date.includes('-')) ? r.date : r.date.split('/').reverse().join('-');
+                                            return normalizedDate.startsWith(selectedDashboardMonth || new Date().toISOString().substring(0, 7));
+                                        })
+                                        .slice(0, 8).map((record) => (
+                                         <div key={record.id} className="p-4 rounded-2xl hover:bg-neutral-50 flex items-center justify-between transition-all group/row">
+                                             <div className="flex items-center gap-4">
+                                                 <div className={`w-11 h-11 rounded-1.5xl flex items-center justify-center transition-all group-hover/row:scale-110 ${Number(record.income) > 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'}`}>
+                                                     {Number(record.income) > 0 ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
+                                                 </div>
+                                                 <div>
+                                                     <h4 className="font-bold text-primary-dark text-sm capitalize">{record.concept.toLowerCase()}</h4>
+                                                     <div className="flex items-center gap-2 mt-0.5">
+                                                         <span className="text-[8px] font-black text-neutral-300 uppercase tracking-widest leading-none border-r border-neutral-100 pr-2">{record.payment_method}</span>
+                                                         <span className="text-[8px] font-bold text-neutral-400 uppercase tracking-tighter leading-none">{new Date(record.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</span>
+                                                     </div>
+                                                 </div>
+                                             </div>
+                                             <div className="text-right">
+                                                 <p className={`font-black text-sm tracking-tight ${Number(record.income) > 0 ? 'text-green-600' : 'text-primary-dark'}`}>
+                                                     {Number(record.income) > 0 ? `+$${Number(record.income).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : `-$${Number(record.expense).toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
+                                                 </p>
+                                                 <div className="h-1 w-0 bg-accent ml-auto mt-1 transition-all group-hover/row:w-full"></div>
+                                             </div>
+                                         </div>
+                                     ))}
+                                     {records.filter(r => r.date.startsWith(selectedDashboardMonth || new Date().toISOString().substring(0, 7))).length === 0 && (
+                                         <div className="p-10 text-center text-neutral-300 text-[10px] font-black uppercase tracking-widest border-2 border-dashed border-neutral-50 rounded-[2rem]">
+                                             Sin actividad en este periodo
+                                         </div>
+                                     )}
+                                 </div>
                             </div>
                         </div>
 
@@ -676,7 +815,11 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                     </div>
                 ) : activeTab === 'finance' ? (
                     <div className="animate-fade-in">
-                        <FinanceTracker user={user} />
+                        <FinanceTracker 
+                            user={user} 
+                            records={records} 
+                            onRefresh={loadDashboardData} 
+                        />
                     </div>
                 ) : (
                     <div className="animate-fade-in">
