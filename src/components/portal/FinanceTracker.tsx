@@ -971,9 +971,9 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                     ) : (
                         <div className="bg-white/70 backdrop-blur-sm rounded-[32px] border border-white shadow-sm overflow-hidden">
                             <table className="w-full text-left border-collapse animate-fade-in delay-100">
-                                <thead>
-                                    <tr className="bg-primary-dark/5 text-primary-dark text-[10px] font-black uppercase tracking-[0.2em] border-b border-light-beige">
-                                        <th className="p-5 whitespace-nowrap">ID</th>
+                                <thead className="sticky top-[240px] md:top-[185px] z-10">
+                                    <tr className="bg-primary-dark/95 backdrop-blur-sm text-white text-[10px] font-black uppercase tracking-[0.2em] border-b border-light-beige">
+                                        <th className="p-5 whitespace-nowrap rounded-tl-[32px]">ID</th>
                                         <th className="p-5 whitespace-nowrap">Concepto</th>
                                         <th className="p-5 whitespace-nowrap">Fecha</th>
                                         <th className="p-5 whitespace-nowrap">Pago</th>
@@ -982,7 +982,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                         <th className="p-5 text-right whitespace-nowrap">Gasto</th>
                                         <th className="p-5 text-right whitespace-nowrap font-black">Saldo</th>
                                         <th className="p-5 whitespace-nowrap max-w-xs">Descripción</th>
-                                        <th className="p-5 text-center whitespace-nowrap">Acciones</th>
+                                        <th className="p-5 text-center whitespace-nowrap rounded-tr-[32px]">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-neutral-100/50">
@@ -1445,6 +1445,36 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                     </div>
                 ) : null}
             </div>
+
+            {/* FLOATING TOTALS BAR - Only visible in Registro mode */}
+            {viewMode === 'detailed' && displayRecords.length > 0 && (
+                <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] w-[90vw] max-w-3xl animate-slide-up">
+                    <div className="bg-primary-dark/80 backdrop-blur-xl rounded-full border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-2 pr-6 flex items-center justify-between gap-4">
+                        <div className="flex bg-white/10 rounded-full p-1">
+                            <div className="px-6 py-2 rounded-full flex flex-col items-center">
+                                <span className="text-[8px] font-black uppercase tracking-widest text-white/50">Ingresos</span>
+                                <span className="text-sm font-black text-green-400">
+                                    ${summaryData.reduce((acc, row) => acc + row.income, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                </span>
+                            </div>
+                            <div className="w-px h-6 bg-white/10 self-center"></div>
+                            <div className="px-6 py-2 rounded-full flex flex-col items-center">
+                                <span className="text-[8px] font-black uppercase tracking-widest text-white/50">Gastos</span>
+                                <span className="text-sm font-black text-red-400">
+                                    ${summaryData.reduce((acc, row) => acc + row.expense, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div className="flex flex-col items-end">
+                            <span className="text-[8px] font-black uppercase tracking-widest text-white/50">Utilidad Neta</span>
+                            <span className={`text-lg font-heading font-black ${(summaryData.reduce((acc, row) => acc + row.income, 0) - summaryData.reduce((acc, row) => acc + row.expense, 0)) >= 0 ? 'text-white' : 'text-red-400'}`}>
+                                ${(summaryData.reduce((acc, row) => acc + row.income, 0) - summaryData.reduce((acc, row) => acc + row.expense, 0)).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
