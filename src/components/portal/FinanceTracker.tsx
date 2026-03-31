@@ -25,6 +25,16 @@ interface FinanceRecord {
     created_at: string;
 }
 
+interface FinanceCredit {
+    id: string;
+    user_id: string;
+    name: string;
+    initial_balance: number;
+    annual_rate: number;
+    start_date: string;
+    created_at: string;
+}
+
 interface FinanceTrackerProps {
     user: any;
     records?: FinanceRecord[];
@@ -41,9 +51,9 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
     const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#6366f1', '#ec4899', '#14b8a6', '#84cc16', '#f43f5e', '#a855f7', '#0ea5e9'];
 
     // View modes
-    const [viewMode, setViewMode] = useState<'detailed' | 'summary' | 'balances' | 'budget'>(() => {
+    const [viewMode, setViewMode] = useState<'detailed' | 'summary' | 'balances' | 'budget' | 'credits'>(() => {
         const saved = localStorage.getItem(`finance_view_mode_${user.id}`);
-        return (saved === 'detailed' || saved === 'summary' || saved === 'balances' || saved === 'budget') ? saved : 'detailed';
+        return (saved === 'detailed' || saved === 'summary' || saved === 'balances' || saved === 'budget' || saved === 'credits') ? saved : 'detailed';
     });
 
     // Save viewMode to localStorage whenever it changes
@@ -83,6 +93,15 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
     const [transferDesc, setTransferDesc] = useState('');
     const [accMgmtTab, setAccMgmtTab] = useState<'initial' | 'transfer'>('initial');
 
+    // Credit Tracker states
+    const [credits, setCredits] = useState<FinanceCredit[]>([]);
+    const [creditName, setCreditName] = useState('');
+    const [creditInitialBalance, setCreditInitialBalance] = useState<number | ''>('');
+    const [creditAnnualRate, setCreditAnnualRate] = useState<number | ''>('');
+    const [creditStartDate, setCreditStartDate] = useState(new Date().toISOString().split('T')[0]);
+    const [isCreditFormOpen, setIsCreditFormOpen] = useState(false);
+    const [isSavingCredit, setIsSavingCredit] = useState(false);
+
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -91,6 +110,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
         } else {
             setLoading(false);
         }
+        loadCredits();
     }, [user.id, propsRecords]);
 
     useEffect(() => {
@@ -165,6 +185,68 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
         } catch (error) {
             console.error("Error deleting budget:", error);
             alert("No se pudo eliminar el presupuesto.");
+        }
+    };
+
+    const loadCredits = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('finance_credits')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false });
+            
+            if (error) throw error;
+            if (data) setCredits(data as FinanceCredit[]);
+        } catch (error) {
+            console.error("Error loading credits:", error);
+        }
+    };
+
+    const handleSaveCredit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSavingCredit(true);
+        try {
+            const { data, error } = await supabase
+                .from('finance_credits')
+                .insert([{
+                    user_id: user.id,
+                    name: creditName,
+                    initial_balance: Number(creditInitialBalance),
+                    annual_rate: Number(creditAnnualRate),
+                    start_date: creditStartDate
+                }])
+                .select();
+
+            if (error) throw error;
+            if (data) {
+                setCredits([...data, ...credits]);
+                setCreditName('');
+                setCreditInitialBalance('');
+                setCreditAnnualRate('');
+                setCreditStartDate(new Date().toISOString().split('T')[0]);
+                setIsCreditFormOpen(false);
+            }
+        } catch (error) {
+            console.error("Error saving credit:", error);
+            alert("Error al guardar crédito.");
+        } finally {
+            setIsSavingCredit(false);
+        }
+    };
+
+    const handleDeleteCredit = async (id: string) => {
+        if (!window.confirm("¿Seguro que quieres eliminar este crédito?")) return;
+        try {
+            const { error } = await supabase
+                .from('finance_credits')
+                .delete()
+                .eq('id', id);
+            
+            if (error) throw error;
+            setCredits(credits.filter(c => c.id !== id));
+        } catch (error) {
+            console.error("Error deleting credit:", error);
         }
     };
     const loadRecords = async () => {
@@ -944,6 +1026,12 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                         >
                             Presupuesto
                         </button>
+                        <button 
+                            onClick={() => setViewMode('credits')}
+                            className={`px-6 py-2.5 rounded-full text-xs font-black tracking-widest uppercase transition-all whitespace-nowrap ${viewMode === 'credits' ? 'bg-primary-dark text-white shadow-lg scale-[1.02]' : 'text-neutral-400 hover:text-primary-dark hover:bg-neutral-50'}`}
+                        >
+                            Créditos
+                        </button>
                     </div>
                     
                     {uniqueMonths.length > 0 && (
@@ -968,6 +1056,167 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                 {loading ? (
                     <div className="p-12 flex justify-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-accent"></div>
+                    </div>
+                ) : viewMode === 'credits' ? (
+                    <div className="p-8 space-y-10 animate-fade-in">
+                        <div className="flex justify-between items-center bg-primary-dark/5 p-6 rounded-[2.5rem] border border-primary-dark/5">
+                            <div>
+                                <h3 className="text-2xl font-black text-primary-dark tracking-tighter">Gestión de Créditos</h3>
+                                <p className="text-xs text-neutral-500 font-bold uppercase tracking-wider mt-1">Control de deudas y aceleración de libertad financiera</p>
+                            </div>
+                            <Button primary className="flex items-center gap-2 group" onClick={() => setIsCreditFormOpen(!isCreditFormOpen)}>
+                                <Plus size={18} className="group-hover:rotate-90 transition-transform duration-300" /> Nuevo Crédito
+                            </Button>
+                        </div>
+
+                        {isCreditFormOpen && (
+                            <div className="bg-white p-8 rounded-[2.5rem] border border-light-beige shadow-xl animate-scale-in relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 rounded-full -mr-32 -mt-32 blur-3xl group-hover:bg-accent/10 transition-all duration-700"></div>
+                                <h4 className="text-lg font-black text-primary-dark mb-8 flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-2xl bg-primary-dark flex items-center justify-center text-white">
+                                        <Plus size={20} />
+                                    </div>
+                                    Registrar Nuevo Crédito Bancario
+                                </h4>
+                                <form onSubmit={handleSaveCredit} className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase text-neutral-400 ml-1">Nombre del Crédito</label>
+                                        <input type="text" required value={creditName} onChange={e => setCreditName(e.target.value)} placeholder="Ej: Crédito Hipotecario" className="w-full bg-neutral-50 border border-light-beige rounded-2xl px-5 py-3.5 text-sm font-bold text-primary-dark outline-none focus:border-accent transition-all" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase text-neutral-400 ml-1">Monto Inicial ($)</label>
+                                        <input type="number" required value={creditInitialBalance} onChange={e => setCreditInitialBalance(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0.00" className="w-full bg-neutral-50 border border-light-beige rounded-2xl px-5 py-3.5 text-sm font-black text-primary-dark outline-none focus:border-accent transition-all" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase text-neutral-400 ml-1">Tasa Anual (%)</label>
+                                        <input type="number" step="0.1" required value={creditAnnualRate} onChange={e => setCreditAnnualRate(e.target.value === '' ? '' : Number(e.target.value))} placeholder="21.0" className="w-full bg-neutral-50 border border-light-beige rounded-2xl px-5 py-3.5 text-sm font-black text-accent outline-none focus:border-accent transition-all" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase text-neutral-400 ml-1">Fecha de Inicio</label>
+                                        <input type="date" required value={creditStartDate} onChange={e => setCreditStartDate(e.target.value)} className="w-full bg-neutral-50 border border-light-beige rounded-2xl px-5 py-3.5 text-sm font-bold text-primary-dark outline-none focus:border-accent transition-all" />
+                                    </div>
+                                    <div className="md:col-span-2 lg:col-span-4 flex justify-end gap-4 pt-4 border-t border-neutral-100">
+                                        <Button outline type="button" onClick={() => setIsCreditFormOpen(false)}>Cancelar</Button>
+                                        <Button primary type="submit" loading={isSavingCredit}>Guardar Crédito</Button>
+                                    </div>
+                                </form>
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            {credits.length === 0 && !isCreditFormOpen && (
+                                <div className="col-span-full py-20 text-center border-2 border-dashed border-light-beige rounded-[3rem]">
+                                    <div className="w-20 h-20 bg-neutral-50 rounded-full flex items-center justify-center mx-auto mb-6 text-neutral-300">
+                                        <TrendingDown size={40} />
+                                    </div>
+                                    <p className="text-neutral-400 font-bold uppercase tracking-widest text-sm">No tienes créditos registrados</p>
+                                    <p className="text-xs text-neutral-300 mt-2">Usa el botón superior para añadir tu primer compromiso financiero.</p>
+                                </div>
+                            )}
+                            {credits.map(credit => {
+                                // Lógica de cálculo simplificada para la UI
+                                const creditPayments = records.filter(r => 
+                                    (r.concept.toUpperCase().includes(credit.name.toUpperCase()) || 
+                                     r.description.toUpperCase().includes(credit.name.toUpperCase())) && 
+                                    Number(r.expense) > 0
+                                );
+                                
+                                const totalPaid = creditPayments.reduce((acc, r) => acc + Number(r.expense), 0);
+                                
+                                // Cálculo de intereses acumulados (Estimado)
+                                const monthsPassed = Math.max(1, Math.floor((new Date().getTime() - new Date(credit.start_date).getTime()) / (1000 * 60 * 60 * 24 * 30)));
+                                const monthlyRate = (credit.annual_rate / 100) / 12;
+                                
+                                // Amortización aproximada
+                                let currentBalance = credit.initial_balance;
+                                let totalInterestGenerated = 0;
+                                let interestThisMonth = 0;
+
+                                // Iterar por meses para aproximar el balance real con intereses
+                                for(let i = 0; i < monthsPassed; i++) {
+                                    const interestMonth = currentBalance * monthlyRate;
+                                    totalInterestGenerated += interestMonth;
+                                    currentBalance += interestMonth;
+                                    
+                                    // Restar pagos de ese mes específico (aproximado)
+                                    const paymentDate = new Date(credit.start_date);
+                                    paymentDate.setMonth(paymentDate.getMonth() + i);
+                                    const monthStr = paymentDate.toISOString().substring(0, 7);
+                                    
+                                    const monthPayments = creditPayments.filter(p => p.date.startsWith(monthStr));
+                                    const monthPaid = monthPayments.reduce((acc, p) => acc + Number(p.expense), 0);
+                                    
+                                    currentBalance -= monthPaid;
+                                    if(i === monthsPassed - 1) interestThisMonth = interestMonth;
+                                }
+
+                                const progress = Math.min(100, Math.max(0, ((credit.initial_balance - currentBalance) / credit.initial_balance) * 100));
+
+                                return (
+                                    <div key={credit.id} className="bg-white rounded-[3rem] p-10 border border-light-beige shadow-sm hover:shadow-2xl transition-all duration-500 relative overflow-hidden group">
+                                        <div className="absolute top-0 right-0 p-8 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button onClick={() => handleDeleteCredit(credit.id)} className="w-10 h-10 rounded-full bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm">
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </div>
+                                        <div className="flex items-center gap-4 mb-10">
+                                            <div className="w-14 h-14 rounded-2xl bg-primary-dark flex items-center justify-center text-accent shadow-inner">
+                                                <DollarSign size={28} />
+                                            </div>
+                                            <div>
+                                                <h4 className="text-2xl font-black text-primary-dark tracking-tighter capitalize">{credit.name.toLowerCase()}</h4>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-[10px] font-black text-accent uppercase tracking-widest">{credit.annual_rate}% Tasa Anual</span>
+                                                    <div className="w-1 h-1 rounded-full bg-neutral-200"></div>
+                                                    <span className="text-[10px] font-bold text-neutral-400">Inicio: {new Date(credit.start_date).toLocaleDateString()}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-8 mb-10">
+                                            <div className="bg-neutral-50/50 p-6 rounded-[2rem] border border-neutral-100">
+                                                <p className="text-[9px] font-black text-neutral-400 uppercase tracking-widest mb-2">Saldo al Día</p>
+                                                <p className="text-3xl font-black text-primary-dark tracking-tighter">${currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                                            </div>
+                                            <div className="bg-orange-50/30 p-6 rounded-[2rem] border border-orange-100 flex flex-col justify-center">
+                                                <p className="text-[9px] font-black text-orange-400 uppercase tracking-widest mb-1">Costo del Dinero</p>
+                                                <p className="text-xl font-black text-primary-dark tracking-tight mb-1">${interestThisMonth.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                                                <p className="text-[8px] text-orange-600 font-bold uppercase tracking-tighter">Intereses este mes</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between items-end">
+                                                <div className="flex flex-col">
+                                                    <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest mb-1">Barra de Libertad Financiera</span>
+                                                    <span className="text-sm font-black text-primary-dark">{progress.toFixed(1)}% Liquidado</span>
+                                                </div>
+                                                <span className="text-[10px] font-bold text-neutral-400 italic">Meta: $0.00</span>
+                                            </div>
+                                            <div className="w-full h-4 bg-neutral-50 rounded-full border border-neutral-100 overflow-hidden p-1 shadow-inner">
+                                                <div 
+                                                    className="h-full bg-gradient-to-r from-primary-dark to-accent rounded-full transition-all duration-1000 relative" 
+                                                    style={{ width: `${progress}%` }}
+                                                >
+                                                    <div className="absolute top-0 right-0 w-full h-full bg-white/20 animate-pulse-subtle"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-10 pt-8 border-t border-neutral-100 grid grid-cols-2 gap-4">
+                                            <div>
+                                                <p className="text-[8px] font-black text-neutral-400 uppercase tracking-widest mb-1">Monto Original</p>
+                                                <p className="text-sm font-bold text-neutral-600">${credit.initial_balance.toLocaleString()}</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-[8px] font-black text-neutral-400 uppercase tracking-widest mb-1">Total Abonado</p>
+                                                <p className="text-sm font-black text-green-600">${totalPaid.toLocaleString()}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
                 ) : viewMode === 'detailed' ? (
                     displayRecords.length === 0 ? (
