@@ -102,7 +102,25 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
     const [isCreditFormOpen, setIsCreditFormOpen] = useState(false);
     const [isSavingCredit, setIsSavingCredit] = useState(false);
 
+    // Credit Payment Form states
+    const [isCreditPaymentFormOpen, setIsCreditPaymentFormOpen] = useState(false);
+    const [activeCreditForPayment, setActiveCreditForPayment] = useState<FinanceCredit | null>(null);
+    const [paymentAmount, setPaymentAmount] = useState<number | ''>('');
+    const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
+    const [isSavingPayment, setIsSavingPayment] = useState(false);
+
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Helper: Formato de fecha sin desajuste de zona horaria
+    const formatDate = (dateStr: string) => {
+        if (!dateStr) return '';
+        // Para YYYY-MM-DD, evitamos UTC shifts dividiendo y usando los componentes locales
+        if (dateStr.includes('-')) {
+            const [year, month, day] = dateStr.split('-');
+            return `${day}/${month}/${year}`;
+        }
+        return dateStr;
+    };
 
     useEffect(() => {
         if (!propsRecords) {
@@ -247,6 +265,39 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
             setCredits(credits.filter(c => c.id !== id));
         } catch (error) {
             console.error("Error deleting credit:", error);
+        }
+    };
+
+    const handleSaveCreditPayment = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!activeCreditForPayment) return;
+        setIsSavingPayment(true);
+        try {
+            const { error } = await supabase
+                .from('finance_records')
+                .insert([{
+                    user_id: user.id,
+                    concept: `PAGO CAPITAL: ${activeCreditForPayment.name.toUpperCase()}`,
+                    date: paymentDate,
+                    payment_method: 'Transferencia',
+                    provider: 'Banco',
+                    income: 0,
+                    expense: Number(paymentAmount),
+                    description: `Abono directo a capital: ${activeCreditForPayment.name}`
+                }]);
+
+            if (error) throw error;
+            
+            // Recargar datos
+            loadRecords();
+            setIsCreditPaymentFormOpen(false);
+            setPaymentAmount('');
+            setActiveCreditForPayment(null);
+        } catch (error) {
+            console.error("Error saving credit payment:", error);
+            alert("No se pudo registrar el pago.");
+        } finally {
+            setIsSavingPayment(false);
         }
     };
     const loadRecords = async () => {
@@ -1114,7 +1165,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                 </div>
                             )}
                             {credits.map(credit => {
-                                // Lógica de cálculo simplificada para la UI
+                                // Lógica de cálculo DIARIO para la UI
                                 const creditPayments = records.filter(r => 
                                     (r.concept.toUpperCase().includes(credit.name.toUpperCase()) || 
                                      r.description.toUpperCase().includes(credit.name.toUpperCase())) && 
@@ -1123,31 +1174,39 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                 
                                 const totalPaid = creditPayments.reduce((acc, r) => acc + Number(r.expense), 0);
                                 
-                                // Cálculo de intereses acumulados (Estimado)
-                                const monthsPassed = Math.max(1, Math.floor((new Date().getTime() - new Date(credit.start_date).getTime()) / (1000 * 60 * 60 * 24 * 30)));
-                                const monthlyRate = (credit.annual_rate / 100) / 12;
+                                // FECHAS CLAVE
+                                const start = new Date(credit.start_date);
+                                const today = new Date();
                                 
-                                // Amortización aproximada
+                                // Tasa diaria
+                                const dailyRate = (credit.annual_rate / 100) / 365;
+                                
+                                // Cálculo Progresivo Día a Día
                                 let currentBalance = credit.initial_balance;
-                                let totalInterestGenerated = 0;
-                                let interestThisMonth = 0;
+                                let interestSinceLastPayment = 0;
+                                let iterDate = new Date(start);
 
-                                // Iterar por meses para aproximar el balance real con intereses
-                                for(let i = 0; i < monthsPassed; i++) {
-                                    const interestMonth = currentBalance * monthlyRate;
-                                    totalInterestGenerated += interestMonth;
-                                    currentBalance += interestMonth;
+                                // Iterar día por día desde el inicio hasta hoy
+                                while (iterDate <= today) {
+                                    const dateStr = iterDate.toISOString().substring(0, 10);
                                     
-                                    // Restar pagos de ese mes específico (aproximado)
-                                    const paymentDate = new Date(credit.start_date);
-                                    paymentDate.setMonth(paymentDate.getMonth() + i);
-                                    const monthStr = paymentDate.toISOString().substring(0, 7);
+                                    // 1. Aplicar interés del día sobre el saldo anterior
+                                    const dayInterest = currentBalance * dailyRate;
+                                    currentBalance += dayInterest;
+                                    interestSinceLastPayment += dayInterest;
+
+                                    // 2. Restar pagos realizados este día específico
+                                    const dayPayments = creditPayments.filter(p => p.date === dateStr);
+                                    const dayPaid = dayPayments.reduce((acc, p) => acc + Number(p.expense), 0);
                                     
-                                    const monthPayments = creditPayments.filter(p => p.date.startsWith(monthStr));
-                                    const monthPaid = monthPayments.reduce((acc, p) => acc + Number(p.expense), 0);
-                                    
-                                    currentBalance -= monthPaid;
-                                    if(i === monthsPassed - 1) interestThisMonth = interestMonth;
+                                    if (dayPaid > 0) {
+                                        currentBalance -= dayPaid;
+                                        // REINICIAR el costo del dinero al detectar un abono, como solicitó el usuario
+                                        interestSinceLastPayment = 0;
+                                    }
+
+                                    // Avanzar un día
+                                    iterDate.setDate(iterDate.getDate() + 1);
                                 }
 
                                 const progress = Math.min(100, Math.max(0, ((credit.initial_balance - currentBalance) / credit.initial_balance) * 100));
@@ -1155,6 +1214,16 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                 return (
                                     <div key={credit.id} className="bg-white rounded-[3rem] p-10 border border-light-beige shadow-sm hover:shadow-2xl transition-all duration-500 relative overflow-hidden group">
                                         <div className="absolute top-0 right-0 p-8 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button 
+                                                onClick={() => {
+                                                    setActiveCreditForPayment(credit);
+                                                    setIsCreditPaymentFormOpen(true);
+                                                }}
+                                                className="w-10 h-10 rounded-full bg-accent/5 text-accent flex items-center justify-center hover:bg-accent hover:text-white transition-all shadow-sm"
+                                                title="Abonar a Capital"
+                                            >
+                                                <DollarSign size={18} />
+                                            </button>
                                             <button onClick={() => handleDeleteCredit(credit.id)} className="w-10 h-10 rounded-full bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm">
                                                 <Trash2 size={18} />
                                             </button>
@@ -1168,7 +1237,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-[10px] font-black text-accent uppercase tracking-widest">{credit.annual_rate}% Tasa Anual</span>
                                                     <div className="w-1 h-1 rounded-full bg-neutral-200"></div>
-                                                    <span className="text-[10px] font-bold text-neutral-400">Inicio: {new Date(credit.start_date).toLocaleDateString()}</span>
+                                                    <span className="text-[10px] font-bold text-neutral-400">Inicio: {formatDate(credit.start_date)}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -1180,8 +1249,8 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                             </div>
                                             <div className="bg-orange-50/30 p-6 rounded-[2rem] border border-orange-100 flex flex-col justify-center">
                                                 <p className="text-[9px] font-black text-orange-400 uppercase tracking-widest mb-1">Costo del Dinero</p>
-                                                <p className="text-xl font-black text-primary-dark tracking-tight mb-1">${interestThisMonth.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                                                <p className="text-[8px] text-orange-600 font-bold uppercase tracking-tighter">Intereses este mes</p>
+                                                <p className="text-xl font-black text-primary-dark tracking-tight mb-1">${interestSinceLastPayment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                                                <p className="text-[8px] text-orange-600 font-bold uppercase tracking-tighter">Intereses acumulados</p>
                                             </div>
                                         </div>
 
@@ -1259,7 +1328,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                                     </div>
                                                 </td>
                                                 <td className="p-4 px-5 whitespace-nowrap text-xs text-neutral-500 font-medium">
-                                                    {record.date.split('-').reverse().join('/')}
+                                                    {formatDate(record.date)}
                                                 </td>
                                                 <td className="p-4 px-5 whitespace-nowrap">
                                                     <span className="bg-neutral-100 text-neutral-600 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter">{record.payment_method}</span>
@@ -1706,6 +1775,50 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                     </div>
                 ) : null}
             </div>
+
+            {/* CREDIT PAYMENT MODAL */}
+            {isCreditPaymentFormOpen && activeCreditForPayment && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 animate-fade-in">
+                    <div className="absolute inset-0 bg-primary-dark/40 backdrop-blur-md" onClick={() => setIsCreditPaymentFormOpen(false)}></div>
+                    <div className="bg-white w-full max-w-md rounded-[3rem] p-10 shadow-2xl relative animate-scale-in border border-light-beige">
+                        <h4 className="text-xl font-black text-primary-dark mb-2 flex items-center gap-3">
+                            <Plus size={24} className="text-accent" /> Registar Abono
+                        </h4>
+                        <p className="text-xs text-neutral-400 font-bold uppercase tracking-widest mb-8">
+                            Pago directo a {activeCreditForPayment.name}
+                        </p>
+                        
+                        <form onSubmit={handleSaveCreditPayment} className="space-y-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase text-neutral-400 ml-1">Monto del Pago ($)</label>
+                                <input 
+                                    type="number" 
+                                    required 
+                                    autoFocus
+                                    value={paymentAmount} 
+                                    onChange={e => setPaymentAmount(e.target.value === '' ? '' : Number(e.target.value))} 
+                                    placeholder="0.00" 
+                                    className="w-full bg-neutral-50 border border-light-beige rounded-2xl px-6 py-4 text-lg font-black text-primary-dark outline-none focus:border-accent" 
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase text-neutral-400 ml-1">Fecha del Movimiento</label>
+                                <input 
+                                    type="date" 
+                                    required 
+                                    value={paymentDate} 
+                                    onChange={e => setPaymentDate(e.target.value)} 
+                                    className="w-full bg-neutral-50 border border-light-beige rounded-2xl px-6 py-4 text-sm font-bold text-primary-dark outline-none focus:border-accent" 
+                                />
+                            </div>
+                            <div className="flex gap-4 pt-4">
+                                <Button outline className="flex-1 py-4" onClick={() => setIsCreditPaymentFormOpen(false)}>Cancelar</Button>
+                                <Button primary className="flex-1 py-4" type="submit" loading={isSavingPayment}>Confirmar Pago</Button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             {/* FLOATING TOTALS BAR - Only visible in Registro mode */}
             {viewMode === 'detailed' && displayRecords.length > 0 && (
