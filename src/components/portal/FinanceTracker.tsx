@@ -1190,23 +1190,25 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                 while (iterDate <= today) {
                                     const dateStr = iterDate.toISOString().substring(0, 10);
                                     
-                                    // 1. Aplicar interés del día sobre el saldo anterior
-                                    const dayInterest = currentBalance * dailyRate;
-                                    currentBalance += dayInterest;
-                                    interestSinceLastPayment += dayInterest;
-
-                                    // 2. Restar pagos realizados este día específico
+                                    // 1. Restar pagos realizados este día específico 
+                                    // (Se restan ANTES del interés si el pago fue el mismo día de inicio)
                                     const dayPayments = creditPayments.filter(p => p.date === dateStr);
                                     const dayPaid = dayPayments.reduce((acc, p) => acc + Number(p.expense), 0);
                                     
                                     if (dayPaid > 0) {
                                         currentBalance -= dayPaid;
-                                        // REINICIAR el costo del dinero al detectar un abono, como solicitó el usuario
-                                        interestSinceLastPayment = 0;
+                                        interestSinceLastPayment = 0; 
                                     }
 
                                     // Avanzar un día
                                     iterDate.setDate(iterDate.getDate() + 1);
+
+                                    // 2. Aplicar interés del nuevo día sobre el saldo insoluto (si aún no llegamos al futuro)
+                                    if (iterDate <= today) {
+                                        const dayInterest = currentBalance * dailyRate;
+                                        currentBalance += dayInterest;
+                                        interestSinceLastPayment += dayInterest;
+                                    }
                                 }
 
                                 const progress = Math.min(100, Math.max(0, ((credit.initial_balance - currentBalance) / credit.initial_balance) * 100));
