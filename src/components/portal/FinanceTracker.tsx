@@ -41,7 +41,17 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
     const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#6366f1', '#ec4899', '#14b8a6', '#84cc16', '#f43f5e', '#a855f7', '#0ea5e9'];
 
     // View modes
-    const [viewMode, setViewMode] = useState<'detailed' | 'summary' | 'balances' | 'budget'>('detailed');
+    const [viewMode, setViewMode] = useState<'detailed' | 'summary' | 'balances' | 'budget'>(() => {
+        const saved = localStorage.getItem(`finance_view_mode_${user.id}`);
+        return (saved === 'detailed' || saved === 'summary' || saved === 'balances' || saved === 'budget') ? saved : 'detailed';
+    });
+
+    // Save viewMode to localStorage whenever it changes
+    useEffect(() => {
+        if (user?.id) {
+            localStorage.setItem(`finance_view_mode_${user.id}`, viewMode);
+        }
+    }, [viewMode, user?.id]);
     const [selectedMonth, setSelectedMonth] = useState<string>('');
     const [uniqueMonths, setUniqueMonths] = useState<{label: string, value: string}[]>([]);
     const [summaryData, setSummaryData] = useState<{concept: string, income: number, expense: number}[]>([]);
@@ -882,8 +892,8 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                 </div>
             )}
 
-            <div className="sticky top-0 z-[100] bg-[#faf7f2] pt-4 pb-2 border-b border-light-beige/30">
-                {/* NEW GLOBAL KPI BAR */}
+            <div className="bg-[#faf7f2] pt-4 pb-2 border-b border-light-beige/30">
+                {/* GLOBAL KPI BAR - NOT STICKY */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <div className="bg-white p-4 rounded-2xl border border-neutral-100 shadow-sm flex flex-col justify-center relative overflow-hidden group hover:shadow-md transition-all">
                         <div className="absolute top-1/2 -translate-y-1/2 right-3 opacity-5 text-green-600 group-hover:scale-110 transition-transform"><TrendingUp size={40} /></div>
@@ -908,7 +918,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                     </div>
                 </div>
 
-                <div className="flex flex-col md:flex-row justify-between items-center gap-6 bg-white/60 backdrop-blur-md p-2 rounded-[24px] border border-white/60 shadow-sm">
+                <div className="flex flex-col md:flex-row justify-between items-center gap-6 bg-white/60 p-2 rounded-[24px] border border-white/60 shadow-sm">
                     <div className="flex bg-white/80 p-1.5 rounded-full shadow-sm border border-neutral-200 w-full md:w-auto overflow-x-auto no-scrollbar">
                         <button 
                             onClick={() => setViewMode('detailed')}
@@ -975,16 +985,16 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                             <table className="w-full text-left border-collapse animate-fade-in delay-100">
                                 <thead>
                                     <tr className="border-b border-light-beige">
-                                        <th className="sticky top-[185px] md:top-[170px] z-20 p-5 whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">ID</th>
-                                        <th className="sticky top-[185px] md:top-[170px] z-20 p-5 whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Concepto</th>
-                                        <th className="sticky top-[185px] md:top-[170px] z-20 p-5 whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Fecha</th>
-                                        <th className="sticky top-[185px] md:top-[170px] z-20 p-5 whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Pago</th>
-                                        <th className="sticky top-[185px] md:top-[170px] z-20 p-5 whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Proveedor</th>
-                                        <th className="sticky top-[185px] md:top-[170px] z-20 p-5 text-right whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Ingreso</th>
-                                        <th className="sticky top-[185px] md:top-[170px] z-20 p-5 text-right whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Gasto</th>
-                                        <th className="sticky top-[185px] md:top-[170px] z-20 p-5 text-right whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Saldo</th>
-                                        <th className="sticky top-[185px] md:top-[170px] z-20 p-5 whitespace-nowrap max-w-xs bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Descripción</th>
-                                        <th className="sticky top-[185px] md:top-[170px] z-20 p-5 text-center whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Acciones</th>
+                                        <th className="sticky top-0 z-10 p-5 whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">ID</th>
+                                        <th className="sticky top-0 z-10 p-5 whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Concepto</th>
+                                        <th className="sticky top-0 z-10 p-5 whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Fecha</th>
+                                        <th className="sticky top-0 z-10 p-5 whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Pago</th>
+                                        <th className="sticky top-0 z-10 p-5 whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Proveedor</th>
+                                        <th className="sticky top-0 z-10 p-5 text-right whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Ingreso</th>
+                                        <th className="sticky top-0 z-10 p-5 text-right whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Gasto</th>
+                                        <th className="sticky top-0 z-10 p-5 text-right whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Saldo</th>
+                                        <th className="sticky top-0 z-10 p-5 whitespace-nowrap max-w-xs bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Descripción</th>
+                                        <th className="sticky top-0 z-10 p-5 text-center whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-neutral-100/50">

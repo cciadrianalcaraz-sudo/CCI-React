@@ -189,7 +189,17 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
     const [docs, setDocs] = useState<Document[]>([]);
     const [records, setRecords] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'dashboard' | 'finance' | 'tickets'>('dashboard');
+    const [activeTab, setActiveTab] = useState<'dashboard' | 'finance' | 'tickets'>(() => {
+        const saved = localStorage.getItem(`portal_active_tab_${user.id}`);
+        return (saved === 'dashboard' || saved === 'finance' || saved === 'tickets') ? saved : 'dashboard';
+    });
+
+    // Save active tab to localStorage whenever it changes
+    useEffect(() => {
+        if (user?.id) {
+            localStorage.setItem(`portal_active_tab_${user.id}`, activeTab);
+        }
+    }, [activeTab, user?.id]);
     const [selectedDashboardMonth, setSelectedDashboardMonth] = useState<string>('');
     const [availableMonths, setAvailableMonths] = useState<{label: string, value: string}[]>([]);
 
@@ -302,7 +312,10 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                             )}
                         </button>
                         <button
-                            onClick={onLogout}
+                            onClick={() => {
+                                localStorage.removeItem('portal_active_tab');
+                                onLogout();
+                            }}
                             className="flex items-center gap-2 bg-white border border-light-beige px-4 py-3 rounded-xl font-bold text-primary-dark hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all cursor-pointer"
                         >
                             <LogOut size={18} />
