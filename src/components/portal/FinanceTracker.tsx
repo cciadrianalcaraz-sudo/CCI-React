@@ -941,6 +941,23 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
         };
     });
 
+    const renderPaymentOptions = () => (
+        <>
+            <option value="" disabled>Seleccione pago...</option>
+            {savedPaymentMethods.length > 0 ? (
+                savedPaymentMethods.map(pm => (
+                    <option key={pm.id} value={pm.name}>{pm.name}</option>
+                ))
+            ) : (
+                <>
+                    <option value="EFECTIVO">EFECTIVO</option>
+                    <option value="TARJETA DÉBITO">TARJETA DÉBITO</option>
+                    <option value="TARJETA CRÉDITO">TARJETA CRÉDITO</option>
+                </>
+            )}
+        </>
+    );
+
     return (
         <div className="bg-white rounded-[2rem] border border-light-beige shadow-sm overflow-hidden animate-fade-in">
             <div className="p-8 border-b border-light-beige flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -1018,21 +1035,6 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                         <option value="VIAJES ALCA" />
                         <option value="INVERSIÓN CETES" />
                     </datalist>
-
-                    <datalist id="payment-options">
-                        {savedPaymentMethods.length > 0 ? (
-                            savedPaymentMethods.map(pm => (
-                                <option key={pm.id} value={pm.name} />
-                            ))
-                        ) : (
-                            <>
-                                <option value="EFECTIVO" />
-                                <option value="TARJETA DÉBITO" />
-                                <option value="TARJETA CRÉDITO" />
-                            </>
-                        )}
-                    </datalist>
-
                     <form onSubmit={handleAddRecord} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
                         <div className="space-y-2">
                             <label className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 block ml-1">Concepto</label>
@@ -1068,7 +1070,12 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                         <div className="space-y-2">
                             <label className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 block ml-1">Forma de pago</label>
                             <div className="flex gap-2">
-                                <input list="payment-options" type="text" required value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} placeholder="Seleccione pago..." className="flex-1 bg-white border border-neutral-200 rounded-2xl px-5 py-3 text-sm font-medium outline-none focus:border-accent transition-all shadow-sm" />
+                                <div className="relative flex-1">
+                                    <select required value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} className="w-full bg-white border border-neutral-200 rounded-2xl px-5 py-3 text-sm font-medium outline-none focus:border-accent transition-all shadow-sm appearance-none cursor-pointer">
+                                        {renderPaymentOptions()}
+                                    </select>
+                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-50"><TrendingDown size={14} /></div>
+                                </div>
                                 <button type="button" onClick={() => { setViewMode('balances'); setAccMgmtTab('accounts'); setIsFormOpen(false); }} className="px-4 bg-primary-dark text-white rounded-2xl hover:bg-accent transition-colors" title="Administrar formas de pago">
                                     <Plus size={16} />
                                 </button>
@@ -1809,14 +1816,17 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                             <form onSubmit={handleAddInitialBalance} className="space-y-6">
                                                 <div className="space-y-2">
                                                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 block ml-1">Cuenta / Banco</label>
-                                                    <input 
-                                                        list="payment-options"
-                                                        required
-                                                        value={initialBalancePM}
-                                                        onChange={e => setInitialBalancePM(e.target.value)}
-                                                        placeholder="Selecciona..."
-                                                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-sm text-white outline-none focus:border-accent placeholder:text-white/20 transition-all font-medium"
-                                                    />
+                                                    <div className="relative">
+                                                        <select
+                                                            required
+                                                            value={initialBalancePM}
+                                                            onChange={e => setInitialBalancePM(e.target.value)}
+                                                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-sm text-white outline-none focus:border-accent transition-all font-medium appearance-none cursor-pointer"
+                                                        >
+                                                            {renderPaymentOptions()}
+                                                        </select>
+                                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-50"><TrendingDown size={14} className="text-white" /></div>
+                                                    </div>
                                                 </div>
                                                 <div className="space-y-2">
                                                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 block ml-1">Monto Inicial</label>
@@ -1852,11 +1862,21 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div className="space-y-2">
                                                         <label className="text-[10px] font-black uppercase tracking-widest text-white/30 block ml-1">Origen</label>
-                                                        <input list="payment-options" required value={transferOrigin} onChange={e => setTransferOrigin(e.target.value)} placeholder="De..." className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-xs text-white outline-none focus:border-accent font-medium" />
+                                                        <div className="relative">
+                                                            <select required value={transferOrigin} onChange={e => setTransferOrigin(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-xs text-white outline-none focus:border-accent font-medium appearance-none cursor-pointer">
+                                                                {renderPaymentOptions()}
+                                                            </select>
+                                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-50"><TrendingDown size={12} className="text-white" /></div>
+                                                        </div>
                                                     </div>
                                                     <div className="space-y-2">
                                                         <label className="text-[10px] font-black uppercase tracking-widest text-white/30 block ml-1">Destino</label>
-                                                        <input list="payment-options" required value={transferDest} onChange={e => setTransferDest(e.target.value)} placeholder="A..." className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-xs text-white outline-none focus:border-accent font-medium" />
+                                                        <div className="relative">
+                                                            <select required value={transferDest} onChange={e => setTransferDest(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-xs text-white outline-none focus:border-accent font-medium appearance-none cursor-pointer">
+                                                                {renderPaymentOptions()}
+                                                            </select>
+                                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-50"><TrendingDown size={12} className="text-white" /></div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div className="space-y-2">
