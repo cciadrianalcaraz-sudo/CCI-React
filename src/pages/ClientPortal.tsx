@@ -353,7 +353,7 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                 {activeTab === 'dashboard' ? (
                     <div className="animate-fade-in space-y-10 pb-10">
                         {/* BENTO GRID: Financial KPIs 2.0 */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
                             {/* Card 1: Balance Total al cierre del periodo */}
                             <div className="bg-primary-dark rounded-[3rem] p-10 text-white relative overflow-hidden group shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] border border-white/5">
                                 <div className="absolute top-0 right-0 w-48 h-48 bg-accent/20 rounded-full -mr-20 -mt-20 blur-[80px] transition-all duration-700 group-hover:bg-accent/40 group-hover:scale-110"></div>
@@ -379,7 +379,7 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                                 .reduce((acc, r) => acc + (Number(r.income) - Number(r.expense)), 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                         </h3>
                                     </div>
-                                    <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between">
+                                     <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between">
                                         <p className="text-xs text-white/30 font-medium">Patrimonio acumulado al periodo</p>
                                         <div className="flex items-center gap-1 text-accent text-[10px] font-black">
                                             SECURE <ShieldCheck size={12} />
@@ -387,6 +387,100 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Card 1.5: Disponible para Gastar (PocketGuard Style) */}
+                            {(() => {
+                                const selectedMonth = selectedDashboardMonth || new Date().toISOString().substring(0, 7);
+                                
+                                const normalizeDate = (dateStr: string) => {
+                                    if (dateStr.includes('-')) return dateStr;
+                                    const parts = dateStr.split('/');
+                                    if (parts.length === 3) return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                                    return dateStr;
+                                };
+
+                                // Calculate Historical Averages
+                                const fijosByMonth: Record<string, number> = {};
+                                const ahorroByMonth: Record<string, number> = {};
+                                
+                                records.forEach(r => {
+                                    const dateStr = normalizeDate(r.date);
+                                    const month = dateStr.substring(0, 7);
+                                    
+                                    if (r.expense_type === 'Fijo' && r.expense > 0) {
+                                        fijosByMonth[month] = (fijosByMonth[month] || 0) + Number(r.expense);
+                                    }
+                                    if (r.expense_type === 'Ahorro' && r.expense > 0) {
+                                        ahorroByMonth[month] = (ahorroByMonth[month] || 0) + Number(r.expense);
+                                    }
+                                });
+                                
+                                const currentRealMonth = new Date().toISOString().substring(0, 7);
+                                const fijosMonths = Object.keys(fijosByMonth).filter(m => m !== currentRealMonth);
+                                const avgFijo = fijosMonths.length > 0 ? fijosMonths.reduce((a, m) => a + fijosByMonth[m], 0) / fijosMonths.length : 0;
+                                const avgAhorro = Object.keys(ahorroByMonth).filter(m => m !== currentRealMonth).length > 0 ? 
+                                    Object.keys(ahorroByMonth).filter(m => m !== currentRealMonth).reduce((a, m) => a + ahorroByMonth[m], 0) / Object.keys(ahorroByMonth).filter(m => m !== currentRealMonth).length : 0;
+                                
+                                // Current month records
+                                const monthRecords = records.filter(r => {
+                                    const c = (r.concept || '').toUpperCase().trim();
+                                    const normalizedDate = normalizeDate(r.date);
+                                    return normalizedDate.startsWith(selectedMonth) && c !== 'SALDO INICIAL' && !c.includes('TRASPASO');
+                                });
+                                
+                                const currentFijos = monthRecords.filter(r => r.expense_type === 'Fijo').reduce((a, r) => a + Number(r.expense), 0);
+                                const currentAhorro = monthRecords.filter(r => r.expense_type === 'Ahorro').reduce((a, r) => a + Number(r.expense), 0);
+                                
+                                const pendingFijo = Math.max(0, avgFijo - currentFijos);
+                                const pendingAhorro = Math.max(0, avgAhorro - currentAhorro);
+                                
+                                const totalBalance = records
+                                    .filter(r => normalizeDate(r.date).substring(0, 7) <= selectedMonth)
+                                    .reduce((acc, r) => acc + (Number(r.income) - Number(r.expense)), 0);
+                                    
+                                const libreParaGastar = totalBalance - pendingFijo - pendingAhorro;
+                                const isSafe = libreParaGastar > (totalBalance * 0.1);
+
+                                return (
+                                    <div className="bg-gradient-to-br from-indigo-900 via-primary-dark to-indigo-950 rounded-[3rem] p-10 text-white relative overflow-hidden shadow-2xl transition-all duration-500 hover:shadow-indigo-900/40 border border-white/10 group">
+                                        <div className="absolute top-0 left-0 w-64 h-64 bg-indigo-500/20 rounded-full -ml-32 -mt-32 blur-3xl group-hover:bg-indigo-400/30 transition-all duration-700"></div>
+                                        <div className="absolute bottom-0 right-0 w-48 h-48 bg-teal-400/10 rounded-full -mr-20 -mb-20 blur-3xl"></div>
+                                        
+                                        <div className="relative z-10 h-full flex flex-col justify-between">
+                                            <div>
+                                                <div className="flex justify-between items-center mb-8">
+                                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-300">Libre para Hoy</span>
+                                                    <div className="w-8 h-8 rounded-full bg-indigo-500/30 flex items-center justify-center backdrop-blur-sm border border-indigo-400/30">
+                                                        <ShieldCheck size={16} className="text-indigo-200" />
+                                                    </div>
+                                                </div>
+                                                <h3 className="text-4xl lg:text-5xl font-heading font-black tracking-tighter mb-2 break-words">
+                                                    ${libreParaGastar.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                                </h3>
+                                                <p className="text-xs font-bold text-indigo-200/60 uppercase tracking-widest mt-2 flex items-center gap-1.5">
+                                                    <span className={`w-1.5 h-1.5 rounded-full ${isSafe ? 'bg-teal-400' : 'bg-red-400'}`}></span>
+                                                    Gasto Variable Seguro
+                                                </p>
+                                            </div>
+                                            
+                                            <div className="mt-8 space-y-3">
+                                                <div className="flex justify-between text-[8px] font-black uppercase tracking-wider text-white/50 border-t border-white/10 pt-4">
+                                                    <span>Dinero Total</span>
+                                                    <span className="text-white">${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 0 })}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center text-[10px] font-bold text-white/70">
+                                                    <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-red-400 rounded-full"></span> Fijos Pendientes</span>
+                                                    <span className="text-red-200">${pendingFijo.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center text-[10px] font-bold text-white/70">
+                                                    <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-teal-400 rounded-full"></span> Ahorro Pendiente</span>
+                                                    <span className="text-teal-200">${pendingAhorro.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
 
                             {/* Card 2: Flujo Mensual - Interactive Glass */}
                             {(() => {

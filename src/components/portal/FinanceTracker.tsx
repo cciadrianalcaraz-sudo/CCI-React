@@ -23,6 +23,13 @@ interface FinanceRecord {
     expense: number;
     description: string;
     created_at: string;
+    expense_type: string;
+}
+
+interface PaymentMethod {
+    id: string;
+    user_id: string;
+    name: string;
 }
 
 interface FinanceCredit {
@@ -80,8 +87,12 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
     const [income, setIncome] = useState<number | ''>('');
     const [expense, setExpense] = useState<number | ''>('');
     const [description, setDescription] = useState('');
+    const [expenseType, setExpenseType] = useState('Variable');
     const [editingId, setEditingId] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
+    
+    // Payment Methods
+    const [savedPaymentMethods, setSavedPaymentMethods] = useState<PaymentMethod[]>([]);
     
     // Account management states (Saldos tab)
     const [initialBalanceAmount, setInitialBalanceAmount] = useState<number | ''>('');
@@ -91,7 +102,8 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
     const [transferDest, setTransferDest] = useState('');
     const [transferDate, setTransferDate] = useState(new Date().toISOString().split('T')[0]);
     const [transferDesc, setTransferDesc] = useState('');
-    const [accMgmtTab, setAccMgmtTab] = useState<'initial' | 'transfer'>('initial');
+    const [accMgmtTab, setAccMgmtTab] = useState<'initial' | 'transfer' | 'accounts'>('initial');
+    const [newAccountName, setNewAccountName] = useState('');
 
     // Credit Tracker states
     const [credits, setCredits] = useState<FinanceCredit[]>([]);
@@ -129,7 +141,51 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
             setLoading(false);
         }
         loadCredits();
+        loadPaymentMethods();
     }, [user.id, propsRecords]);
+
+    const loadPaymentMethods = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('finance_payment_methods')
+                .select('*')
+                .order('name', { ascending: true });
+            
+            if (error) throw error;
+            if (data) setSavedPaymentMethods(data as PaymentMethod[]);
+        } catch (error) {
+            console.error("Error loading payment methods:", error);
+        }
+    };
+
+    const handleSavePaymentMethod = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newAccountName.trim()) return;
+        try {
+            const { error } = await supabase
+                .from('finance_payment_methods')
+                .insert([{ user_id: user.id, name: newAccountName.trim().toUpperCase() }]);
+            if (error) throw error;
+            setNewAccountName('');
+            loadPaymentMethods();
+            alert("Cuenta agregada correctamente.");
+        } catch (error: any) {
+            console.error("Error saving payment method:", error);
+            alert("No se pudo agregar la cuenta. (¿Ya existe?)");
+        }
+    };
+
+    const handleDeletePaymentMethod = async (id: string, name: string) => {
+        if (!window.confirm(`¿Seguro que deseas eliminar la cuenta "${name}"? Esto no borrará sus registros históricos.`)) return;
+        try {
+            const { error } = await supabase.from('finance_payment_methods').delete().eq('id', id);
+            if (error) throw error;
+            loadPaymentMethods();
+        } catch (error) {
+            console.error("Error deleting payment method:", error);
+            alert("No se pudo eliminar la cuenta.");
+        }
+    };
 
     useEffect(() => {
         if (selectedMonth) {
@@ -511,7 +567,8 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                         provider,
                         income: numIncome,
                         expense: numExpense,
-                        description
+                        description,
+                        expense_type: expenseType
                     })
                     .eq('id', editingId)
                     .select();
@@ -534,7 +591,8 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                         provider,
                         income: numIncome,
                         expense: numExpense,
-                        description
+                        description,
+                        expense_type: expenseType
                     }])
                     .select();
 
@@ -656,6 +714,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
         setIncome('');
         setExpense('');
         setDescription('');
+        setExpenseType('Variable');
         setEditingId(null);
     };
 
@@ -667,6 +726,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
         setIncome((record.income && Number(record.income) !== 0) ? Number(record.income) : '');
         setExpense((record.expense && Number(record.expense) !== 0) ? Number(record.expense) : '');
         setDescription(record.description || '');
+        setExpenseType(record.expense_type || 'Variable');
         setEditingId(record.id);
         setIsFormOpen(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -958,20 +1018,17 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                     </datalist>
 
                     <datalist id="payment-options">
-                        <option value="EFECTIVO LAURA" />
-                        <option value="EFECTIVO ADRIAN" />
-                        <option value="TD STR LAURA" />
-                        <option value="TD BBVA LAURA" />
-                        <option value="TC STR LAURA" />
-                        <option value="CPM LAURA" />
-                        <option value="CPM ADRIAN" />
-                        <option value="CPM CRÉDITO" />
-                        <option value="CETES" />
-                        <option value="TD STR ADRIAN" />
-                        <option value="TD DESPENSA" />
-                        <option value="VALES" />
-                        <option value="ALCANCIA" />
-                        <option value="CASHI" />
+                        {savedPaymentMethods.length > 0 ? (
+                            savedPaymentMethods.map(pm => (
+                                <option key={pm.id} value={pm.name} />
+                            ))
+                        ) : (
+                            <>
+                                <option value="EFECTIVO" />
+                                <option value="TARJETA DÉBITO" />
+                                <option value="TARJETA CRÉDITO" />
+                            </>
+                        )}
                     </datalist>
 
                     <form onSubmit={handleAddRecord} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
@@ -981,13 +1038,39 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                         </div>
                         
                         <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 block ml-1">Tipo de Movimiento</label>
+                            <div className="relative">
+                                <select 
+                                    className="w-full bg-white border border-neutral-200 rounded-2xl px-5 py-3 text-sm font-black text-primary-dark outline-none focus:border-accent transition-all shadow-sm appearance-none cursor-pointer"
+                                    value={expenseType}
+                                    onChange={(e) => setExpenseType(e.target.value)}
+                                >
+                                    <option value="Variable">💅 Variable / Lujo</option>
+                                    <option value="Fijo">🏡 Gasto Fijo</option>
+                                    <option value="Ahorro">💰 Ahorro / Inversión</option>
+                                    <option value="Deuda">💳 Pago a Deuda</option>
+                                    <option value="Ingreso">💵 Ingreso</option>
+                                    <option value="Traspaso">🔄 Traspaso</option>
+                                </select>
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
+                                    <TrendingDown size={14} />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
                             <label className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 block ml-1">Fecha</label>
                             <input type="date" required value={date} onChange={e => setDate(e.target.value)} className="w-full bg-white border border-neutral-200 rounded-2xl px-5 py-3 text-sm font-medium outline-none focus:border-accent transition-all shadow-sm" />
                         </div>
                         
                         <div className="space-y-2">
                             <label className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 block ml-1">Forma de pago</label>
-                            <input list="payment-options" type="text" required value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} placeholder="Seleccione pago..." className="w-full bg-white border border-neutral-200 rounded-2xl px-5 py-3 text-sm font-medium outline-none focus:border-accent transition-all shadow-sm" />
+                            <div className="flex gap-2">
+                                <input list="payment-options" type="text" required value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} placeholder="Seleccione pago..." className="flex-1 bg-white border border-neutral-200 rounded-2xl px-5 py-3 text-sm font-medium outline-none focus:border-accent transition-all shadow-sm" />
+                                <button type="button" onClick={() => { setViewMode('balances'); setAccMgmtTab('accounts'); setIsFormOpen(false); }} className="px-4 bg-primary-dark text-white rounded-2xl hover:bg-accent transition-colors" title="Administrar formas de pago">
+                                    <Plus size={16} />
+                                </button>
+                            </div>
                         </div>
 
                         <div className="space-y-2">
@@ -1327,6 +1410,17 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                                     <div className="flex items-center gap-2">
                                                         <span className="font-black text-xs text-primary-dark uppercase tracking-wider">{record.concept}</span>
                                                         {isInitialBalance && <span className="text-[8px] bg-accent/20 text-accent-dark px-1.5 py-0.5 rounded-full font-black uppercase tracking-widest">Ajuste</span>}
+                                                    </div>
+                                                    <div className="mt-1">
+                                                        <span className={`text-[8px] px-2 py-0.5 rounded-md font-black uppercase tracking-widest ${
+                                                            record.expense_type === 'Fijo' ? 'bg-indigo-100 text-indigo-700' :
+                                                            record.expense_type === 'Ahorro' ? 'bg-teal-100 text-teal-700' :
+                                                            record.expense_type === 'Deuda' ? 'bg-orange-100 text-orange-700' :
+                                                            record.expense_type === 'Ingreso' ? 'bg-green-100 text-green-700' :
+                                                            'bg-neutral-100 text-neutral-500'
+                                                        }`}>
+                                                            {record.expense_type || 'Variable'}
+                                                        </span>
                                                     </div>
                                                 </td>
                                                 <td className="p-4 px-5 whitespace-nowrap text-xs text-neutral-500 font-medium">
@@ -1691,6 +1785,12 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                     >
                                         Traspaso
                                     </button>
+                                    <button 
+                                        onClick={() => setAccMgmtTab('accounts')}
+                                        className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${accMgmtTab === 'accounts' ? 'bg-white text-primary-dark shadow-lg scale-[1.02]' : 'text-white/40 hover:text-white'}`}
+                                    >
+                                        Mis Cuentas
+                                    </button>
                                 </div>
 
                                 <div className="relative z-10">
@@ -1736,7 +1836,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                                 </Button>
                                             </form>
                                         </div>
-                                    ) : (
+                                    ) : accMgmtTab === 'transfer' ? (
                                         <div className="animate-fade-in">
                                             <h3 className="text-xl font-heading font-black mb-2 flex items-center gap-3">
                                                 <div className="w-8 h-8 rounded-xl bg-accent/20 flex items-center justify-center">
@@ -1769,6 +1869,51 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                                     Realizar Traspaso
                                                 </Button>
                                             </form>
+                                        </div>
+                                    ) : (
+                                        <div className="animate-fade-in">
+                                            <h3 className="text-xl font-heading font-black mb-2 flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-xl bg-accent/20 flex items-center justify-center">
+                                                    <DollarSign size={18} className="text-accent" />
+                                                </div>
+                                                Cuentas y Métodos
+                                            </h3>
+                                            <p className="text-white/40 text-[10px] mb-6 font-black uppercase tracking-widest">Catálogo de formas de pago</p>
+                                            
+                                            <form onSubmit={handleSavePaymentMethod} className="flex gap-2 mb-6">
+                                                <input 
+                                                    type="text" 
+                                                    required 
+                                                    value={newAccountName} 
+                                                    onChange={e => setNewAccountName(e.target.value)} 
+                                                    placeholder="Nueva Cuenta (Ej. BBVA)" 
+                                                    className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-5 py-3 text-xs text-white outline-none focus:border-accent" 
+                                                />
+                                                <Button primary type="submit" className="py-3 px-6 shadow-xl hover:scale-[1.02] transition-all text-xs font-black uppercase tracking-widest">
+                                                    Crear
+                                                </Button>
+                                            </form>
+
+                                            <div className="space-y-2 max-h-56 overflow-y-auto pr-2 no-scrollbar">
+                                                {savedPaymentMethods.length === 0 ? (
+                                                    <div className="text-center p-6 border border-white/10 border-dashed rounded-2xl text-white/40 text-xs font-bold uppercase tracking-widest">
+                                                        No tienes cuentas registradas
+                                                    </div>
+                                                ) : (
+                                                    savedPaymentMethods.map(pm => (
+                                                        <div key={pm.id} className="flex items-center justify-between p-3 px-5 rounded-2xl bg-white/5 border border-white/5 group hover:bg-white/10 transition-all">
+                                                            <span className="font-black text-sm uppercase tracking-wider">{pm.name}</span>
+                                                            <button 
+                                                                onClick={() => handleDeletePaymentMethod(pm.id, pm.name)}
+                                                                className="opacity-0 group-hover:opacity-100 p-2 text-red-400 hover:bg-red-500/20 rounded-xl transition-all"
+                                                                title="Eliminar Cuenta"
+                                                            >
+                                                                <Trash2 size={14} />
+                                                            </button>
+                                                        </div>
+                                                    ))
+                                                )}
+                                            </div>
                                         </div>
                                     )}
                                 </div>
