@@ -119,6 +119,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
     const [activeCreditForPayment, setActiveCreditForPayment] = useState<FinanceCredit | null>(null);
     const [paymentAmount, setPaymentAmount] = useState<number | ''>('');
     const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
+    const [creditPaymentMethod, setCreditPaymentMethod] = useState('');
     const [isSavingPayment, setIsSavingPayment] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -335,11 +336,12 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                     user_id: user.id,
                     concept: `PAGO CAPITAL: ${activeCreditForPayment.name.toUpperCase()}`,
                     date: paymentDate,
-                    payment_method: 'Transferencia',
+                    payment_method: creditPaymentMethod || 'Transferencia',
                     provider: 'Banco',
                     income: 0,
                     expense: Number(paymentAmount),
-                    description: `Abono directo a capital: ${activeCreditForPayment.name}`
+                    description: `Abono directo a capital: ${activeCreditForPayment.name}`,
+                    expense_type: 'Deuda'
                 }]);
 
             if (error) throw error;
@@ -1955,6 +1957,18 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                     required 
                                     value={paymentDate} 
                                     onChange={e => setPaymentDate(e.target.value)} 
+                                    className="w-full bg-neutral-50 border border-light-beige rounded-2xl px-6 py-4 text-sm font-bold text-primary-dark outline-none focus:border-accent" 
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase text-neutral-400 ml-1">Forma de Pago (Origen)</label>
+                                <input 
+                                    list="payment-options" 
+                                    type="text" 
+                                    required 
+                                    value={creditPaymentMethod} 
+                                    onChange={e => setCreditPaymentMethod(e.target.value)} 
+                                    placeholder="Seleccione de dónde salió el dinero..." 
                                     className="w-full bg-neutral-50 border border-light-beige rounded-2xl px-6 py-4 text-sm font-bold text-primary-dark outline-none focus:border-accent" 
                                 />
                             </div>
