@@ -1982,15 +1982,17 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black uppercase text-neutral-400 ml-1">Forma de Pago (Origen)</label>
-                                <input 
-                                    list="payment-options" 
-                                    type="text" 
-                                    required 
-                                    value={creditPaymentMethod} 
-                                    onChange={e => setCreditPaymentMethod(e.target.value)} 
-                                    placeholder="Seleccione de dónde salió el dinero..." 
-                                    className="w-full bg-neutral-50 border border-light-beige rounded-2xl px-6 py-4 text-sm font-bold text-primary-dark outline-none focus:border-accent" 
-                                />
+                                <div className="relative">
+                                    <select 
+                                        required 
+                                        value={creditPaymentMethod} 
+                                        onChange={e => setCreditPaymentMethod(e.target.value)} 
+                                        className="w-full bg-neutral-50 border border-light-beige rounded-2xl px-6 py-4 text-sm font-bold text-primary-dark outline-none focus:border-accent appearance-none cursor-pointer" 
+                                    >
+                                        {renderPaymentOptions()}
+                                    </select>
+                                    <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none opacity-50"><TrendingDown size={14} /></div>
+                                </div>
                             </div>
                             <div className="flex gap-4 pt-4">
                                 <Button outline className="flex-1 py-4" onClick={() => setIsCreditPaymentFormOpen(false)}>Cancelar</Button>
