@@ -1753,6 +1753,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                                 <th className="p-5 font-black text-[10px] uppercase tracking-widest text-neutral-400 text-right">Entradas</th>
                                                 <th className="p-5 font-black text-[10px] uppercase tracking-widest text-neutral-400 text-right">Salidas</th>
                                                 <th className="p-5 font-black text-[10px] uppercase tracking-widest text-primary-dark text-right">Final</th>
+                                                <th className="p-5 w-10"></th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-neutral-100/50">
@@ -1770,6 +1771,26 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                                     </td>
                                                     <td className={`p-5 text-right text-sm font-black ${row.finalBalance < 0 ? 'text-red-600' : 'text-primary-dark'}`}>
                                                         ${row.finalBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                                    </td>
+                                                    <td className="p-5 text-center">
+                                                        <button 
+                                                            onClick={async () => {
+                                                                if (!window.confirm(`⚠️ ADVERTENCIA: Estás a punto de eliminar TODOS los movimientos financieros (${records.filter(r => r.payment_method === row.method).length}) asociados a la cuenta "${row.method}".\n\nEsta acción NO se puede deshacer. ¿Deseas continuar?`)) return;
+                                                                try {
+                                                                    const { error } = await supabase.from('finance_records').delete().eq('payment_method', row.method).eq('user_id', user.id);
+                                                                    if (error) throw error;
+                                                                    loadRecords();
+                                                                    alert(`Cuenta "${row.method}" y todos sus movimientos han sido eliminados.`);
+                                                                } catch (err) {
+                                                                    console.error(err);
+                                                                    alert("Hubo un error al intentar eliminar la cuenta.");
+                                                                }
+                                                            }}
+                                                            className="text-red-400 hover:bg-red-50 hover:text-red-600 p-2 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                                                            title="Eliminar cuenta y movimientos"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
                                                     </td>
                                                 </tr>
                                             ))}
