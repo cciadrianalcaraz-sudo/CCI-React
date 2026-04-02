@@ -374,7 +374,7 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                                     // Normalize for comparison
                                                     const rDate = r.date.includes('/') ? r.date.split('/').reverse().join('-') : r.date;
                                                     // Accumulate balance until the end of selected month
-                                                    return rDate.substring(0, 7) <= (selectedDashboardMonth || '9999-12');
+                                                    return rDate.substring(0, 7) <= (selectedDashboardMonth || '9999-12') && (r.concept || '').toUpperCase().trim() !== 'SALDO INICIAL';
                                                 })
                                                 .reduce((acc, r) => acc + (Number(r.income) - Number(r.expense)), 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                         </h3>
@@ -435,7 +435,7 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                 const pendingAhorro = Math.max(0, avgAhorro - currentAhorro);
                                 
                                 const totalBalance = records
-                                    .filter(r => normalizeDate(r.date).substring(0, 7) <= selectedMonth)
+                                    .filter(r => normalizeDate(r.date).substring(0, 7) <= selectedMonth && (r.concept || '').toUpperCase().trim() !== 'SALDO INICIAL')
                                     .reduce((acc, r) => acc + (Number(r.income) - Number(r.expense)), 0);
                                     
                                 const libreParaGastar = totalBalance - pendingFijo - pendingAhorro;
