@@ -503,7 +503,8 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
 
         const paymentMap: Record<string, { initial: number, income: number, expense: number, finalBalance: number }> = {};
         
-        records.forEach(r => {
+        // Sort chronologically (oldest to newest) to properly compute running balances and overrides
+        [...records].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).forEach(r => {
             const pm = r.payment_method || 'SIN ESPECIFICAR';
             if (!paymentMap[pm]) {
                 paymentMap[pm] = { initial: 0, income: 0, expense: 0, finalBalance: 0 };
