@@ -1775,21 +1775,24 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                                     <td className="p-5 text-center">
                                                         <button 
                                                             onClick={async () => {
-                                                                if (!window.confirm(`⚠️ ADVERTENCIA: Estás a punto de eliminar TODOS los movimientos financieros (${records.filter(r => r.payment_method === row.method).length}) asociados a la cuenta "${row.method}".\n\nEsta acción NO se puede deshacer. ¿Deseas continuar?`)) return;
+                                                                const target = window.prompt(`Conservar registros de "${row.method}".\n\nIngresa el nombre EXACTO de la cuenta destino a la cual deseas unificarlos:\n(Opciones: ${savedPaymentMethods.map(p => p.name).join(', ') || 'EFECTIVO'})`);
+                                                                if (!target) return;
+                                                                const targetUpper = target.trim().toUpperCase();
+                                                                if (!window.confirm(`⚠️ Vas a MIGRAR todos los movimientos (${records.filter(r => r.payment_method === row.method).length}) de "${row.method}" hacia la cuenta "${targetUpper}".\n\n¿Estás seguro?`)) return;
                                                                 try {
-                                                                    const { error } = await supabase.from('finance_records').delete().eq('payment_method', row.method).eq('user_id', user.id);
+                                                                    const { error } = await supabase.from('finance_records').update({ payment_method: targetUpper }).eq('payment_method', row.method).eq('user_id', user.id);
                                                                     if (error) throw error;
                                                                     loadRecords();
-                                                                    alert(`Cuenta "${row.method}" y todos sus movimientos han sido eliminados.`);
+                                                                    alert(`Registros unificados exitosamente a "${targetUpper}".`);
                                                                 } catch (err) {
                                                                     console.error(err);
-                                                                    alert("Hubo un error al intentar eliminar la cuenta.");
+                                                                    alert("Hubo un error al reasignar la cuenta.");
                                                                 }
                                                             }}
-                                                            className="text-red-400 hover:bg-red-50 hover:text-red-600 p-2 rounded-xl transition-all opacity-0 group-hover:opacity-100"
-                                                            title="Eliminar cuenta y movimientos"
+                                                            className="text-amber-500 hover:bg-amber-50 hover:text-amber-600 p-2 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                                                            title="Unificar registros con otra cuenta"
                                                         >
-                                                            <Trash2 size={16} />
+                                                            <Edit2 size={16} />
                                                         </button>
                                                     </td>
                                                 </tr>
