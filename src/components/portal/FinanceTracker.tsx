@@ -97,6 +97,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
     // Account management states (Saldos tab)
     const [initialBalanceAmount, setInitialBalanceAmount] = useState<number | ''>('');
     const [initialBalancePM, setInitialBalancePM] = useState('');
+    const [initialBalanceDate, setInitialBalanceDate] = useState(new Date().toISOString().split('T')[0]);
     const [transferAmount, setTransferAmount] = useState<number | ''>('');
     const [transferOrigin, setTransferOrigin] = useState('');
     const [transferDest, setTransferDest] = useState('');
@@ -503,8 +504,18 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
 
         const paymentMap: Record<string, { initial: number, income: number, expense: number, finalBalance: number }> = {};
         
-        // Sort chronologically (oldest to newest) to properly compute running balances and overrides
-        [...records].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).forEach(r => {
+        // The saldos tab always needs the FULL historical picture up to (and including) the selected month.
+        // We iterate ALL records chronologically, accumulating balances per account.
+        // For the current/selected month we also track income/expense for that period.
+        const cutoffMonth = selectedMonth === 'all' ? '9999-12' : selectedMonth;
+
+        [...records]
+          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+          .filter(r => {
+            const rDate = r.date.includes('/') ? r.date.split('/').reverse().join('-') : r.date;
+            return rDate.substring(0, 7) <= cutoffMonth;
+          })
+          .forEach(r => {
             const pm = r.payment_method || 'SIN ESPECIFICAR';
             if (!paymentMap[pm]) {
                 paymentMap[pm] = { initial: 0, income: 0, expense: 0, finalBalance: 0 };
@@ -514,22 +525,25 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
             const isInitialBalance = (r.concept || '').toUpperCase().trim() === 'SALDO INICIAL';
             const recordIncome = Number(r.income) || 0;
             const recordExpense = Number(r.expense) || 0;
-            
+
+            // Records BEFORE the selected month: accumulate into the "initial" carry-forward balance
             if (selectedMonth !== 'all' && recordMonth < selectedMonth) {
                 if (isInitialBalance) {
-                    paymentMap[pm].finalBalance = recordIncome - recordExpense; 
+                    paymentMap[pm].finalBalance = recordIncome - recordExpense;
                 } else {
-                    paymentMap[pm].finalBalance += recordIncome - recordExpense; 
+                    paymentMap[pm].finalBalance += recordIncome - recordExpense;
                 }
+                // Keep updating initial so it reflects carry-forward at start of selected month
                 paymentMap[pm].initial = paymentMap[pm].finalBalance;
 
-            } else if (selectedMonth === 'all' || recordMonth === selectedMonth) {
+            } else {
+                // Records IN the selected month (or all months)
                 if (isInitialBalance) {
                     const resetValue = recordIncome - recordExpense;
-                    paymentMap[pm].initial = resetValue;      
-                    paymentMap[pm].finalBalance = resetValue; 
-                    paymentMap[pm].income = 0;                
-                    paymentMap[pm].expense = 0;               
+                    paymentMap[pm].initial = resetValue;
+                    paymentMap[pm].finalBalance = resetValue;
+                    paymentMap[pm].income = 0;
+                    paymentMap[pm].expense = 0;
                 } else {
                     paymentMap[pm].income += recordIncome;
                     paymentMap[pm].expense += recordExpense;
@@ -538,6 +552,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
             }
         });
         
+        // Show ALL accounts that have ever had any record, even if current balance is zero
         const balances = Object.entries(paymentMap)
             .map(([method, data]) => ({
                 method,
@@ -546,7 +561,6 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                 expense: data.expense,
                 finalBalance: data.finalBalance 
             }))
-            .filter(p => p.initialBalance !== 0 || p.income !== 0 || p.expense !== 0 || p.finalBalance !== 0)
             .sort((a,b) => b.finalBalance - a.finalBalance);
             
         setPaymentBalancesData(balances);
@@ -623,7 +637,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
             const { error } = await supabase.from('finance_records').insert([{
                 user_id: user.id,
                 concept: 'SALDO INICIAL',
-                date: new Date().toISOString().split('T')[0],
+                date: initialBalanceDate,
                 payment_method: initialBalancePM,
                 income: Number(initialBalanceAmount) >= 0 ? Number(initialBalanceAmount) : 0,
                 expense: Number(initialBalanceAmount) < 0 ? Math.abs(Number(initialBalanceAmount)) : 0,
@@ -634,6 +648,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
             if (error) throw error;
             setInitialBalanceAmount('');
             setInitialBalancePM('');
+            setInitialBalanceDate(new Date().toISOString().split('T')[0]);
             loadRecords();
             alert("Saldo inicial registrado correctamente.");
         } catch (error) {
@@ -1869,6 +1884,16 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                                             className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-5 py-3.5 text-sm font-black text-white outline-none focus:border-accent placeholder:text-white/20 transition-all"
                                                         />
                                                     </div>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 block ml-1">Fecha del Ajuste</label>
+                                                    <input
+                                                        type="date"
+                                                        required
+                                                        value={initialBalanceDate}
+                                                        onChange={e => setInitialBalanceDate(e.target.value)}
+                                                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-sm text-white outline-none focus:border-accent transition-all font-medium"
+                                                    />
                                                 </div>
                                                 <Button primary type="submit" className="w-full py-4 text-xs font-black uppercase tracking-widest shadow-2xl mt-4 hover:scale-[1.02] active:scale-[0.98] transition-all">
                                                     Guardar Ajuste
