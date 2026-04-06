@@ -2092,6 +2092,41 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                     </div>
                 </div>
             )}
+
+            {/* FLOATING TOTALS BAR - Budget mode */}
+            {viewMode === 'budget' && budgetData.length > 0 && (() => {
+                const totalBudget = budgetData.reduce((acc, row) => acc + row.avgBudget, 0);
+                const totalSpent = budgetData.reduce((acc, row) => acc + row.currentExpense, 0);
+                const diff = totalBudget - totalSpent;
+                const isOver = diff < 0;
+                return (
+                    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] w-[90vw] max-w-3xl animate-slide-up">
+                        <div className="bg-primary-dark/80 backdrop-blur-xl rounded-full border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-2 pr-6 flex items-center justify-between gap-4">
+                            <div className="flex bg-white/10 rounded-full p-1">
+                                <div className="px-5 py-2 rounded-full flex flex-col items-center">
+                                    <span className="text-[8px] font-black uppercase tracking-widest text-white/50">Presupuestado</span>
+                                    <span className="text-sm font-black text-white">
+                                        ${totalBudget.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                    </span>
+                                </div>
+                                <div className="w-px h-6 bg-white/10 self-center"></div>
+                                <div className="px-5 py-2 rounded-full flex flex-col items-center">
+                                    <span className="text-[8px] font-black uppercase tracking-widest text-white/50">Gastado</span>
+                                    <span className="text-sm font-black text-red-400">
+                                        ${totalSpent.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="flex flex-col items-end">
+                                <span className="text-[8px] font-black uppercase tracking-widest text-white/50">{isOver ? 'Exceso' : 'Margen'}</span>
+                                <span className={`text-lg font-heading font-black ${isOver ? 'text-red-400' : 'text-green-400'}`}>
+                                    {isOver ? '-' : '+'}${Math.abs(diff).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
         </div>
     );
 }
