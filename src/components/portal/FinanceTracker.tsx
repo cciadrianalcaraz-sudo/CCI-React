@@ -1775,22 +1775,24 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                                     <td className="p-5 text-center">
                                                         <button 
                                                             onClick={async () => {
-                                                                const target = window.prompt(`Conservar registros de "${row.method}".\n\nIngresa el nombre EXACTO de la cuenta destino a la cual deseas unificarlos:\n(Opciones: ${savedPaymentMethods.map(p => p.name).join(', ') || 'EFECTIVO'})`);
+                                                                const target = window.prompt(`Reasignar registros de "${row.method}" a otra cuenta.\n\nEscribe el nombre EXACTO de la cuenta destino:\n(Cuentas disponibles: ${savedPaymentMethods.map(p => p.name).join(', ') || 'ninguna registrada'})`);
                                                                 if (!target) return;
                                                                 const targetUpper = target.trim().toUpperCase();
-                                                                if (!window.confirm(`⚠️ Vas a MIGRAR todos los movimientos (${records.filter(r => r.payment_method === row.method).length}) de "${row.method}" hacia la cuenta "${targetUpper}".\n\n¿Estás seguro?`)) return;
+                                                                const count = records.filter(r => r.payment_method === row.method).length;
+                                                                if (!window.confirm(`¿Mover ${count} registro(s) de "${row.method}" → "${targetUpper}"?`)) return;
                                                                 try {
                                                                     const { error } = await supabase.from('finance_records').update({ payment_method: targetUpper }).eq('payment_method', row.method).eq('user_id', user.id);
                                                                     if (error) throw error;
+                                                                    if (onRefresh) onRefresh();
                                                                     loadRecords();
-                                                                    alert(`Registros unificados exitosamente a "${targetUpper}".`);
+                                                                    alert(`✅ ${count} registro(s) movidos a "${targetUpper}" exitosamente.`);
                                                                 } catch (err) {
                                                                     console.error(err);
-                                                                    alert("Hubo un error al reasignar la cuenta.");
+                                                                    alert("Error al reasignar la cuenta. Intenta de nuevo.");
                                                                 }
                                                             }}
-                                                            className="text-amber-500 hover:bg-amber-50 hover:text-amber-600 p-2 rounded-xl transition-all opacity-0 group-hover:opacity-100"
-                                                            title="Unificar registros con otra cuenta"
+                                                            className="text-amber-500 hover:bg-amber-50 hover:text-amber-600 p-2 rounded-xl transition-all"
+                                                            title={`Reasignar registros de ${row.method} a otra cuenta`}
                                                         >
                                                             <Edit2 size={16} />
                                                         </button>
