@@ -848,6 +848,13 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                 const incomeValue = parseNumber(getValue(['INGRESO', 'ENTRADA', 'POSITIVO', 'DEPOSITO', 'ABONO', 'CREDITO', 'INPUT', 'CASHIN']));
                 const expenseValue = parseNumber(getValue(['GASTO', 'SALIDA', 'NEGATIVO', 'EGRESO', 'CARGO', 'RETIRO', 'DEBITO', 'OUTPUT', 'CASHOUT']));
 
+                // Tipo de movimiento
+                const validTypes = ['Variable', 'Fijo', 'Ahorro', 'Deuda', 'Ingreso', 'Traspaso'];
+                const rawType = String(getValue(['TIPO', 'TIPOGASTO', 'TIPOMOVIMIENTO', 'CATEGORIA', 'CATEGORY', 'TYPE']) || '').trim();
+                // Capitalize first letter to match valid values (e.g. 'fijo' -> 'Fijo')
+                const normalizedType = rawType.charAt(0).toUpperCase() + rawType.slice(1).toLowerCase();
+                const expenseTypeValue = validTypes.includes(normalizedType) ? normalizedType : 'Variable';
+
                 // Si no hay concepto ni montos, es una fila vacía
                 if (!conceptValue && incomeValue === 0 && expenseValue === 0) {
                     return null;
@@ -861,6 +868,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                     provider: String(getValue(['PROVEEDOR', 'PROVIDER', 'LUGAR', 'ESTABLECIMIENTO', 'DESTINO', 'COMERCIO']) || '').trim().toUpperCase(),
                     income: incomeValue,
                     expense: expenseValue,
+                    expense_type: expenseTypeValue,
                     description: String(getValue(['DESCRIPCION', 'DETALLE', 'MOTIVO', 'COMENTARIO', 'OBSERVACION', 'REFERENCIA', 'NOTAS']) || '').trim()
                 };
             }).filter(record => record !== null); // Eliminar filas vacías
