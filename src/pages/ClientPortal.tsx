@@ -17,6 +17,18 @@ import {
 
 const MASTER_EMAIL = 'cci.adrianalcaraz@gmail.com';
 
+// Robust Date Normalization Helper
+const normalizeDate = (dateStr: string) => {
+    if (!dateStr) return '';
+    if (dateStr.includes('-')) return dateStr;
+    const parts = dateStr.split('/');
+    if (parts.length === 3) {
+        // Assume DD/MM/YYYY
+        return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+    }
+    return dateStr;
+};
+
 // Define interfaces for our real data
 interface Profile {
     full_name: string;
@@ -40,7 +52,6 @@ export default function ClientPortal() {
     const [user, setUser] = useState<any>(null);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
-    // Initial session check
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
             setUser(session?.user ?? null);
@@ -369,14 +380,16 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                             </div>
                                         </div>
                                         <h3 className="text-5xl font-heading font-black mb-2 tracking-tighter leading-none">
-                                            ${records
-                                                .filter(r => {
-                                                    // Normalize for comparison
-                                                    const rDate = r.date.includes('/') ? r.date.split('/').reverse().join('-') : r.date;
-                                                    // Accumulate balance until the end of selected month
-                                                    return rDate.substring(0, 7) <= (selectedDashboardMonth || '9999-12') && (r.concept || '').toUpperCase().trim() !== 'SALDO INICIAL';
-                                                })
-                                                .reduce((acc, r) => acc + (Number(r.income) - Number(r.expense)), 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                            ${(() => {
+                                                const currentVal = records
+                                                    .filter(r => {
+                                                        const rDate = normalizeDate(r.date);
+                                                        return rDate.substring(0, 7) <= (selectedDashboardMonth || '9999-12') && (r.concept || '').toUpperCase().trim() !== 'SALDO INICIAL';
+                                                    })
+                                                    .reduce((acc, r) => acc + (Number(r.income) - Number(r.expense)), 0);
+                                                
+                                                return currentVal.toLocaleString('en-US', { minimumFractionDigits: 2 });
+                                            })()}
                                         </h3>
                                     </div>
                                      <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between">
@@ -405,13 +418,13 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                 
                                 records.forEach(r => {
                                     const dateStr = normalizeDate(r.date);
-                                    const month = dateStr.substring(0, 7);
+                                    const monthVal = dateStr.substring(0, 7);
                                     
                                     if (r.expense_type === 'Fijo' && r.expense > 0) {
-                                        fijosByMonth[month] = (fijosByMonth[month] || 0) + Number(r.expense);
+                                        fijosByMonth[monthVal] = (fijosByMonth[monthVal] || 0) + Number(r.expense);
                                     }
                                     if (r.expense_type === 'Ahorro' && r.expense > 0) {
-                                        ahorroByMonth[month] = (ahorroByMonth[month] || 0) + Number(r.expense);
+                                        ahorroByMonth[monthVal] = (ahorroByMonth[monthVal] || 0) + Number(r.expense);
                                     }
                                 });
                                 
@@ -424,8 +437,8 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                 // Current month records
                                 const monthRecords = records.filter(r => {
                                     const c = (r.concept || '').toUpperCase().trim();
-                                    const normalizedDate = normalizeDate(r.date);
-                                    return normalizedDate.startsWith(selectedMonth) && c !== 'SALDO INICIAL' && !c.includes('TRASPASO');
+                                    const normalizedDateVal = normalizeDate(r.date);
+                                    return normalizedDateVal.startsWith(selectedMonth) && c !== 'SALDO INICIAL' && !c.includes('TRASPASO');
                                 });
                                 
                                 const currentFijos = monthRecords.filter(r => r.expense_type === 'Fijo').reduce((a, r) => a + Number(r.expense), 0);
@@ -438,6 +451,17 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                     .filter(r => normalizeDate(r.date).substring(0, 7) <= selectedMonth && (r.concept || '').toUpperCase().trim() !== 'SALDO INICIAL')
                                     .reduce((acc, r) => acc + (Number(r.income) - Number(r.expense)), 0);
                                     
+                                const [year, month] = selectedMonth.split('-').map(Number);
+                                const prevDateObj = new Date(year, month - 2, 1);
+                                const prevMonth = prevDateObj.getFullYear() + '-' + String(prevDateObj.getMonth() + 1).padStart(2, '0');
+
+                                const prevTotalBalance = records
+                                    .filter(r => normalizeDate(r.date).substring(0, 7) <= prevMonth && (r.concept || '').toUpperCase().trim() !== 'SALDO INICIAL')
+                                    .reduce((acc, r) => acc + (Number(r.income) - Number(r.expense)), 0);
+
+                                const diffBalance = totalBalance - prevTotalBalance;
+                                const percBalance = prevTotalBalance !== 0 ? (diffBalance / Math.abs(prevTotalBalance)) * 100 : 0;
+
                                 const libreParaGastar = totalBalance - pendingFijo - pendingAhorro;
                                 const isSafe = libreParaGastar > (totalBalance * 0.1);
 
@@ -457,10 +481,18 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                                 <h3 className="text-4xl lg:text-5xl font-heading font-black tracking-tighter mb-2 break-words">
                                                     ${libreParaGastar.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                                 </h3>
-                                                <p className="text-xs font-bold text-indigo-200/60 uppercase tracking-widest mt-2 flex items-center gap-1.5">
-                                                    <span className={`w-1.5 h-1.5 rounded-full ${isSafe ? 'bg-teal-400' : 'bg-red-400'}`}></span>
-                                                    Gasto Variable Seguro
-                                                </p>
+                                                <div className="flex items-center gap-2 mt-2">
+                                                    <p className="text-xs font-bold text-indigo-200/60 uppercase tracking-widest flex items-center gap-1.5">
+                                                        <span className={`w-1.5 h-1.5 rounded-full ${isSafe ? 'bg-teal-400' : 'bg-red-400'}`}></span>
+                                                        Gasto Seguro
+                                                    </p>
+                                                    {percBalance !== 0 && (
+                                                        <div className={`flex items-center gap-0.5 text-[10px] font-black px-2 py-0.5 rounded-full ${percBalance > 0 ? 'bg-teal-400/20 text-teal-400' : 'bg-rose-400/20 text-rose-400'}`}>
+                                                            {percBalance > 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
+                                                            {Math.abs(percBalance).toFixed(1)}%
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                             
                                             <div className="mt-8 space-y-3">
@@ -486,17 +518,16 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                             {(() => {
                                 const selectedMonth = selectedDashboardMonth || new Date().toISOString().substring(0, 7);
                                 
-                                const normalizeDate = (dateStr: string) => {
-                                    if (dateStr.includes('-')) return dateStr;
-                                    const parts = dateStr.split('/');
-                                    if (parts.length === 3) return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-                                    return dateStr;
-                                };
+                                // Calculate Previous Month
+                                const [year, month] = selectedMonth.split('-').map(Number);
+                                const prevDateObj = new Date(year, month - 2, 1);
+                                const prevMonth = prevDateObj.getFullYear() + '-' + String(prevDateObj.getMonth() + 1).padStart(2, '0');
 
+                                // Current Month metrics
                                 const monthRecords = records.filter(r => {
                                     const c = (r.concept || '').toUpperCase().trim();
-                                    const normalizedDate = normalizeDate(r.date);
-                                    return normalizedDate.startsWith(selectedMonth) && c !== 'SALDO INICIAL' && !c.includes('TRASPASO');
+                                    const nDate = normalizeDate(r.date);
+                                    return nDate.startsWith(selectedMonth) && c !== 'SALDO INICIAL' && !c.includes('TRASPASO');
                                 });
                                 
                                 const monthIncome = monthRecords.reduce((acc, r) => acc + Number(r.income), 0);
@@ -504,10 +535,31 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                 const savings = monthIncome - monthExpense;
                                 const savingsRate = monthIncome > 0 ? (savings / monthIncome) * 100 : 0;
                                 
-                                // Calculation for daily burn
+                                // Daily burn
                                 const isCurrentMonth = selectedMonth === new Date().toISOString().substring(0, 7);
-                                const daysInMonth = isCurrentMonth ? new Date().getDate() : new Date(Number(selectedMonth.split('-')[0]), Number(selectedMonth.split('-')[1]), 0).getDate();
+                                const daysInMonth = isCurrentMonth ? new Date().getDate() : new Date(year, month, 0).getDate();
                                 const dailyBurn = monthExpense / daysInMonth;
+
+                                // Previous Month metrics
+                                const prevMonthRecords = records.filter(r => {
+                                    const c = (r.concept || '').toUpperCase().trim();
+                                    const nDate = normalizeDate(r.date);
+                                    return nDate.startsWith(prevMonth) && c !== 'SALDO INICIAL' && !c.includes('TRASPASO');
+                                });
+
+                                const prevIncome = prevMonthRecords.reduce((acc, r) => acc + Number(r.income), 0);
+                                const prevExpense = prevMonthRecords.reduce((acc, r) => acc + Number(r.expense), 0);
+                                const prevSavings = prevIncome - prevExpense;
+
+                                // Comparisons
+                                const incomeDiff = monthIncome - prevIncome;
+                                const incomePerc = prevIncome !== 0 ? (incomeDiff / prevIncome) * 100 : 0;
+                                
+                                const expenseDiff = monthExpense - prevExpense;
+                                const expensePerc = prevExpense !== 0 ? (expenseDiff / prevExpense) * 100 : 0;
+
+                                const savingsDiff = savings - prevSavings;
+                                const savingsPerc = Math.abs(prevSavings) > 0 ? (savingsDiff / Math.abs(prevSavings)) * 100 : 0;
 
                                 return (
                                     <>
@@ -537,11 +589,27 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                                         <div className="flex justify-between items-end">
                                                             <div>
                                                                 <p className="text-[9px] font-black text-neutral-300 uppercase mb-2 tracking-widest">Ingresos</p>
-                                                                <p className="text-3xl font-black text-primary-dark tracking-tighter">${monthIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                                                                <div className="flex items-center gap-2">
+                                                                    <p className="text-3xl font-black text-primary-dark tracking-tighter">${monthIncome.toLocaleString('en-US', { minimumFractionDigits: 0 })}</p>
+                                                                    {incomePerc !== 0 && (
+                                                                        <span className={`text-[10px] font-black flex items-center gap-0.5 ${incomePerc > 0 ? 'text-green-500' : 'text-rose-500'}`}>
+                                                                            {incomePerc > 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
+                                                                            {Math.abs(incomePerc).toFixed(0)}%
+                                                                        </span>
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                             <div className="text-right">
                                                                 <p className="text-[9px] font-black text-neutral-300 uppercase mb-2 tracking-widest">Gastos</p>
-                                                                <p className="text-2xl font-black text-red-500 tracking-tighter">${monthExpense.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                                                                <div className="flex items-center justify-end gap-2">
+                                                                    {expensePerc !== 0 && (
+                                                                        <span className={`text-[10px] font-black flex items-center gap-0.5 ${expensePerc < 0 ? 'text-green-500' : 'text-rose-500'}`}>
+                                                                            {expensePerc > 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
+                                                                            {Math.abs(expensePerc).toFixed(0)}%
+                                                                        </span>
+                                                                    )}
+                                                                    <p className="text-2xl font-black text-red-500 tracking-tighter">${monthExpense.toLocaleString('en-US', { minimumFractionDigits: 0 })}</p>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                         <div className="space-y-2">
@@ -564,9 +632,17 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                                 <TrendingUp size={180} />
                                             </div>
                                             <div className="relative z-10">
-                                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-400 mb-2 block">Utilidad Neta</span>
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-400 block">Utilidad Neta</span>
+                                                    {savingsPerc !== 0 && (
+                                                        <div className={`flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full ${savingsPerc > 0 ? 'bg-green-100 text-green-600' : 'bg-rose-100 text-rose-600'}`}>
+                                                            {savingsPerc > 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
+                                                            {Math.abs(savingsPerc).toFixed(0)}%
+                                                        </div>
+                                                    )}
+                                                </div>
                                                 <h3 className={`text-4xl font-heading font-black tracking-tighter ${savings >= 0 ? 'text-primary-dark' : 'text-red-600'}`}>
-                                                    ${savings.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                                    ${savings.toLocaleString('en-US', { minimumFractionDigits: 0 })}
                                                 </h3>
                                                 <div className="mt-6 space-y-4">
                                                     <div className="flex items-center justify-between">
@@ -620,8 +696,8 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                         const chartData = last6Months.map(m => {
                                             const monthMoves = records.filter(r => {
                                                 const c = (r.concept || '').toUpperCase().trim();
-                                                const normalizedDate = (r.date.includes('/')) ? r.date.split('/').reverse().join('-') : r.date;
-                                                return normalizedDate.startsWith(m.value) && c !== 'SALDO INICIAL' && !c.includes('TRASPASO');
+                                                const nDate = normalizeDate(r.date);
+                                                return nDate.startsWith(m.value) && c !== 'SALDO INICIAL' && !c.includes('TRASPASO');
                                             });
                                             return {
                                                 month: m.label.split(' ')[0], // Just the month name
@@ -694,7 +770,8 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                             const selectedMonth = selectedDashboardMonth || new Date().toISOString().substring(0, 7);
                                             const monthExpenses = records.filter(r => {
                                                 const c = (r.concept || '').toUpperCase().trim();
-                                                return r.date.startsWith(selectedMonth) && Number(r.expense) > 0 && c !== 'SALDO INICIAL' && !c.includes('TRASPASO');
+                                                const nDate = normalizeDate(r.date);
+                                                return nDate.startsWith(selectedMonth) && Number(r.expense) > 0 && c !== 'SALDO INICIAL' && !c.includes('TRASPASO');
                                             });
                                             
                                             const categoryTotals: Record<string, number> = {};
@@ -768,7 +845,8 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                             const selectedMonth = selectedDashboardMonth || new Date().toISOString().substring(0, 7);
                                             const monthExpenses = records.filter(r => {
                                                 const c = (r.concept || '').toUpperCase().trim();
-                                                return r.date.startsWith(selectedMonth) && Number(r.expense) > 0 && c !== 'SALDO INICIAL' && !c.includes('TRASPASO');
+                                                const nDate = normalizeDate(r.date);
+                                                return nDate.startsWith(selectedMonth) && Number(r.expense) > 0 && c !== 'SALDO INICIAL' && !c.includes('TRASPASO');
                                             });
                                             const totalMonthExpense = monthExpenses.reduce((acc, r) => acc + Number(r.expense), 0);
                                             
@@ -811,8 +889,8 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                 <div className="p-4 space-y-2">
                                      {records
                                         .filter(r => {
-                                            const normalizedDate = (r.date.includes('/')) ? r.date.split('/').reverse().join('-') : r.date;
-                                            return normalizedDate.startsWith(selectedDashboardMonth || new Date().toISOString().substring(0, 7));
+                                            const nDate = normalizeDate(r.date);
+                                            return nDate.startsWith(selectedDashboardMonth || new Date().toISOString().substring(0, 7));
                                         })
                                         .slice(0, 8).map((record) => (
                                          <div key={record.id} className="p-4 rounded-2xl hover:bg-neutral-50 flex items-center justify-between transition-all group/row">
@@ -836,7 +914,7 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                              </div>
                                          </div>
                                      ))}
-                                     {records.filter(r => r.date.startsWith(selectedDashboardMonth || new Date().toISOString().substring(0, 7))).length === 0 && (
+                                     {records.filter(r => normalizeDate(r.date).startsWith(selectedDashboardMonth || new Date().toISOString().substring(0, 7))).length === 0 && (
                                          <div className="p-10 text-center text-neutral-300 text-[10px] font-black uppercase tracking-widest border-2 border-dashed border-neutral-50 rounded-[2rem]">
                                              Sin actividad en este periodo
                                          </div>

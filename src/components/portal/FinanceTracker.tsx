@@ -1,16 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Plus, Trash2, Search, TrendingUp, 
-    TrendingDown, 
-    DollarSign, 
-    Edit2, 
-    Upload, 
-    Download, 
-    Calendar
+import { Plus, Trash2, Search, TrendingUp,
+    TrendingDown,
+    DollarSign,
+    Edit2,
+    Upload,
+    Download,
+    Calendar,
+    X
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import Button from '../ui/Button';
+import { toast } from '../../lib/toast';
+import { Toaster } from '../ui/Toaster';
+import { useConfirm } from '../../hooks/useConfirm';
 
 interface FinanceRecord {
     id: string;
@@ -90,6 +94,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
     const [expenseType, setExpenseType] = useState('Variable');
     const [editingId, setEditingId] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
     
     // Payment Methods
     const [savedPaymentMethods, setSavedPaymentMethods] = useState<PaymentMethod[]>([]);
@@ -124,6 +129,14 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
     const [isSavingPayment, setIsSavingPayment] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Toast & Confirm
+    const { confirm, ConfirmModal } = useConfirm();
+
+    // Reassign account modal
+    const [reassignModal, setReassignModal] = useState<{ method: string; count: number } | null>(null);
+    const [reassignTarget, setReassignTarget] = useState('');
+    const [isReassigning, setIsReassigning] = useState(false);
 
     // Helper: Formato de fecha sin desajuste de zona horaria
     const formatDate = (dateStr: string) => {
@@ -170,22 +183,29 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
             if (error) throw error;
             setNewAccountName('');
             loadPaymentMethods();
-            alert("Cuenta agregada correctamente.");
+            toast.success('Cuenta agregada correctamente.');
         } catch (error: any) {
-            console.error("Error saving payment method:", error);
-            alert("No se pudo agregar la cuenta. (¿Ya existe?)");
+            console.error('Error saving payment method:', error);
+            toast.error('No se pudo agregar la cuenta. ¿Ya existe una con ese nombre?');
         }
     };
 
     const handleDeletePaymentMethod = async (id: string, name: string) => {
-        if (!window.confirm(`¿Seguro que deseas eliminar la cuenta "${name}"? Esto no borrará sus registros históricos.`)) return;
+        const ok = await confirm({
+            title: 'Eliminar Cuenta',
+            message: `¿Seguro que deseas eliminar "${name}"? Sus registros históricos se conservarán.`,
+            confirmLabel: 'Eliminar',
+            danger: true,
+        });
+        if (!ok) return;
         try {
             const { error } = await supabase.from('finance_payment_methods').delete().eq('id', id);
             if (error) throw error;
             loadPaymentMethods();
+            toast.success(`Cuenta "${name}" eliminada.`);
         } catch (error) {
-            console.error("Error deleting payment method:", error);
-            alert("No se pudo eliminar la cuenta.");
+            console.error('Error deleting payment method:', error);
+            toast.error('No se pudo eliminar la cuenta.');
         }
     };
 
@@ -239,13 +259,19 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                 [concept]: amount
             }));
         } catch (error) {
-            console.error("Error saving budget:", error);
-            alert("No se pudo guardar el presupuesto.");
+            console.error('Error saving budget:', error);
+            toast.error('No se pudo guardar el presupuesto.');
         }
     };
 
     const handleDeleteBudget = async (concept: string) => {
-        if (!window.confirm(`¿Seguro que deseas eliminar el presupuesto personalizado para "${concept}"?`)) return;
+        const ok = await confirm({
+            title: 'Reiniciar Presupuesto',
+            message: `¿Deseas eliminar el presupuesto personalizado de "${concept}"? Se usará el promedio histórico.`,
+            confirmLabel: 'Reiniciar',
+            danger: true,
+        });
+        if (!ok) return;
         try {
             const { error } = await supabase
                 .from('finance_budgets')
@@ -254,13 +280,14 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                 .eq('month', selectedMonth);
 
             if (error) throw error;
-            
+
             const newBudgets = { ...manualBudgets };
             delete newBudgets[concept];
             setManualBudgets(newBudgets);
+            toast.success(`Presupuesto de "${concept}" reiniciado.`);
         } catch (error) {
-            console.error("Error deleting budget:", error);
-            alert("No se pudo eliminar el presupuesto.");
+            console.error('Error deleting budget:', error);
+            toast.error('No se pudo eliminar el presupuesto.');
         }
     };
 
@@ -302,27 +329,36 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                 setCreditAnnualRate('');
                 setCreditStartDate(new Date().toISOString().split('T')[0]);
                 setIsCreditFormOpen(false);
+                toast.success('Crédito registrado correctamente.');
             }
         } catch (error) {
-            console.error("Error saving credit:", error);
-            alert("Error al guardar crédito.");
+            console.error('Error saving credit:', error);
+            toast.error('Error al guardar el crédito.');
         } finally {
             setIsSavingCredit(false);
         }
     };
 
     const handleDeleteCredit = async (id: string) => {
-        if (!window.confirm("¿Seguro que quieres eliminar este crédito?")) return;
+        const ok = await confirm({
+            title: 'Eliminar Crédito',
+            message: '¿Seguro que quieres eliminar este crédito? Se perderá todo su historial de cálculo.',
+            confirmLabel: 'Eliminar',
+            danger: true,
+        });
+        if (!ok) return;
         try {
             const { error } = await supabase
                 .from('finance_credits')
                 .delete()
                 .eq('id', id);
-            
+
             if (error) throw error;
             setCredits(credits.filter(c => c.id !== id));
+            toast.success('Crédito eliminado correctamente.');
         } catch (error) {
-            console.error("Error deleting credit:", error);
+            console.error('Error deleting credit:', error);
+            toast.error('No se pudo eliminar el crédito.');
         }
     };
 
@@ -352,9 +388,10 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
             setIsCreditPaymentFormOpen(false);
             setPaymentAmount('');
             setActiveCreditForPayment(null);
+            toast.success(`Pago de $${Number(paymentAmount).toLocaleString()} registrado.`);
         } catch (error) {
-            console.error("Error saving credit payment:", error);
-            alert("No se pudo registrar el pago.");
+            console.error('Error saving credit payment:', error);
+            toast.error('No se pudo registrar el pago.');
         } finally {
             setIsSavingPayment(false);
         }
@@ -595,6 +632,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                     loadRecords();
                     resetForm();
                     setIsFormOpen(false);
+                    toast.success('Registro actualizado correctamente.');
                 }
             } else {
                 // Registro Normal
@@ -618,21 +656,21 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                     loadRecords();
                     resetForm();
                     setIsFormOpen(false);
+                    toast.success('Registro guardado correctamente.');
                 }
             }
         } catch (error) {
-            console.error("Error adding/updating record:", error);
-            alert("Hubo un error al guardar el registro.");
+            console.error('Error adding/updating record:', error);
+            toast.error('Hubo un error al guardar el registro.');
         }
     };
 
     const handleAddInitialBalance = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!initialBalancePM || initialBalanceAmount === '') {
-            alert("Por favor selecciona una cuenta y un monto.");
+            toast.warning('Por favor selecciona una cuenta y un monto.');
             return;
         }
-
         try {
             const { error } = await supabase.from('finance_records').insert([{
                 user_id: user.id,
@@ -644,23 +682,22 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                 provider: 'SISTEMA',
                 description: 'Carga inicial de saldo'
             }]);
-
             if (error) throw error;
             setInitialBalanceAmount('');
             setInitialBalancePM('');
             setInitialBalanceDate(new Date().toISOString().split('T')[0]);
             loadRecords();
-            alert("Saldo inicial registrado correctamente.");
+            toast.success('Saldo inicial registrado correctamente.');
         } catch (error) {
-            console.error("Error setting initial balance:", error);
-            alert("Error al guardar saldo inicial.");
+            console.error('Error setting initial balance:', error);
+            toast.error('Error al guardar saldo inicial.');
         }
     };
 
     const handleTransfer = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!transferOrigin || !transferDest || !transferAmount || transferOrigin === transferDest) {
-            alert("Por favor selecciona cuentas de origen y destino válidas y un monto.");
+            toast.warning('Por favor selecciona cuentas de origen y destino válidas y un monto.');
             return;
         }
 
@@ -698,15 +735,21 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
             setTransferDest('');
             setTransferDesc('');
             loadRecords();
-            alert("Traspaso registrado correctamente.");
+            toast.success('Traspaso registrado correctamente.');
         } catch (error) {
-            console.error("Error creating transfer:", error);
-            alert("No se pudo realizar el traspaso.");
+            console.error('Error creating transfer:', error);
+            toast.error('No se pudo realizar el traspaso.');
         }
     };
 
     const handleDelete = async (id: string) => {
-        if (!window.confirm("¿Seguro que deseas eliminar este registro?")) return;
+        const ok = await confirm({
+            title: 'Eliminar Registro',
+            message: '¿Seguro que deseas eliminar este movimiento? Esta acción no se puede deshacer.',
+            confirmLabel: 'Eliminar',
+            danger: true,
+        });
+        if (!ok) return;
         try {
             const { error } = await supabase
                 .from('finance_records')
@@ -714,13 +757,15 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                 .eq('id', id);
 
             if (error) throw error;
+            toast.success('Registro eliminado.');
             if (onRefresh) {
                 onRefresh();
             } else {
                 setLocalRecords(records.filter(r => r.id !== id));
             }
         } catch (error) {
-            console.error("Error deleting record:", error);
+            console.error('Error deleting record:', error);
+            toast.error('No se pudo eliminar el registro.');
         }
     };
 
@@ -888,12 +933,12 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
 
             if (error) throw error;
             
-            alert(`¡Importación exitosa! Se añadieron ${recordsToInsert.length} registros.`);
+            toast.success(`¡Importación exitosa! Se añadieron ${recordsToInsert.length} registros.`);
             loadRecords();
 
         } catch (error: any) {
             console.error("Error detallado al importar excel:", error);
-            alert(`Error al importar: ${error.message || 'Verifica el formato del archivo'}`);
+            toast.error(`Error al importar: ${error.message || 'Verifica el formato del archivo'}`);
         } finally {
             setIsUploading(false);
             if (fileInputRef.current) {
@@ -904,7 +949,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
     
     const handleExportExcel = () => {
         if (displayRecords.length === 0) {
-            alert("No hay registros para exportar en el mes seleccionado.");
+            toast.warning('No hay registros para exportar en el mes seleccionado.');
             return;
         }
 
@@ -943,9 +988,10 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
 
             const fileName = `Finanzas_${selectedMonth === 'all' ? 'Completo' : selectedMonth}.xlsx`;
             XLSX.writeFile(wb, fileName);
+            toast.success(`Archivo "${fileName}" exportado correctamente.`);
         } catch (error) {
-            console.error("Error exporting to Excel:", error);
-            alert("No se pudo generar el archivo Excel.");
+            console.error('Error exporting to Excel:', error);
+            toast.error('No se pudo generar el archivo Excel.');
         }
     };
 
@@ -954,16 +1000,27 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
         : records.filter(r => r.date.startsWith(selectedMonth));
 
     let runningBalanceFlow = 0;
-    const displayRecords = filteredRecords.map(record => {
-        const isAdjustment = (record.concept || '').toUpperCase().trim() === 'SALDO INICIAL';
-        if (!isAdjustment) {
-            runningBalanceFlow = runningBalanceFlow + Number(record.income) - Number(record.expense);
-        }
-        return {
-            ...record,
-            balance: runningBalanceFlow
-        };
-    });
+    const displayRecords = filteredRecords
+        .filter(record => {
+            if (!searchTerm) return true;
+            const search = searchTerm.toLowerCase();
+            return (
+                (record.concept || '').toLowerCase().includes(search) ||
+                (record.provider || '').toLowerCase().includes(search) ||
+                (record.payment_method || '').toLowerCase().includes(search) ||
+                (record.description || '').toLowerCase().includes(search)
+            );
+        })
+        .map(record => {
+            const isAdjustment = (record.concept || '').toUpperCase().trim() === 'SALDO INICIAL';
+            if (!isAdjustment) {
+                runningBalanceFlow = runningBalanceFlow + Number(record.income) - Number(record.expense);
+            }
+            return {
+                ...record,
+                balance: runningBalanceFlow
+            };
+        });
 
     const renderPaymentOptions = () => (
         <>
@@ -1202,18 +1259,37 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                     </div>
                     
                     {uniqueMonths.length > 0 && (
-                        <div className="flex items-center gap-2 bg-white/80 px-4 py-2 rounded-full border border-neutral-200 shadow-sm transition-all hover:border-accent group">
-                            <Calendar size={16} className="text-neutral-400 group-hover:text-accent transition-colors" />
-                            <select 
-                                value={selectedMonth} 
-                                onChange={(e) => setSelectedMonth(e.target.value)}
-                                className="bg-transparent text-sm font-black text-primary-dark outline-none cursor-pointer capitalize appearance-none pr-6 relative"
-                                style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%234A7C82\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right center', backgroundSize: '16px' }}
-                            >
-                                {uniqueMonths.map(m => (
-                                    <option key={m.value} value={m.value}>{m.label}</option>
-                                ))}
-                            </select>
+                        <div className="flex flex-col md:flex-row items-center gap-4">
+                            {viewMode === 'detailed' && (
+                                <div className="flex items-center gap-2 bg-white/80 px-4 py-2 rounded-full border border-neutral-200 shadow-sm transition-all focus-within:border-accent group w-full md:w-64">
+                                    <Search size={16} className="text-neutral-400 group-focus-within:text-accent transition-colors" />
+                                    <input 
+                                        type="text"
+                                        placeholder="Buscar..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="bg-transparent text-sm font-bold text-primary-dark outline-none w-full"
+                                    />
+                                    {searchTerm && (
+                                        <button onClick={() => setSearchTerm('')} className="text-neutral-400 hover:text-red-500 transition-colors">
+                                            <X size={14} />
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                            <div className="flex items-center gap-2 bg-white/80 px-4 py-2 rounded-full border border-neutral-200 shadow-sm transition-all hover:border-accent group">
+                                <Calendar size={16} className="text-neutral-400 group-hover:text-accent transition-colors" />
+                                <select 
+                                    value={selectedMonth} 
+                                    onChange={(e) => setSelectedMonth(e.target.value)}
+                                    className="bg-transparent text-sm font-black text-primary-dark outline-none cursor-pointer capitalize appearance-none pr-6 relative"
+                                    style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%234A7C82\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right center', backgroundSize: '16px' }}
+                                >
+                                    {uniqueMonths.map(m => (
+                                        <option key={m.value} value={m.value}>{m.label}</option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
                     )}
                 </div>
@@ -1797,22 +1873,10 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                                     </td>
                                                     <td className="p-5 text-center">
                                                         <button 
-                                                            onClick={async () => {
-                                                                const target = window.prompt(`Reasignar registros de "${row.method}" a otra cuenta.\n\nEscribe el nombre EXACTO de la cuenta destino:\n(Cuentas disponibles: ${savedPaymentMethods.map(p => p.name).join(', ') || 'ninguna registrada'})`);
-                                                                if (!target) return;
-                                                                const targetUpper = target.trim().toUpperCase();
+                                                            onClick={() => {
                                                                 const count = records.filter(r => r.payment_method === row.method).length;
-                                                                if (!window.confirm(`¿Mover ${count} registro(s) de "${row.method}" → "${targetUpper}"?`)) return;
-                                                                try {
-                                                                    const { error } = await supabase.from('finance_records').update({ payment_method: targetUpper }).eq('payment_method', row.method).eq('user_id', user.id);
-                                                                    if (error) throw error;
-                                                                    if (onRefresh) onRefresh();
-                                                                    loadRecords();
-                                                                    alert(`✅ ${count} registro(s) movidos a "${targetUpper}" exitosamente.`);
-                                                                } catch (err) {
-                                                                    console.error(err);
-                                                                    alert("Error al reasignar la cuenta. Intenta de nuevo.");
-                                                                }
+                                                                setReassignModal({ method: row.method, count });
+                                                                setReassignTarget('');
                                                             }}
                                                             className="text-amber-500 hover:bg-amber-50 hover:text-amber-600 p-2 rounded-xl transition-all"
                                                             title={`Reasignar registros de ${row.method} a otra cuenta`}
@@ -2127,6 +2191,75 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                     </div>
                 );
             })()}
+            {/* REASSIGN MODAL */}
+            {reassignModal && (
+                <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 animate-fade-in">
+                    <div className="absolute inset-0 bg-primary-dark/40 backdrop-blur-md" onClick={() => setReassignModal(null)}></div>
+                    <div className="bg-white w-full max-w-md rounded-[3rem] p-10 shadow-2xl relative animate-scale-in border border-light-beige">
+                        <h4 className="text-xl font-black text-primary-dark mb-2 flex items-center gap-3">
+                            <Edit2 size={24} className="text-amber-500" /> Reasignar Cuenta
+                        </h4>
+                        <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest mb-8 leading-relaxed">
+                            Mover {reassignModal.count} registros de <span className="text-primary-dark font-black">{reassignModal.method}</span> a otra cuenta.
+                        </p>
+
+                        <div className="space-y-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase text-neutral-400 ml-1">Seleccionar Cuenta Destino</label>
+                                <div className="relative">
+                                    <select 
+                                        value={reassignTarget} 
+                                        onChange={e => setReassignTarget(e.target.value)}
+                                        className="w-full bg-neutral-50 border border-light-beige rounded-2xl px-6 py-4 text-sm font-bold text-primary-dark outline-none focus:border-accent appearance-none cursor-pointer"
+                                    >
+                                        <option value="">Selecciona una cuenta...</option>
+                                        {savedPaymentMethods.filter(p => p.name !== reassignModal.method).map(pm => (
+                                            <option key={pm.id} value={pm.name}>{pm.name}</option>
+                                        ))}
+                                    </select>
+                                    <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none opacity-50"><TrendingDown size={14} /></div>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-4 pt-4">
+                                <Button outline className="flex-1 py-4" onClick={() => setReassignModal(null)}>Cancelar</Button>
+                                <Button 
+                                    primary 
+                                    className="flex-1 py-4" 
+                                    disabled={!reassignTarget || isReassigning}
+                                    loading={isReassigning}
+                                    onClick={async () => {
+                                        setIsReassigning(true);
+                                        try {
+                                            const { error } = await supabase
+                                                .from('finance_records')
+                                                .update({ payment_method: reassignTarget })
+                                                .eq('payment_method', reassignModal.method)
+                                                .eq('user_id', user.id);
+                                            
+                                            if (error) throw error;
+                                            toast.success(`Movidos ${reassignModal.count} registros a ${reassignTarget}`);
+                                            setReassignModal(null);
+                                            if (onRefresh) onRefresh();
+                                            loadRecords();
+                                        } catch (err) {
+                                            console.error(err);
+                                            toast.error('Error al reasignar registros');
+                                        } finally {
+                                            setIsReassigning(false);
+                                        }
+                                    }}
+                                >
+                                    Confirmar
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <Toaster />
+            {ConfirmModal}
         </div>
     );
 }
