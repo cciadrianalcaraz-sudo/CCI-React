@@ -1,13 +1,39 @@
 @import "tailwindcss";
 @config "../tailwind.config.js";
 
+:root {
+  --bg-main: #faf7f2;
+  --bg-card: #ffffff;
+  --text-primary: #1a1a1a;
+  --text-secondary: #525252;
+  --border-color: rgba(0, 0, 0, 0.05);
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.4);
+  --accent-color: #b28a45;
+}
+
+.dark {
+  --bg-main: #0b0e14;
+  --bg-card: #161c26;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --border-color: rgba(255, 255, 255, 0.08);
+  --glass-bg: rgba(11, 14, 20, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --accent-color: #d4a75e; /* Slightly brighter for dark mode */
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;
+    transition: background-color 0.3s ease;
   }
 
   body {
-    @apply font-sans text-text bg-white leading-relaxed antialiased;
+    @apply font-sans antialiased;
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   h1,
@@ -15,6 +41,7 @@
   h3,
   h4 {
     @apply font-heading font-bold leading-tight;
+    color: var(--text-primary);
   }
 }
 

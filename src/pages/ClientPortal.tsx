@@ -4,7 +4,7 @@ import {
     LogOut, Download, TrendingUp, TrendingDown,
     Bell, DollarSign, Plus, Upload,
     LayoutDashboard, BarChart3, Search,
-    ArrowRight
+    ArrowRight, Sun, Moon
 } from "lucide-react";
 import Button from "../components/ui/Button";
 import { supabase } from "../lib/supabase";
@@ -208,6 +208,21 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
     const [selectedDashboardMonth, setSelectedDashboardMonth] = useState<string>('');
     const [availableMonths, setAvailableMonths] = useState<{label: string, value: string}[]>([]);
     const [isCommandCenterOpen, setIsCommandCenterOpen] = useState(false);
+    const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+        const saved = localStorage.getItem('portal_theme');
+        return (saved === 'dark') ? 'dark' : 'light';
+    });
+
+    useEffect(() => {
+        localStorage.setItem('portal_theme', theme);
+        if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    }, [theme]);
+
+    const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
 
     const financialMetrics = useMemo(() => {
         if (!records.length) return null;
@@ -340,14 +355,14 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
     }
 
     return (
-        <div className="min-h-screen bg-[#faf7f2] pt-32 md:pt-44 pb-20 px-[6vw] md:px-[8vw]">
+        <div className="min-h-screen bg-[var(--bg-main)] pt-32 md:pt-44 pb-20 px-[6vw] md:px-[8vw] transition-colors duration-500">
             <div className="max-w-[1400px] mx-auto">
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6 animate-fade-in">
                     <div>
-                        <h1 className="text-3xl font-bold text-primary-dark mb-2">Resumen Financiero Digital</h1>
-                        <p className="text-neutral-500 flex items-center gap-2">
+                        <h1 className="text-3xl font-bold mb-2">Resumen Financiero Digital</h1>
+                        <p className="opacity-60 flex items-center gap-2">
                             <ShieldCheck size={16} className="text-green-600" />
-                            Empresa: <span className="font-bold text-primary">{profile?.full_name || user.email}</span>
+                            Empresa: <span className="font-bold">{profile?.full_name || user.email}</span>
                             {profile?.status && (
                                 <span className={`ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${profile.status === 'activo' ? 'bg-green-100 text-green-700' : profile.status === 'suspendido' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
                                     {profile.status}
@@ -356,11 +371,14 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                         </p>
                     </div>
                     <div className="flex items-center gap-4">
-                        <button className="p-3 bg-white rounded-xl border border-light-beige hover:border-accent transition-all text-primary-dark relative group">
-                            <Bell size={20} />
-                            {docs.some(d => d.status === 'pendiente') && <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>}
+                        <button onClick={toggleTheme} className="p-3 bg-white dark:bg-white/10 rounded-xl border border-light-beige dark:border-white/10 hover:border-accent transition-all text-primary-dark dark:text-white relative group">
+                            {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
                         </button>
-                        <button onClick={onLogout} className="flex items-center gap-2 bg-white border border-light-beige px-4 py-3 rounded-xl font-bold text-primary-dark hover:bg-red-50 hover:text-red-600 transition-all shadow-sm">
+                        <button className="p-3 bg-white dark:bg-white/10 rounded-xl border border-light-beige dark:border-white/10 hover:border-accent transition-all text-primary-dark dark:text-white relative group">
+                            <Bell size={20} />
+                            {docs.some(d => d.status === 'pendiente') && <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-primary-dark animate-pulse"></span>}
+                        </button>
+                        <button onClick={onLogout} className="flex items-center gap-2 bg-white dark:bg-white/10 border border-light-beige dark:border-white/10 px-4 py-3 rounded-xl font-bold text-primary-dark dark:text-white hover:bg-red-50 dark:hover:bg-red-500/20 hover:text-red-600 transition-all shadow-sm">
                             <LogOut size={18} /> Cerrar Sesión
                         </button>
                     </div>
@@ -368,20 +386,20 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
 
                 {isMaster ? <AdminDashboard user={user} /> : (
                     <>
-                        <div className="flex flex-wrap gap-4 mb-8 border-b border-light-beige pb-4 animate-fade-in">
+                        <div className="flex flex-wrap gap-4 mb-8 border-b border-[var(--border-color)] pb-4 animate-fade-in">
                             {[
                                 { id: 'dashboard', label: 'Panel Principal', icon: LayoutDashboard },
                                 { id: 'finance', label: 'Finanzas Personales', icon: BarChart3 },
                                 { id: 'tickets', label: 'Tickets y Facturas', icon: FileText }
                             ].map(tab => (
-                                <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={`px-6 py-2.5 rounded-full font-bold text-sm transition-all flex items-center gap-2 ${activeTab === tab.id ? 'bg-primary-dark text-white shadow-lg scale-105' : 'bg-white border border-light-beige text-neutral-500 hover:border-accent'}`}>
+                                <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={`px-6 py-2.5 rounded-full font-bold text-sm transition-all flex items-center gap-2 ${activeTab === tab.id ? 'bg-[var(--text-primary)] text-[var(--bg-card)] shadow-lg scale-105' : 'bg-[var(--bg-card)] dark:bg-white/5 border border-[var(--border-color)] opacity-60 hover:opacity-100 hover:border-accent'}`}>
                                     <tab.icon size={18} /> {tab.label}
                                 </button>
                             ))}
                         </div>
 
                         {activeTab === 'dashboard' ? (
-                            <div className="animate-fade-in space-y-10 pb-10">
+                            <div className="animate-fade-in space-y-10 pb-10 text-[var(--text-primary)]">
                                 {/* Row 1: KPIs */}
                                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
                                     <div className="bg-primary-dark rounded-[3rem] p-10 text-white relative overflow-hidden shadow-2xl group">
@@ -400,12 +418,12 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                         </div>
                                     </div>
 
-                                    <div className="bg-white rounded-[3rem] p-10 border border-light-beige shadow-sm relative overflow-hidden group">
+                                    <div className="bg-[var(--bg-card)] rounded-[3rem] p-10 border border-[var(--border-color)] dark:border-white/10 shadow-sm relative overflow-hidden group backdrop-blur-md">
                                         <div className="flex flex-col items-center justify-between h-full">
-                                            <span className="w-full text-[10px] font-black uppercase tracking-[0.3em] text-neutral-400">Salud Financiera</span>
+                                            <span className="w-full text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Salud Financiera</span>
                                             <div className="relative flex items-center justify-center my-4">
                                                 <svg className="w-32 h-32 transform -rotate-90">
-                                                    <circle cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-neutral-50" />
+                                                    <circle cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="8" fill="transparent" className="opacity-10" />
                                                     <circle cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="10" fill="transparent" strokeDasharray={364.4} strokeDashoffset={364.4 - (364.4 * (financialMetrics?.healthScore || 0)) / 100} strokeLinecap="round" className={(financialMetrics?.healthScore || 0) > 80 ? 'text-green-500' : 'text-amber-500'} />
                                                 </svg>
                                                 <span className="absolute text-4xl font-black">{financialMetrics?.healthScore || 0}</span>
@@ -422,11 +440,11 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                         </div>
                                     </div>
 
-                                    <div className="bg-white/80 backdrop-blur-xl rounded-[3rem] p-10 border border-light-beige shadow-sm relative overflow-hidden group">
+                                    <div className="bg-[var(--bg-card)] dark:bg-white/5 backdrop-blur-xl rounded-[3rem] p-10 border border-[var(--border-color)] dark:border-white/10 shadow-sm relative overflow-hidden group">
                                         <div className="flex items-center justify-between mb-8">
-                                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-400">Rendimiento</span>
+                                            <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Rendimiento</span>
                                             <select value={selectedDashboardMonth} onChange={e => setSelectedDashboardMonth(e.target.value)} className="bg-transparent text-[10px] font-black text-accent uppercase outline-none">
-                                                {availableMonths.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                                                {availableMonths.map(m => <option key={m.value} value={m.value} className="bg-[var(--bg-card)]">{m.label}</option>)}
                                             </select>
                                         </div>
                                         <div className="space-y-4">
@@ -435,22 +453,22 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                                     <span className="flex items-center gap-2">INGRESOS <span className={financialMetrics?.incomeChange.startsWith('+') ? 'text-green-600' : 'text-red-500'}>{financialMetrics?.incomeChange}</span></span>
                                                     <span>${financialMetrics?.monthIncome.toLocaleString()}</span>
                                                 </div>
-                                                <div className="h-1.5 bg-neutral-100 rounded-full"><div className="h-full bg-primary-dark rounded-full" style={{width: '70%'}}></div></div>
+                                                <div className="h-1.5 bg-neutral-100 dark:bg-white/10 rounded-full"><div className="h-full bg-[var(--text-primary)] rounded-full" style={{width: '70%'}}></div></div>
                                             </div>
                                             <div>
                                                 <div className="flex justify-between text-[10px] font-bold mb-1">
                                                     <span className="flex items-center gap-2">GASTOS <span className={financialMetrics?.expenseChange.startsWith('+') ? 'text-red-500' : 'text-green-600'}>{financialMetrics?.expenseChange}</span></span>
                                                     <span>${financialMetrics?.monthExpense.toLocaleString()}</span>
                                                 </div>
-                                                <div className="h-1.5 bg-neutral-100 rounded-full"><div className="h-full bg-accent rounded-full" style={{width: '40%'}}></div></div>
+                                                <div className="h-1.5 bg-neutral-100 dark:bg-white/10 rounded-full"><div className="h-full bg-accent rounded-full" style={{width: '40%'}}></div></div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Row 2: Performance Chart */}
-                                <div className="bg-white/90 backdrop-blur-xl rounded-[3rem] p-10 border border-light-beige shadow-sm">
-                                    <h2 className="text-xl font-black text-primary-dark mb-10">Comparativa de Rendimiento</h2>
+                                <div className="bg-[var(--bg-card)] dark:bg-white/5 backdrop-blur-xl rounded-[3rem] p-10 border border-[var(--border-color)] dark:border-white/10 shadow-sm transition-all duration-500">
+                                    <h2 className="text-xl font-black mb-10">Comparativa de Rendimiento</h2>
                                     <div className="h-80 w-full">
                                         {(() => {
                                             const chartData = availableMonths.slice(0, 6).reverse().map(m => {
@@ -460,11 +478,11 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                             return (
                                                 <ResponsiveContainer>
                                                     <RechartsBarChart data={chartData}>
-                                                        <CartesianGrid vertical={false} stroke="#f0f0f0" />
-                                                        <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900}} />
-                                                        <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10}} />
+                                                        <CartesianGrid vertical={false} stroke={theme === 'light' ? '#f0f0f0' : '#ffffff10'} />
+                                                        <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900, fill: 'currentColor'}} />
+                                                        <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fill: 'currentColor'}} />
                                                         <RechartsTooltip />
-                                                        <Bar dataKey="ingresos" fill="#1a1a1a" radius={[6,6,0,0]} barSize={24} />
+                                                        <Bar dataKey="ingresos" fill={theme === 'light' ? '#1a1a1a' : '#f8fafc'} radius={[6,6,0,0]} barSize={24} />
                                                         <Bar dataKey="gastos" fill="#EFA364" radius={[6,6,0,0]} barSize={24} />
                                                     </RechartsBarChart>
                                                 </ResponsiveContainer>
@@ -475,13 +493,13 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
 
                                 {/* Row 3: Distribution & Activity */}
                                 <div className="grid lg:grid-cols-2 gap-8">
-                                    <div className="bg-white/90 rounded-[3rem] p-10 border border-light-beige shadow-sm">
+                                    <div className="bg-[var(--bg-card)] dark:bg-white/5 rounded-[3rem] p-10 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md">
                                         <h2 className="text-xl font-black mb-10">Distribución de Gastos</h2>
                                         <div className="h-64 flex flex-col md:flex-row items-center gap-8">
                                             <div className="flex-1 w-full h-full relative">
                                                 <ResponsiveContainer>
                                                     <RechartsPieChart>
-                                                        <Pie data={[{name: 'Gastos', value: financialMetrics?.monthExpense || 1}]} innerRadius={60} outerRadius={80} dataKey="value"><Cell fill="#1a1a1a" /></Pie>
+                                                        <Pie data={[{name: 'Gastos', value: financialMetrics?.monthExpense || 1}]} innerRadius={60} outerRadius={80} dataKey="value"><Cell fill={theme === 'light' ? '#1a1a1a' : '#f8fafc'} /></Pie>
                                                         <RechartsTooltip />
                                                     </RechartsPieChart>
                                                 </ResponsiveContainer>
@@ -489,16 +507,16 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                             </div>
                                             <div className="flex-1 space-y-2">
                                                 <div className="flex justify-between text-[10px] font-bold uppercase"><span>Categoría</span><span>Pje</span></div>
-                                                <div className="h-0.5 bg-neutral-100"></div>
-                                                <p className="text-[10px] text-neutral-400">Análisis detallado disponible en finanzas.</p>
+                                                <div className="h-0.5 bg-neutral-100 dark:bg-white/10"></div>
+                                                <p className="text-[10px] opacity-40">Análisis detallado disponible en finanzas.</p>
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="bg-white/90 rounded-[3rem] p-10 border border-light-beige shadow-sm">
+                                    <div className="bg-[var(--bg-card)] dark:bg-white/5 rounded-[3rem] p-10 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md">
                                         <h2 className="text-xl font-black mb-10">Actividad Reciente</h2>
                                         <div className="space-y-4">
                                             {records.slice(0, 4).map(r => (
-                                                <div key={r.id} className="flex justify-between items-center p-3 rounded-2xl bg-neutral-50">
+                                                <div key={r.id} className="flex justify-between items-center p-3 rounded-2xl bg-[var(--bg-main)] dark:bg-white/5">
                                                     <div className="flex items-center gap-3">
                                                         <div className={Number(r.income) > 0 ? 'text-green-600' : 'text-red-500'}>{Number(r.income) > 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}</div>
                                                         <span className="text-xs font-bold truncate w-32">{r.concept}</span>
@@ -514,13 +532,13 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                 <div className="grid lg:grid-cols-3 gap-8">
                                     <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <button onClick={() => setActiveTab('finance')} className="bg-accent rounded-[2.5rem] p-10 text-white shadow-xl hover:-translate-y-1 transition-all"><Plus size={24} className="mb-4" /><h3 className="text-2xl font-black">Nuevo Registro</h3></button>
-                                        <button onClick={() => setActiveTab('tickets')} className="bg-white rounded-[2.5rem] p-10 border border-light-beige hover:shadow-xl transition-all"><Upload size={24} className="mb-4 text-primary-dark" /><h3 className="text-2xl font-black">Subir Ticket</h3></button>
+                                        <button onClick={() => setActiveTab('tickets')} className="bg-[var(--bg-card)] dark:bg-white/5 rounded-[2.5rem] p-10 border border-[var(--border-color)] dark:border-white/10 hover:shadow-xl transition-all"><Upload size={24} className="mb-4 opacity-70" /><h3 className="text-2xl font-black">Subir Ticket</h3></button>
                                     </div>
-                                    <div className="bg-white/90 rounded-[2.5rem] p-10 border border-light-beige shadow-sm">
+                                    <div className="bg-[var(--bg-card)] dark:bg-white/5 rounded-[2.5rem] p-10 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md">
                                         <h3 className="font-black mb-8 flex justify-between items-center">Expediente <FileText size={16}/></h3>
                                         <div className="space-y-4">
                                             {docs.slice(0, 3).map(d => (
-                                                <div key={d.id} className="flex justify-between items-center p-3 rounded-xl bg-neutral-50"><span className="text-xs font-bold truncate w-32">{d.name}</span><a href={d.file_url} target="_blank" rel="noreferrer"><Download size={14}/></a></div>
+                                                <div key={d.id} className="flex justify-between items-center p-3 rounded-xl bg-[var(--bg-main)] dark:bg-white/5"><span className="text-xs font-bold truncate w-32">{d.name}</span><a href={d.file_url} target="_blank" rel="noreferrer"><Download size={14}/></a></div>
                                             ))}
                                         </div>
                                     </div>

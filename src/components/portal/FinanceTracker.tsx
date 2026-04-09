@@ -215,6 +215,30 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
         }
     }, [selectedMonth, user.id]);
 
+    // Smart Categorization Logic
+    useEffect(() => {
+        if (editingId) return; // Don't auto-categorize when editing existing records
+        
+        const conceptUpper = (concept || '').toUpperCase();
+        const providerUpper = (provider || '').toUpperCase();
+        const combined = `${conceptUpper} ${providerUpper}`;
+
+        const SMART_MAP = {
+            'Variable': ['AMAZON', 'UBER', 'DIDI', 'NETFLIX', 'SPOTIFY', 'RESTAURANTE', 'CINE', 'STARBUCKS', 'RAPPI', 'MERCADO LIBRE', 'APPLE', 'VAPE', 'TIENDA'],
+            'Fijo': ['CFE', 'RENTA', 'INTERNET', 'TELCEL', 'IZZI', 'TOTALPLAY', 'AGUA', 'GAS', 'HIPOTECA', 'SEGURO', 'PPR', 'MANTENIMIENTO'],
+            'Ingreso': ['SUELDO', 'HONORARIOS', 'PAGO', 'VENTA', 'DIVIDENDO', 'CASHBACK', 'NOMINA', 'TRANSFERENCIA RECIBIDA'],
+            'Ahorro': ['CETES', 'GBM', 'INVERSION', 'AHORRO', 'NU', 'BONOS'],
+            'Deuda': ['TARJETA', 'PRESTAMO', 'CREDITO', 'PAGO A DEUDA']
+        };
+
+        for (const [type, keywords] of Object.entries(SMART_MAP)) {
+            if (keywords.some(kw => combined.includes(kw))) {
+                setExpenseType(type);
+                break;
+            }
+        }
+    }, [concept, provider, editingId]);
+
     const loadBudgets = async (month: string) => {
         try {
             const { data, error } = await supabase
@@ -1040,11 +1064,11 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
     );
 
     return (
-        <div className="bg-white rounded-[2rem] border border-light-beige shadow-sm overflow-hidden animate-fade-in">
-            <div className="p-8 border-b border-light-beige flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="bg-[var(--bg-card)] dark:bg-white/5 rounded-[2rem] border border-[var(--border-color)] dark:border-white/10 shadow-sm overflow-hidden animate-fade-in backdrop-blur-md">
+            <div className="p-8 border-b border-[var(--border-color)] dark:border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-xl font-bold text-primary-dark">Registro de Finanzas Personales</h2>
-                    <p className="text-sm text-neutral-500 mt-1">Control de ingresos, gastos y saldo al día.</p>
+                    <h2 className="text-xl font-bold">Registro de Finanzas Personales</h2>
+                    <p className="text-sm opacity-40 mt-1">Control de ingresos, gastos y saldo al día.</p>
                 </div>
                 <div className="flex flex-wrap gap-3">
                     <input 
@@ -1054,14 +1078,14 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                         className="hidden" 
                         onChange={handleFileUpload} 
                     />
-                    <Button outline className="text-[10px] font-black uppercase tracking-widest py-2.5 px-5 flex items-center gap-2 border-neutral-200 hover:border-primary-dark transition-all" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
-                        <Upload size={14} className="text-primary-dark" /> {isUploading ? 'Importando...' : 'Importar Excel'}
+                    <Button outline className="text-[10px] font-black uppercase tracking-widest py-2.5 px-5 flex items-center gap-2 border-[var(--border-color)] hover:border-accent transition-all" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                        <Upload size={14} className="opacity-70" /> {isUploading ? 'Importando...' : 'Importar Excel'}
                     </Button>
-                    <Button outline className="text-[10px] font-black uppercase tracking-widest py-2.5 px-5 flex items-center gap-2 border-neutral-200 hover:border-primary-dark transition-all" onClick={handleExportExcel} disabled={displayRecords.length === 0}>
-                        <Download size={14} className="text-primary-dark" /> Exportar
+                    <Button outline className="text-[10px] font-black uppercase tracking-widest py-2.5 px-5 flex items-center gap-2 border-[var(--border-color)] hover:border-accent transition-all" onClick={handleExportExcel} disabled={displayRecords.length === 0}>
+                        <Download size={14} className="opacity-70" /> Exportar
                     </Button>
-                    <Button outline className="text-[10px] font-black uppercase tracking-widest py-2.5 px-5 flex items-center gap-2 border-neutral-200 hover:border-primary-dark transition-all" onClick={() => loadRecords()}>
-                        <Calendar size={14} className="text-primary-dark" /> Actualizar
+                    <Button outline className="text-[10px] font-black uppercase tracking-widest py-2.5 px-5 flex items-center gap-2 border-[var(--border-color)] hover:border-accent transition-all" onClick={() => loadRecords()}>
+                        <Calendar size={14} className="opacity-70" /> Actualizar
                     </Button>
                     <Button primary className="text-[10px] font-black uppercase tracking-widest py-2.5 px-6 flex items-center gap-2 shadow-lg hover:scale-[1.02] transition-all" onClick={() => setIsFormOpen(!isFormOpen)}>
                         <Plus size={14} /> {isFormOpen ? 'Cerrar Panel' : 'Nuevo Registro'}
@@ -1070,11 +1094,11 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
             </div>
 
             {isFormOpen && (
-                <div className="mb-10 bg-white/70 backdrop-blur-sm p-8 rounded-[32px] border border-white shadow-sm animate-fade-in relative overflow-hidden">
+                <div className="mb-10 bg-[var(--bg-card)]/50 dark:bg-white/5 backdrop-blur-xl p-8 rounded-[32px] border border-[var(--border-color)] dark:border-white/10 shadow-sm animate-fade-in relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 rounded-full -mr-32 -mt-32 blur-3xl pointer-events-none"></div>
                     
-                    <h3 className="text-xl font-heading font-black text-primary-dark mb-8 flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-primary-dark flex items-center justify-center text-white">
+                    <h3 className="text-xl font-heading font-black mb-8 flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-accent flex items-center justify-center text-white shadow-lg">
                             <Plus size={20} />
                         </div>
                         {editingId ? 'Editar Movimiento' : 'Registrar Nuevo Movimiento'}
@@ -1118,15 +1142,15 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                     </datalist>
                     <form onSubmit={handleAddRecord} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 block ml-1">Concepto</label>
-                            <input list="concept-options" type="text" required value={concept} onChange={e => setConcept(e.target.value)} placeholder="Seleccione concepto..." className="w-full bg-white border border-neutral-200 rounded-2xl px-5 py-3 text-sm font-medium outline-none focus:border-accent transition-all shadow-sm" />
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 block ml-1">Concepto</label>
+                            <input list="concept-options" type="text" required value={concept} onChange={e => setConcept(e.target.value)} placeholder="Seleccione concepto..." className="w-full bg-[var(--bg-card)] dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 rounded-2xl px-5 py-3 text-sm font-medium outline-none focus:border-accent transition-all shadow-sm" />
                         </div>
                         
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 block ml-1">Tipo de Movimiento</label>
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 block ml-1">Tipo de Movimiento</label>
                             <div className="relative">
                                 <select 
-                                    className="w-full bg-white border border-neutral-200 rounded-2xl px-5 py-3 text-sm font-black text-primary-dark outline-none focus:border-accent transition-all shadow-sm appearance-none cursor-pointer"
+                                    className="w-full bg-[var(--bg-card)] dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 rounded-2xl px-5 py-3 text-sm font-black text-[var(--text-primary)] outline-none focus:border-accent transition-all shadow-sm appearance-none cursor-pointer"
                                     value={expenseType}
                                     onChange={(e) => setExpenseType(e.target.value)}
                                 >
@@ -1144,52 +1168,52 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 block ml-1">Fecha</label>
-                            <input type="date" required value={date} onChange={e => setDate(e.target.value)} className="w-full bg-white border border-neutral-200 rounded-2xl px-5 py-3 text-sm font-medium outline-none focus:border-accent transition-all shadow-sm" />
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 block ml-1">Fecha</label>
+                            <input type="date" required value={date} onChange={e => setDate(e.target.value)} className="w-full bg-[var(--bg-card)] dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 rounded-2xl px-5 py-3 text-sm font-medium outline-none focus:border-accent transition-all shadow-sm" />
                         </div>
                         
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 block ml-1">Forma de pago</label>
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 block ml-1">Forma de pago</label>
                             <div className="flex gap-2">
                                 <div className="relative flex-1">
-                                    <select required value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} className="w-full bg-white border border-neutral-200 rounded-2xl px-5 py-3 text-sm font-medium outline-none focus:border-accent transition-all shadow-sm appearance-none cursor-pointer">
+                                    <select required value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} className="w-full bg-[var(--bg-card)] dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 rounded-2xl px-5 py-3 text-sm font-medium outline-none focus:border-accent transition-all shadow-sm appearance-none cursor-pointer">
                                         {renderPaymentOptions()}
                                     </select>
                                     <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-50"><TrendingDown size={14} /></div>
                                 </div>
-                                <button type="button" onClick={() => { setViewMode('balances'); setAccMgmtTab('accounts'); setIsFormOpen(false); }} className="px-4 bg-primary-dark text-white rounded-2xl hover:bg-accent transition-colors" title="Administrar formas de pago">
+                                <button type="button" onClick={() => { setViewMode('balances'); setAccMgmtTab('accounts'); setIsFormOpen(false); }} className="px-4 bg-accent text-white rounded-2xl hover:brightness-110 transition-all" title="Administrar formas de pago">
                                     <Plus size={16} />
                                 </button>
                             </div>
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 block ml-1">Proveedor / Tienda</label>
-                            <input type="text" required value={provider} onChange={e => setProvider(e.target.value)} placeholder="Ej. Amazon, Walmart..." className="w-full bg-white border border-neutral-200 rounded-2xl px-5 py-3 text-sm font-medium outline-none focus:border-accent transition-all shadow-sm" />
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 block ml-1">Proveedor / Tienda</label>
+                            <input type="text" required value={provider} onChange={e => setProvider(e.target.value)} placeholder="Ej. Amazon, Walmart..." className="w-full bg-[var(--bg-card)] dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 rounded-2xl px-5 py-3 text-sm font-medium outline-none focus:border-accent transition-all shadow-sm" />
                         </div>
                         
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 block ml-1">Ingreso ($)</label>
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 block ml-1">Ingreso ($)</label>
                             <div className="relative">
                                 <span className="absolute left-5 top-1/2 -translate-y-1/2 text-green-600 font-black">$</span>
-                                <input type="number" step="0.01" value={income} onChange={e => setIncome(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0.00" className="w-full bg-white border border-neutral-200 rounded-2xl pl-10 pr-5 py-3 text-sm font-black text-green-600 outline-none focus:border-accent transition-all shadow-sm" />
+                                <input type="number" step="0.01" value={income} onChange={e => setIncome(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0.00" className="w-full bg-[var(--bg-card)] dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 rounded-2xl pl-10 pr-5 py-3 text-sm font-black text-green-600 outline-none focus:border-accent transition-all shadow-sm" />
                             </div>
                         </div>
                         
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 block ml-1">Gasto ($)</label>
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 block ml-1">Gasto ($)</label>
                             <div className="relative">
                                 <span className="absolute left-5 top-1/2 -translate-y-1/2 text-red-500 font-black">$</span>
-                                <input type="number" step="0.01" value={expense} onChange={e => setExpense(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0.00" className="w-full bg-white border border-neutral-200 rounded-2xl pl-10 pr-5 py-3 text-sm font-black text-red-500 outline-none focus:border-accent transition-all shadow-sm" />
+                                <input type="number" step="0.01" value={expense} onChange={e => setExpense(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0.00" className="w-full bg-[var(--bg-card)] dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 rounded-2xl pl-10 pr-5 py-3 text-sm font-black text-red-500 outline-none focus:border-accent transition-all shadow-sm" />
                             </div>
                         </div>
                         
                         <div className="space-y-2 lg:col-span-2">
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 block ml-1">Descripción / Notas</label>
-                            <input type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="Detalles adicionales del movimiento..." className="w-full bg-white border border-neutral-200 rounded-2xl px-5 py-3 text-sm font-medium outline-none focus:border-accent transition-all shadow-sm" />
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 block ml-1">Descripción / Notas</label>
+                            <input type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="Detalles adicionales del movimiento..." className="w-full bg-[var(--bg-card)] dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 rounded-2xl px-5 py-3 text-sm font-medium outline-none focus:border-accent transition-all shadow-sm" />
                         </div>
-                        <div className="lg:col-span-4 flex justify-end gap-3 pt-6 border-t border-neutral-100/50">
-                            <Button outline type="button" onClick={() => { setIsFormOpen(false); resetForm(); }} className="text-[10px] font-black uppercase tracking-widest py-3 px-8 border-neutral-200">Cancelar</Button>
+                        <div className="lg:col-span-4 flex justify-end gap-3 pt-6 border-t border-[var(--border-color)]">
+                            <Button outline type="button" onClick={() => { setIsFormOpen(false); resetForm(); }} className="text-[10px] font-black uppercase tracking-widest py-3 px-8 border-[var(--border-color)]">Cancelar</Button>
                             <Button primary type="submit" className="text-[10px] font-black uppercase tracking-widest py-3 px-10 shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all">
                                 {editingId ? 'Actualizar Registro' : 'Confirmar Registro'}
                             </Button>
@@ -1198,19 +1222,19 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                 </div>
             )}
 
-            <div className="bg-[#faf7f2] pt-4 pb-2 border-b border-light-beige/30">
+            <div className="bg-[var(--bg-main)] pt-4 pb-2 border-b border-[var(--border-color)]">
                 {/* GLOBAL KPI BAR - NOT STICKY */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div className="bg-white p-4 rounded-2xl border border-neutral-100 shadow-sm flex flex-col justify-center relative overflow-hidden group hover:shadow-md transition-all">
+                    <div className="bg-[var(--bg-card)] dark:bg-white/5 p-4 rounded-2xl border border-[var(--border-color)] dark:border-white/10 shadow-sm flex flex-col justify-center relative overflow-hidden group hover:shadow-md transition-all">
                         <div className="absolute top-1/2 -translate-y-1/2 right-3 opacity-5 text-green-600 group-hover:scale-110 transition-transform"><TrendingUp size={40} /></div>
-                        <p className="text-neutral-500 font-bold uppercase tracking-widest text-[10px] mb-1">Ingresos Periodo</p>
+                        <p className="opacity-40 font-bold uppercase tracking-widest text-[10px] mb-1">Ingresos Periodo</p>
                         <p className="text-xl font-heading font-black text-green-600">
                             ${summaryData.reduce((acc, row) => acc + row.income, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                         </p>
                     </div>
-                    <div className="bg-white p-4 rounded-2xl border border-neutral-100 shadow-sm flex flex-col justify-center relative overflow-hidden group hover:shadow-md transition-all">
+                    <div className="bg-[var(--bg-card)] dark:bg-white/5 p-4 rounded-2xl border border-[var(--border-color)] dark:border-white/10 shadow-sm flex flex-col justify-center relative overflow-hidden group hover:shadow-md transition-all">
                         <div className="absolute top-1/2 -translate-y-1/2 right-3 opacity-5 text-red-600 group-hover:scale-110 transition-transform"><TrendingDown size={40} /></div>
-                        <p className="text-neutral-500 font-bold uppercase tracking-widest text-[10px] mb-1">Gastos Periodo</p>
+                        <p className="opacity-40 font-bold uppercase tracking-widest text-[10px] mb-1">Gastos Periodo</p>
                         <p className="text-xl font-heading font-black text-red-500">
                             ${summaryData.reduce((acc, row) => acc + row.expense, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                         </p>
@@ -1224,35 +1248,35 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                     </div>
                 </div>
 
-                <div className="flex flex-col md:flex-row justify-between items-center gap-6 bg-white/60 p-2 rounded-[24px] border border-white/60 shadow-sm">
-                    <div className="flex bg-white/80 p-1.5 rounded-full shadow-sm border border-neutral-200 w-full md:w-auto overflow-x-auto no-scrollbar">
+                <div className="flex flex-col md:flex-row justify-between items-center gap-6 bg-[var(--bg-card)]/60 dark:bg-white/5 p-2 rounded-[24px] border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md">
+                    <div className="flex bg-[var(--bg-card)]/80 dark:bg-white/5 p-1.5 rounded-full shadow-sm border border-[var(--border-color)] dark:border-white/10 w-full md:w-auto overflow-x-auto no-scrollbar">
                         <button 
                             onClick={() => setViewMode('detailed')}
-                            className={`px-6 py-2.5 rounded-full text-xs font-black tracking-widest uppercase transition-all whitespace-nowrap ${viewMode === 'detailed' ? 'bg-primary-dark text-white shadow-lg scale-[1.02]' : 'text-neutral-400 hover:text-primary-dark hover:bg-neutral-50'}`}
+                            className={`px-6 py-2.5 rounded-full text-xs font-black tracking-widest uppercase transition-all whitespace-nowrap ${viewMode === 'detailed' ? 'bg-accent text-white shadow-lg scale-[1.02]' : 'opacity-40 hover:opacity-100 hover:bg-neutral-50 dark:hover:bg-white/10'}`}
                         >
                             Registro
                         </button>
                         <button 
                             onClick={() => setViewMode('summary')}
-                            className={`px-6 py-2.5 rounded-full text-xs font-black tracking-widest uppercase transition-all whitespace-nowrap ${viewMode === 'summary' ? 'bg-primary-dark text-white shadow-lg scale-[1.02]' : 'text-neutral-400 hover:text-primary-dark hover:bg-neutral-50'}`}
+                            className={`px-6 py-2.5 rounded-full text-xs font-black tracking-widest uppercase transition-all whitespace-nowrap ${viewMode === 'summary' ? 'bg-accent text-white shadow-lg scale-[1.02]' : 'opacity-40 hover:opacity-100 hover:bg-neutral-50 dark:hover:bg-white/10'}`}
                         >
                             Resumen
                         </button>
                         <button 
                             onClick={() => setViewMode('balances')}
-                            className={`px-6 py-2.5 rounded-full text-xs font-black tracking-widest uppercase transition-all whitespace-nowrap ${viewMode === 'balances' ? 'bg-primary-dark text-white shadow-lg scale-[1.02]' : 'text-neutral-400 hover:text-primary-dark hover:bg-neutral-50'}`}
+                            className={`px-6 py-2.5 rounded-full text-xs font-black tracking-widest uppercase transition-all whitespace-nowrap ${viewMode === 'balances' ? 'bg-accent text-white shadow-lg scale-[1.02]' : 'opacity-40 hover:opacity-100 hover:bg-neutral-50 dark:hover:bg-white/10'}`}
                         >
                             Saldos
                         </button>
                         <button 
                             onClick={() => setViewMode('budget')}
-                            className={`px-6 py-2.5 rounded-full text-xs font-black tracking-widest uppercase transition-all whitespace-nowrap ${viewMode === 'budget' ? 'bg-primary-dark text-white shadow-lg scale-[1.02]' : 'text-neutral-400 hover:text-primary-dark hover:bg-neutral-50'}`}
+                            className={`px-6 py-2.5 rounded-full text-xs font-black tracking-widest uppercase transition-all whitespace-nowrap ${viewMode === 'budget' ? 'bg-accent text-white shadow-lg scale-[1.02]' : 'opacity-40 hover:opacity-100 hover:bg-neutral-50 dark:hover:bg-white/10'}`}
                         >
                             Presupuesto
                         </button>
                         <button 
                             onClick={() => setViewMode('credits')}
-                            className={`px-6 py-2.5 rounded-full text-xs font-black tracking-widest uppercase transition-all whitespace-nowrap ${viewMode === 'credits' ? 'bg-primary-dark text-white shadow-lg scale-[1.02]' : 'text-neutral-400 hover:text-primary-dark hover:bg-neutral-50'}`}
+                            className={`px-6 py-2.5 rounded-full text-xs font-black tracking-widest uppercase transition-all whitespace-nowrap ${viewMode === 'credits' ? 'bg-accent text-white shadow-lg scale-[1.02]' : 'opacity-40 hover:opacity-100 hover:bg-neutral-50 dark:hover:bg-white/10'}`}
                         >
                             Créditos
                         </button>
@@ -1261,14 +1285,14 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                     {uniqueMonths.length > 0 && (
                         <div className="flex flex-col md:flex-row items-center gap-4">
                             {viewMode === 'detailed' && (
-                                <div className="flex items-center gap-2 bg-white/80 px-4 py-2 rounded-full border border-neutral-200 shadow-sm transition-all focus-within:border-accent group w-full md:w-64">
+                                <div className="flex items-center gap-2 bg-[var(--bg-card)]/80 dark:bg-white/5 px-4 py-2 rounded-full border border-[var(--border-color)] dark:border-white/10 shadow-sm transition-all focus-within:border-accent group w-full md:w-64">
                                     <Search size={16} className="text-neutral-400 group-focus-within:text-accent transition-colors" />
                                     <input 
                                         type="text"
                                         placeholder="Buscar..."
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="bg-transparent text-sm font-bold text-primary-dark outline-none w-full"
+                                        className="bg-transparent text-sm font-bold text-[var(--text-primary)] outline-none w-full"
                                     />
                                     {searchTerm && (
                                         <button onClick={() => setSearchTerm('')} className="text-neutral-400 hover:text-red-500 transition-colors">
@@ -1277,16 +1301,16 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                     )}
                                 </div>
                             )}
-                            <div className="flex items-center gap-2 bg-white/80 px-4 py-2 rounded-full border border-neutral-200 shadow-sm transition-all hover:border-accent group">
+                            <div className="flex items-center gap-2 bg-[var(--bg-card)]/80 dark:bg-white/5 px-4 py-2 rounded-full border border-[var(--border-color)] dark:border-white/10 shadow-sm transition-all hover:border-accent group">
                                 <Calendar size={16} className="text-neutral-400 group-hover:text-accent transition-colors" />
                                 <select 
                                     value={selectedMonth} 
                                     onChange={(e) => setSelectedMonth(e.target.value)}
-                                    className="bg-transparent text-sm font-black text-primary-dark outline-none cursor-pointer capitalize appearance-none pr-6 relative"
+                                    className="bg-transparent text-sm font-black text-[var(--text-primary)] outline-none cursor-pointer capitalize appearance-none pr-6 relative"
                                     style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%234A7C82\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right center', backgroundSize: '16px' }}
                                 >
                                     {uniqueMonths.map(m => (
-                                        <option key={m.value} value={m.value}>{m.label}</option>
+                                        <option key={m.value} value={m.value} className="bg-[var(--bg-card)]">{m.label}</option>
                                     ))}
                                 </select>
                             </div>
@@ -1301,11 +1325,11 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-accent"></div>
                     </div>
                 ) : viewMode === 'credits' ? (
-                    <div className="p-8 space-y-10 animate-fade-in">
-                        <div className="flex justify-between items-center bg-primary-dark/5 p-6 rounded-[2.5rem] border border-primary-dark/5">
+                    <div className="p-8 space-y-10 animate-fade-in text-[var(--text-primary)]">
+                        <div className="flex justify-between items-center bg-accent/10 p-6 rounded-[2.5rem] border border-accent/10">
                             <div>
-                                <h3 className="text-2xl font-black text-primary-dark tracking-tighter">Gestión de Créditos</h3>
-                                <p className="text-xs text-neutral-500 font-bold uppercase tracking-wider mt-1">Control de deudas y aceleración de libertad financiera</p>
+                                <h3 className="text-2xl font-black tracking-tighter">Gestión de Créditos</h3>
+                                <p className="text-[10px] opacity-60 font-bold uppercase tracking-wider mt-1">Control de deudas y aceleración de libertad financiera</p>
                             </div>
                             <Button primary className="flex items-center gap-2 group" onClick={() => setIsCreditFormOpen(!isCreditFormOpen)}>
                                 <Plus size={18} className="group-hover:rotate-90 transition-transform duration-300" /> Nuevo Crédito
@@ -1313,32 +1337,32 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                         </div>
 
                         {isCreditFormOpen && (
-                            <div className="bg-white p-8 rounded-[2.5rem] border border-light-beige shadow-xl animate-scale-in relative overflow-hidden group">
+                            <div className="bg-[var(--bg-card)] dark:bg-white/5 p-8 rounded-[2.5rem] border border-[var(--border-color)] dark:border-white/10 shadow-xl animate-scale-in relative overflow-hidden group backdrop-blur-md">
                                 <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 rounded-full -mr-32 -mt-32 blur-3xl group-hover:bg-accent/10 transition-all duration-700"></div>
-                                <h4 className="text-lg font-black text-primary-dark mb-8 flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-2xl bg-primary-dark flex items-center justify-center text-white">
+                                <h4 className="text-lg font-black mb-8 flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-2xl bg-accent flex items-center justify-center text-white">
                                         <Plus size={20} />
                                     </div>
                                     Registrar Nuevo Crédito Bancario
                                 </h4>
                                 <form onSubmit={handleSaveCredit} className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase text-neutral-400 ml-1">Nombre del Crédito</label>
-                                        <input type="text" required value={creditName} onChange={e => setCreditName(e.target.value)} placeholder="Ej: Crédito Hipotecario" className="w-full bg-neutral-50 border border-light-beige rounded-2xl px-5 py-3.5 text-sm font-bold text-primary-dark outline-none focus:border-accent transition-all" />
+                                        <label className="text-[10px] font-black uppercase opacity-40 ml-1">Nombre del Crédito</label>
+                                        <input type="text" required value={creditName} onChange={e => setCreditName(e.target.value)} placeholder="Ej: Crédito Hipotecario" className="w-full bg-[var(--bg-main)] dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:border-accent transition-all" />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase text-neutral-400 ml-1">Monto Inicial ($)</label>
-                                        <input type="number" required value={creditInitialBalance} onChange={e => setCreditInitialBalance(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0.00" className="w-full bg-neutral-50 border border-light-beige rounded-2xl px-5 py-3.5 text-sm font-black text-primary-dark outline-none focus:border-accent transition-all" />
+                                        <label className="text-[10px] font-black uppercase opacity-40 ml-1">Monto Inicial ($)</label>
+                                        <input type="number" required value={creditInitialBalance} onChange={e => setCreditInitialBalance(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0.00" className="w-full bg-[var(--bg-main)] dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 rounded-2xl px-5 py-3.5 text-sm font-black outline-none focus:border-accent transition-all" />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase text-neutral-400 ml-1">Tasa Anual (%)</label>
-                                        <input type="number" step="0.1" required value={creditAnnualRate} onChange={e => setCreditAnnualRate(e.target.value === '' ? '' : Number(e.target.value))} placeholder="21.0" className="w-full bg-neutral-50 border border-light-beige rounded-2xl px-5 py-3.5 text-sm font-black text-accent outline-none focus:border-accent transition-all" />
+                                        <label className="text-[10px] font-black uppercase opacity-40 ml-1">Tasa Anual (%)</label>
+                                        <input type="number" step="0.1" required value={creditAnnualRate} onChange={e => setCreditAnnualRate(e.target.value === '' ? '' : Number(e.target.value))} placeholder="21.0" className="w-full bg-[var(--bg-main)] dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 rounded-2xl px-5 py-3.5 text-sm font-black text-accent outline-none focus:border-accent transition-all" />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase text-neutral-400 ml-1">Fecha de Inicio</label>
-                                        <input type="date" required value={creditStartDate} onChange={e => setCreditStartDate(e.target.value)} className="w-full bg-neutral-50 border border-light-beige rounded-2xl px-5 py-3.5 text-sm font-bold text-primary-dark outline-none focus:border-accent transition-all" />
+                                        <label className="text-[10px] font-black uppercase opacity-40 ml-1">Fecha de Inicio</label>
+                                        <input type="date" required value={creditStartDate} onChange={e => setCreditStartDate(e.target.value)} className="w-full bg-[var(--bg-main)] dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:border-accent transition-all" />
                                     </div>
-                                    <div className="md:col-span-2 lg:col-span-4 flex justify-end gap-4 pt-4 border-t border-neutral-100">
+                                    <div className="md:col-span-2 lg:col-span-4 flex justify-end gap-4 pt-4 border-t border-[var(--border-color)]">
                                         <Button outline type="button" onClick={() => setIsCreditFormOpen(false)}>Cancelar</Button>
                                         <Button primary type="submit" loading={isSavingCredit}>Guardar Crédito</Button>
                                     </div>
@@ -1493,32 +1517,32 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                             <p className="text-sm">Comienza agregando tu primer movimiento.</p>
                         </div>
                     ) : (
-                        <div className="bg-white/70 backdrop-blur-sm rounded-[32px] border border-white shadow-sm overflow-hidden">
+                        <div className="bg-[var(--bg-card)]/50 dark:bg-white/5 backdrop-blur-md rounded-[32px] border border-[var(--border-color)] dark:border-white/10 shadow-sm overflow-hidden">
                             <table className="w-full text-left border-collapse animate-fade-in delay-100">
                                 <thead>
-                                    <tr className="border-b border-light-beige">
-                                        <th className="sticky top-0 z-10 p-5 whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">ID</th>
-                                        <th className="sticky top-0 z-10 p-5 whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Concepto</th>
-                                        <th className="sticky top-0 z-10 p-5 whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Fecha</th>
-                                        <th className="sticky top-0 z-10 p-5 whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Pago</th>
-                                        <th className="sticky top-0 z-10 p-5 whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Proveedor</th>
-                                        <th className="sticky top-0 z-10 p-5 text-right whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Ingreso</th>
-                                        <th className="sticky top-0 z-10 p-5 text-right whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Gasto</th>
-                                        <th className="sticky top-0 z-10 p-5 text-right whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Saldo</th>
-                                        <th className="sticky top-0 z-10 p-5 whitespace-nowrap max-w-xs bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Descripción</th>
-                                        <th className="sticky top-0 z-10 p-5 text-center whitespace-nowrap bg-primary-dark text-white text-[10px] font-black uppercase tracking-[0.2em]">Acciones</th>
+                                    <tr className="border-b border-[var(--border-color)] dark:border-white/10">
+                                        <th className="sticky top-0 z-10 p-5 whitespace-nowrap bg-accent text-white text-[10px] font-black uppercase tracking-[0.2em]">ID</th>
+                                        <th className="sticky top-0 z-10 p-5 whitespace-nowrap bg-accent text-white text-[10px] font-black uppercase tracking-[0.2em]">Concepto</th>
+                                        <th className="sticky top-0 z-10 p-5 whitespace-nowrap bg-accent text-white text-[10px] font-black uppercase tracking-[0.2em]">Fecha</th>
+                                        <th className="sticky top-0 z-10 p-5 whitespace-nowrap bg-accent text-white text-[10px] font-black uppercase tracking-[0.2em]">Pago</th>
+                                        <th className="sticky top-0 z-10 p-5 whitespace-nowrap bg-accent text-white text-[10px] font-black uppercase tracking-[0.2em]">Proveedor</th>
+                                        <th className="sticky top-0 z-10 p-5 text-right whitespace-nowrap bg-accent text-white text-[10px] font-black uppercase tracking-[0.2em]">Ingreso</th>
+                                        <th className="sticky top-0 z-10 p-5 text-right whitespace-nowrap bg-accent text-white text-[10px] font-black uppercase tracking-[0.2em]">Gasto</th>
+                                        <th className="sticky top-0 z-10 p-5 text-right whitespace-nowrap bg-accent text-white text-[10px] font-black uppercase tracking-[0.2em]">Saldo</th>
+                                        <th className="sticky top-0 z-10 p-5 whitespace-nowrap max-w-xs bg-accent text-white text-[10px] font-black uppercase tracking-[0.2em]">Descripción</th>
+                                        <th className="sticky top-0 z-10 p-5 text-center whitespace-nowrap bg-accent text-white text-[10px] font-black uppercase tracking-[0.2em]">Acciones</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-neutral-100/50">
+                                <tbody className="divide-y divide-[var(--border-color)] dark:divide-white/5">
                                     {displayRecords.map((record, index) => {
                                         const isInitialBalance = record.concept.toUpperCase() === 'SALDO INICIAL';
                                         return (
-                                            <tr key={record.id} className={`hover:bg-white transition-colors group ${isInitialBalance ? 'bg-amber-50/20' : ''}`}>
-                                                <td className="p-4 px-5 whitespace-nowrap text-neutral-400 font-bold text-[10px]">{index + 1}</td>
+                                            <tr key={record.id} className={`hover:bg-[var(--bg-main)] dark:hover:bg-white/5 transition-colors group ${isInitialBalance ? 'bg-amber-500/10' : ''}`}>
+                                                <td className="p-4 px-5 whitespace-nowrap opacity-40 font-bold text-[10px]">{index + 1}</td>
                                                 <td className="p-4 px-5 whitespace-nowrap">
                                                     <div className="flex items-center gap-2">
-                                                        <span className="font-black text-xs text-primary-dark uppercase tracking-wider">{record.concept}</span>
-                                                        {isInitialBalance && <span className="text-[8px] bg-accent/20 text-accent-dark px-1.5 py-0.5 rounded-full font-black uppercase tracking-widest">Ajuste</span>}
+                                                        <span className="font-black text-xs uppercase tracking-wider">{record.concept}</span>
+                                                        {isInitialBalance && <span className="text-[8px] bg-accent/20 text-accent px-1.5 py-0.5 rounded-full font-black uppercase tracking-widest">Ajuste</span>}
                                                     </div>
                                                     <div className="mt-1">
                                                         <span className={`text-[8px] px-2 py-0.5 rounded-md font-black uppercase tracking-widest ${
@@ -1532,23 +1556,23 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                                         </span>
                                                     </div>
                                                 </td>
-                                                <td className="p-4 px-5 whitespace-nowrap text-xs text-neutral-500 font-medium">
+                                                <td className="p-4 px-5 whitespace-nowrap text-xs opacity-60 font-medium">
                                                     {formatDate(record.date)}
                                                 </td>
                                                 <td className="p-4 px-5 whitespace-nowrap">
-                                                    <span className="bg-neutral-100 text-neutral-600 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter">{record.payment_method}</span>
+                                                    <span className="bg-[var(--bg-main)] dark:bg-white/10 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter">{record.payment_method}</span>
                                                 </td>
-                                                <td className="p-4 px-5 whitespace-nowrap text-xs font-medium text-neutral-600">{record.provider}</td>
+                                                <td className="p-4 px-5 whitespace-nowrap text-xs font-medium opacity-60">{record.provider}</td>
                                                 <td className="p-4 px-5 text-right whitespace-nowrap text-green-600 font-bold text-sm">
                                                     {isInitialBalance ? '-' : (Number(record.income) !== 0 ? `$${Number(record.income).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-')}
                                                 </td>
                                                 <td className="p-4 px-5 text-right whitespace-nowrap text-red-500 font-bold text-sm">
                                                     {isInitialBalance ? '-' : (Number(record.expense) !== 0 ? `$${Number(record.expense).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-')}
                                                 </td>
-                                                <td className={`p-4 px-5 text-right whitespace-nowrap font-black text-sm ${Number(record.balance) < 0 ? 'text-red-500' : 'text-primary-dark'}`}>
+                                                <td className={`p-4 px-5 text-right whitespace-nowrap font-black text-sm ${Number(record.balance) < 0 ? 'text-red-500' : ''}`}>
                                                     ${Number(record.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                                 </td>
-                                                <td className="p-4 px-5 text-xs text-neutral-400 max-w-xs truncate italic">{record.description}</td>
+                                                <td className="p-4 px-5 text-xs opacity-40 max-w-xs truncate italic">{record.description}</td>
                                                  <td className="p-4 px-5">
                                                     <div className="flex justify-center gap-2">
                                                         <button 
@@ -1673,10 +1697,10 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                                 <th className="p-5 text-right w-48 font-bold">Total Gasto</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-neutral-100">
+                                        <tbody className="divide-y divide-[var(--border-color)] dark:divide-white/5 text-[var(--text-primary)]">
                                             {summaryData.map((row) => (
-                                                <tr key={row.concept} className="hover:bg-white transition-colors">
-                                                    <td className="p-4 px-6 font-black text-xs text-primary-dark uppercase tracking-wider">{row.concept}</td>
+                                                <tr key={row.concept} className="hover:bg-[var(--bg-main)] dark:hover:bg-white/5 transition-colors">
+                                                    <td className="p-4 px-6 font-black text-xs uppercase tracking-wider">{row.concept}</td>
                                                     <td className="p-4 px-6 text-right font-bold text-sm text-green-600">
                                                         {row.income > 0 ? `$${row.income.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-'}
                                                     </td>
@@ -1686,17 +1710,17 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                                 </tr>
                                             ))}
                                         </tbody>
-                                        <tfoot className="bg-primary-dark/5 font-black border-t-2 border-primary-dark/10">
+                                        <tfoot className="bg-[var(--bg-main)] dark:bg-white/5 font-black border-t-2 border-[var(--border-color)] dark:border-white/10">
                                             <tr>
-                                                <td className="p-5 px-6 text-[10px] uppercase tracking-widest text-primary-dark opacity-50">Totales del Periodo</td>
-                                                <td className="p-5 px-6 text-right text-green-600 border-r border-primary-dark/10">
+                                                <td className="p-5 px-6 text-[10px] uppercase tracking-widest opacity-50">Totales del Periodo</td>
+                                                <td className="p-5 px-6 text-right text-green-600 border-r border-[var(--border-color)] dark:border-white/10">
                                                     ${summaryData.reduce((acc, row) => acc + row.income, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                                 </td>
                                                 <td className="p-5 px-6 text-right text-red-500">
                                                     ${summaryData.reduce((acc, row) => acc + row.expense, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                                 </td>
                                             </tr>
-                                            <tr className="bg-primary-dark text-white">
+                                            <tr className="bg-accent text-white">
                                                 <td colSpan={2} className="p-4 px-6 text-xs uppercase tracking-[0.15em]">Balance Neto del Mes</td>
                                                 <td className="p-4 px-6 text-right font-black text-lg">
                                                     ${(summaryData.reduce((acc, row) => acc + row.income, 0) - summaryData.reduce((acc, row) => acc + row.expense, 0)).toLocaleString('en-US', { minimumFractionDigits: 2 })}
@@ -1717,13 +1741,13 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                         )}
                     </div>
                 ) : viewMode === 'budget' ? (
-                    <div className="p-8 max-w-7xl mx-auto animate-fade-in delay-100">
+                    <div className="p-8 max-w-7xl mx-auto animate-fade-in delay-100 text-[var(--text-primary)]">
                         <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-10">
                             <div>
-                                <h3 className="text-3xl font-black font-heading text-primary-dark uppercase tracking-tighter">
+                                <h3 className="text-3xl font-black font-heading uppercase tracking-tighter">
                                     Control de Presupuesto
                                 </h3>
-                                <p className="text-neutral-500 text-xs mt-1 font-medium tracking-wide">Planeación vs Gasto Real del periodo seleccionado.</p>
+                                <p className="opacity-40 text-xs mt-1 font-medium tracking-wide">Planeación vs Gasto Real del periodo seleccionado.</p>
                             </div>
                             <Button 
                                 outline={!isEditingBudget}
@@ -1748,13 +1772,13 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                             </div>
                         )}
 
-                        <div className="bg-white/70 backdrop-blur-sm overflow-hidden rounded-[32px] border border-white shadow-sm">
+                        <div className="bg-[var(--bg-card)]/50 dark:bg-white/5 backdrop-blur-md overflow-hidden rounded-[32px] border border-[var(--border-color)] dark:border-white/10 shadow-sm">
                             <table className="w-full text-left border-collapse">
                                 <thead>
-                                    <tr className="bg-primary-dark/5 text-primary-dark text-[10px] font-black uppercase tracking-[0.2em] border-b border-light-beige">
-                                        <th className="p-5 border-r border-light-beige/30">Concepto</th>
-                                        <th className="p-5 border-r border-light-beige/30 text-right w-48">Presupuesto</th>
-                                        <th className="p-5 border-r border-light-beige/30 text-right w-64">Gasto Real</th>
+                                    <tr className="bg-accent/5 text-[var(--text-primary)] text-[10px] font-black uppercase tracking-[0.2em] border-b border-[var(--border-color)] dark:border-white/10">
+                                        <th className="p-5 border-r border-[var(--border-color)] dark:border-white/10">Concepto</th>
+                                        <th className="p-5 border-r border-[var(--border-color)] dark:border-white/10 text-right w-48">Presupuesto</th>
+                                        <th className="p-5 border-r border-[var(--border-color)] dark:border-white/10 text-right w-64">Gasto Real</th>
                                         <th className="p-5 text-right w-40">Estado</th>
                                     </tr>
                                 </thead>
@@ -1826,40 +1850,40 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                         </div>
                     </div>
                 ) : viewMode === 'balances' ? (
-                    <div className="p-8 max-w-7xl mx-auto animate-fade-in delay-100">
+                    <div className="p-8 max-w-7xl mx-auto animate-fade-in delay-100 text-[var(--text-primary)]">
                         {selectedMonth && (
-                            <h3 className="text-2xl font-black font-heading text-center text-primary-dark mb-10 capitalize flex items-center justify-center gap-4">
-                                <div className="h-px bg-neutral-200 flex-1"></div>
-                                <span className="bg-white px-6 py-2 rounded-2xl border border-neutral-100 shadow-sm">
+                            <h3 className="text-2xl font-black font-heading text-center mb-10 capitalize flex items-center justify-center gap-4">
+                                <div className="h-px bg-[var(--border-color)] dark:bg-white/10 flex-1"></div>
+                                <span className="bg-[var(--bg-card)] dark:bg-white/5 px-6 py-2 rounded-2xl border border-[var(--border-color)] dark:border-white/10 shadow-sm">
                                     {uniqueMonths.find(m => m.value === selectedMonth)?.label}
                                 </span>
-                                <div className="h-px bg-neutral-200 flex-1"></div>
+                                <div className="h-px bg-[var(--border-color)] dark:bg-white/10 flex-1"></div>
                             </h3>
                         )}
                         
                         <div className="grid gap-8 lg:grid-cols-3">
                             {/* Tabla Balance por Forma de Pago */}
-                            <div className="lg:col-span-2 bg-white/70 backdrop-blur-sm overflow-hidden rounded-[32px] border border-white shadow-sm">
-                                <h4 className="text-[10px] font-black text-center text-primary-dark p-6 bg-primary-dark/5 border-b border-light-beige uppercase tracking-[0.2em]">
+                            <div className="lg:col-span-2 bg-[var(--bg-card)]/50 dark:bg-white/5 backdrop-blur-md overflow-hidden rounded-[32px] border border-[var(--border-color)] dark:border-white/10 shadow-sm">
+                                <h4 className="text-[10px] font-black text-center p-6 bg-accent/5 border-b border-[var(--border-color)] dark:border-white/10 uppercase tracking-[0.2em]">
                                     Estado Actual de Cuentas
                                 </h4>
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left">
                                         <thead>
-                                            <tr className="border-b border-light-beige">
-                                                <th className="p-5 font-black text-[10px] uppercase tracking-widest text-neutral-400">Cuenta</th>
-                                                <th className="p-5 font-black text-[10px] uppercase tracking-widest text-neutral-400 text-right">Inicial</th>
-                                                <th className="p-5 font-black text-[10px] uppercase tracking-widest text-neutral-400 text-right">Entradas</th>
-                                                <th className="p-5 font-black text-[10px] uppercase tracking-widest text-neutral-400 text-right">Salidas</th>
-                                                <th className="p-5 font-black text-[10px] uppercase tracking-widest text-primary-dark text-right">Final</th>
+                                            <tr className="border-b border-[var(--border-color)] dark:border-white/10">
+                                                <th className="p-5 font-black text-[10px] uppercase tracking-widest opacity-40">Cuenta</th>
+                                                <th className="p-5 font-black text-[10px] uppercase tracking-widest opacity-40 text-right">Inicial</th>
+                                                <th className="p-5 font-black text-[10px] uppercase tracking-widest opacity-40 text-right">Entradas</th>
+                                                <th className="p-5 font-black text-[10px] uppercase tracking-widest opacity-40 text-right">Salidas</th>
+                                                <th className="p-5 font-black text-[10px] uppercase tracking-widest text-right">Final</th>
                                                 <th className="p-5 w-10"></th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-neutral-100/50">
+                                        <tbody className="divide-y divide-[var(--border-color)] dark:divide-white/5">
                                             {paymentBalancesData.map((row) => (
-                                                <tr key={row.method} className="hover:bg-white transition-colors group">
-                                                    <td className="p-5 font-black text-primary-dark text-xs uppercase tracking-wider">{row.method}</td>
-                                                    <td className="p-5 text-right text-sm text-neutral-400 font-medium">
+                                                <tr key={row.method} className="hover:bg-[var(--bg-main)] dark:hover:bg-white/5 transition-colors group">
+                                                    <td className="p-5 font-black text-xs uppercase tracking-wider">{row.method}</td>
+                                                    <td className="p-5 text-right text-sm opacity-40 font-medium">
                                                         ${row.initialBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                                     </td>
                                                     <td className="p-5 text-right text-sm text-green-600 font-bold">
@@ -1868,7 +1892,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                                     <td className="p-5 text-right text-sm text-red-500 font-bold">
                                                         {row.expense > 0 ? `$${row.expense.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-'}
                                                     </td>
-                                                    <td className={`p-5 text-right text-sm font-black ${row.finalBalance < 0 ? 'text-red-600' : 'text-primary-dark'}`}>
+                                                    <td className={`p-5 text-right text-sm font-black ${row.finalBalance < 0 ? 'text-red-600' : ''}`}>
                                                         ${row.finalBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                                     </td>
                                                     <td className="p-5 text-center">
@@ -1892,25 +1916,25 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                             </div>
 
                             {/* Gestión de Cuentas Paneles */}
-                            <div className="bg-primary-dark rounded-[32px] p-8 text-white shadow-xl relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 rounded-full -mr-16 -mt-16 blur-3xl transition-all group-hover:bg-accent/20"></div>
+                            <div className="bg-accent rounded-[32px] p-8 text-white shadow-xl relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl transition-all group-hover:bg-white/20"></div>
                                 
                                 <div className="flex bg-white/10 p-1.5 rounded-2xl mb-8 border border-white/5 relative z-10">
                                     <button 
                                         onClick={() => setAccMgmtTab('initial')}
-                                        className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${accMgmtTab === 'initial' ? 'bg-white text-primary-dark shadow-lg scale-[1.02]' : 'text-white/40 hover:text-white'}`}
+                                        className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${accMgmtTab === 'initial' ? 'bg-white text-accent shadow-lg scale-[1.02]' : 'text-white/40 hover:text-white'}`}
                                     >
                                         Saldo Inicial
                                     </button>
                                     <button 
                                         onClick={() => setAccMgmtTab('transfer')}
-                                        className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${accMgmtTab === 'transfer' ? 'bg-white text-primary-dark shadow-lg scale-[1.02]' : 'text-white/40 hover:text-white'}`}
+                                        className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${accMgmtTab === 'transfer' ? 'bg-white text-accent shadow-lg scale-[1.02]' : 'text-white/40 hover:text-white'}`}
                                     >
                                         Traspaso
                                     </button>
                                     <button 
                                         onClick={() => setAccMgmtTab('accounts')}
-                                        className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${accMgmtTab === 'accounts' ? 'bg-white text-primary-dark shadow-lg scale-[1.02]' : 'text-white/40 hover:text-white'}`}
+                                        className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${accMgmtTab === 'accounts' ? 'bg-white text-accent shadow-lg scale-[1.02]' : 'text-white/40 hover:text-white'}`}
                                     >
                                         Mis Cuentas
                                     </button>
