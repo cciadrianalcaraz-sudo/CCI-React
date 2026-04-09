@@ -15,6 +15,11 @@ import Button from '../ui/Button';
 import { toast } from '../../lib/toast';
 import { Toaster } from '../ui/Toaster';
 import { useConfirm } from '../../hooks/useConfirm';
+import { extractDataFromReceipt } from '../../lib/gemini';
+import { Camera, Sparkles, TrendingUp, Download, Printer, User, DollarSign, Calendar } from 'lucide-react';
+import AICopilot from './AICopilot';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 interface FinanceRecord {
     id: string;
@@ -44,6 +49,17 @@ interface FinanceCredit {
     annual_rate: number;
     start_date: string;
     created_at: string;
+}
+
+interface FinanceGoal {
+    id: string;
+    user_id: string;
+    name: string;
+    target_amount: number;
+    current_amount: number;
+    deadline?: string;
+    icon?: string;
+    color?: string;
 }
 
 interface FinanceTrackerProps {
@@ -128,6 +144,14 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
     const [creditPaymentMethod, setCreditPaymentMethod] = useState('');
     const [isSavingPayment, setIsSavingPayment] = useState(false);
 
+    // Savings Goals states
+    const [goals, setGoals] = useState<FinanceGoal[]>([]);
+    const [isGoalFormOpen, setIsGoalFormOpen] = useState(false);
+    const [goalName, setGoalName] = useState('');
+    const [goalTarget, setGoalTarget] = useState<number | ''>('');
+    const [goalDeadline, setGoalDeadline] = useState('');
+    const [isSavingGoal, setIsSavingGoal] = useState(false);
+
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Toast & Confirm
@@ -137,6 +161,10 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
     const [reassignModal, setReassignModal] = useState<{ method: string; count: number } | null>(null);
     const [reassignTarget, setReassignTarget] = useState('');
     const [isReassigning, setIsReassigning] = useState(false);
+
+    // AI OCR States
+    const [isProcessingOCR, setIsProcessingOCR] = useState(false);
+    const ocrFileInputRef = useRef<HTMLInputElement>(null);
 
     // Helper: Formato de fecha sin desajuste de zona horaria
     const formatDate = (dateStr: string) => {
@@ -157,6 +185,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
         }
         loadCredits();
         loadPaymentMethods();
+        loadGoals();
     }, [user.id, propsRecords]);
 
     const loadPaymentMethods = async () => {
@@ -420,6 +449,67 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
             setIsSavingPayment(false);
         }
     };
+
+    const loadGoals = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('finance_goals')
+                .select('*')
+                .order('created_at', { ascending: true });
+            if (error) throw error;
+            setGoals(data || []);
+        } catch (error) {
+            console.error("Error loading goals:", error);
+        }
+    };
+
+    const handleAddGoal = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!goalName || !goalTarget) return;
+
+        setIsSavingGoal(true);
+        try {
+            const { error } = await supabase.from('finance_goals').insert([{
+                user_id: user.id,
+                name: goalName,
+                target_amount: Number(goalTarget),
+                current_amount: 0,
+                deadline: goalDeadline || null
+            }]);
+
+            if (error) throw error;
+            toast.success("Meta de ahorro creada");
+            setGoalName('');
+            setGoalTarget('');
+            setGoalDeadline('');
+            setIsGoalFormOpen(false);
+            loadGoals();
+        } catch (error) {
+            console.error(error);
+            toast.error("Error al crear la meta");
+        } finally {
+            setIsSavingGoal(false);
+        }
+    };
+
+    const handleDeleteGoal = async (id: string) => {
+        if (!await confirm({
+            title: 'Eliminar Meta',
+            message: '¿Seguro que quieres eliminar esta meta de ahorro?',
+            confirmLabel: 'Eliminar',
+            danger: true,
+        })) return;
+        try {
+            const { error } = await supabase.from('finance_goals').delete().eq('id', id);
+            if (error) throw error;
+            toast.success("Meta eliminada");
+            loadGoals();
+        } catch (error) {
+            console.error(error);
+            toast.error("Error al eliminar la meta");
+        }
+    };
+
     const loadRecords = async () => {
         try {
             setLoading(true);
@@ -970,6 +1060,37 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
             }
         }
     };
+
+    const handleExportPDF = async () => {
+        const element = document.getElementById('finance-dashboard-content');
+        if (!element) {
+            toast.error("No se encontró el contenido del reporte.");
+            return;
+        }
+
+        toast.info("Generando PDF... por favor espera.");
+        
+        try {
+            const canvas = await html2canvas(element, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: theme === 'dark' ? '#151515' : '#ffffff'
+            });
+            
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const imgProps = pdf.getImageProperties(imgData);
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+            
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.save(`Reporte_Mensual_${selectedMonth || 'Global'}.pdf`);
+            toast.success("PDF generado con éxito.");
+        } catch (error) {
+            console.error("Error generating PDF:", error);
+            toast.error("Error al generar el PDF.");
+        }
+    };
     
     const handleExportExcel = () => {
         if (displayRecords.length === 0) {
@@ -1087,11 +1208,38 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                     <Button outline className="text-[10px] font-black uppercase tracking-widest py-2.5 px-5 flex items-center gap-2 border-[var(--border-color)] hover:border-accent transition-all" onClick={() => loadRecords()}>
                         <Calendar size={14} className="opacity-70" /> Actualizar
                     </Button>
-                    <Button primary className="text-[10px] font-black uppercase tracking-widest py-2.5 px-6 flex items-center gap-2 shadow-lg hover:scale-[1.02] transition-all" onClick={() => setIsFormOpen(!isFormOpen)}>
-                        <Plus size={14} /> {isFormOpen ? 'Cerrar Panel' : 'Nuevo Registro'}
-                    </Button>
+                    <div className="flex items-center gap-3">
+                        <Button 
+                            outline 
+                            className="text-[10px] font-black uppercase tracking-widest py-2.5 px-6 flex items-center gap-2"
+                            onClick={handleExportPDF}
+                        >
+                            <Printer size={14} /> Reporte PDF
+                        </Button>
+                        <Button primary className="text-[10px] font-black uppercase tracking-widest py-2.5 px-6 flex items-center gap-2 shadow-lg hover:scale-[1.02] transition-all" onClick={() => setIsFormOpen(!isFormOpen)}>
+                            <Plus size={14} /> {isFormOpen ? 'Cerrar Panel' : 'Nuevo Registro'}
+                        </Button>
+                    </div>
                 </div>
             </div>
+
+            {/* OCR Processing Overlay */}
+            {isProcessingOCR && (
+                <div className="fixed inset-0 z-[400] flex items-center justify-center p-4 bg-primary-dark/60 backdrop-blur-md animate-fade-in">
+                    <div className="bg-[var(--bg-card)] p-10 rounded-[3rem] border border-[var(--border-color)] shadow-2xl text-center max-w-sm">
+                        <div className="relative w-20 h-20 mx-auto mb-6">
+                            <div className="absolute inset-0 bg-accent/20 rounded-full animate-ping"></div>
+                            <div className="relative z-10 w-20 h-20 bg-accent rounded-full flex items-center justify-center text-white shadow-lg">
+                                <Sparkles size={32} className="animate-pulse" />
+                            </div>
+                        </div>
+                        <h4 className="text-xl font-black text-[var(--text-primary)] mb-2">Analizando Ticket...</h4>
+                        <p className="text-xs text-[var(--text-primary)]/40 font-bold uppercase tracking-widest leading-relaxed">
+                            Nuestra IA está extrayendo montos, fechas y conceptos para ti.
+                        </p>
+                    </div>
+                </div>
+            )}
 
             {isFormOpen && (
                 <div className="mb-10 bg-[var(--bg-card)]/50 dark:bg-white/5 backdrop-blur-xl p-8 rounded-[32px] border border-[var(--border-color)] dark:border-white/10 shadow-sm animate-fade-in relative overflow-hidden">
@@ -1103,6 +1251,72 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                         </div>
                         {editingId ? 'Editar Movimiento' : 'Registrar Nuevo Movimiento'}
                     </h3>
+
+                    {!editingId && (
+                        <div className="mb-8 p-6 bg-accent/5 rounded-[2rem] border border-accent/20 flex flex-col md:flex-row items-center justify-between gap-6 group hover:bg-accent/10 transition-all">
+                            <div className="flex items-center gap-4 text-center md:text-left">
+                                <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center text-accent">
+                                    <Camera size={24} />
+                                </div>
+                                <div>
+                                    <h4 className="text-sm font-black text-accent uppercase tracking-wider">¿Cero escritura manual?</h4>
+                                    <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest">Escanea tu ticket y deja que la IA llene el formulario por ti.</p>
+                                </div>
+                            </div>
+                            <input 
+                                type="file" 
+                                ref={ocrFileInputRef} 
+                                className="hidden" 
+                                accept="image/*" 
+                                onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (!file) return;
+
+                                    setIsProcessingOCR(true);
+                                    try {
+                                        const reader = new FileReader();
+                                        reader.onload = async (event) => {
+                                            const base64 = event.target?.result as string;
+                                            const data = await extractDataFromReceipt(base64);
+                                            
+                                            // Auto-poblar el formulario
+                                            if (data.amount) {
+                                                setExpense(data.amount);
+                                                setIncome('');
+                                            }
+                                            if (data.date) setDate(data.date);
+                                            if (data.provider) setProvider(data.provider);
+                                            if (data.concept) setConcept(data.concept);
+                                            
+                                            // Si Gemini sugiere una categoría, podemos intentar mappearla a expenseType
+                                            if (data.category) {
+                                                const cat = data.category.toLowerCase();
+                                                if (cat.includes('alimento') || cat.includes('servicio')) setExpenseType('Fijo');
+                                                else if (cat.includes('salud') || cat.includes('educación')) setExpenseType('Variable');
+                                            }
+                                            
+                                            toast.success("¡Ticket escaneado con éxito!");
+                                            setIsProcessingOCR(false);
+                                        };
+                                        reader.readAsDataURL(file);
+                                    } catch (err) {
+                                        console.error(err);
+                                        toast.error("Error al analizar el ticket. Inténtalo de nuevo.");
+                                        setIsProcessingOCR(false);
+                                    }
+                                    if (e.target) e.target.value = '';
+                                }}
+                            />
+                            <Button 
+                                primary 
+                                className="w-full md:w-auto px-8 py-3.5 flex items-center justify-center gap-2 shadow-xl shadow-accent/20 hover:scale-105 active:scale-95 transition-all text-[11px] font-black uppercase tracking-tighter"
+                                onClick={() => ocrFileInputRef.current?.click()}
+                            >
+                                <Sparkles size={16} /> Escanear Ticket
+                            </Button>
+                        </div>
+                    )}
+
 
                     <datalist id="concept-options">
                         <option value="SALDO INICIAL" />
@@ -1319,7 +1533,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                 </div>
             </div>
        
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto" id="finance-dashboard-content">
                 {loading ? (
                     <div className="p-12 flex justify-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-accent"></div>
@@ -1612,10 +1826,70 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
 
                         {summaryData.length > 0 ? (
                             <>
+                                {/* WIDGET DE METAS DE AHORRO */}
+                                <div className="mb-12">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-2xl bg-accent/10 flex items-center justify-center text-accent">
+                                                <TrendingUp size={20} />
+                                            </div>
+                                            <h4 className="text-xl font-heading font-black text-[var(--text-primary)]">Metas de Ahorro</h4>
+                                        </div>
+                                        <button 
+                                            onClick={() => setIsGoalFormOpen(true)}
+                                            className="px-4 py-2 bg-accent/5 hover:bg-accent text-accent hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                                        >
+                                            + Nueva Meta
+                                        </button>
+                                    </div>
+
+                                    {goals.length === 0 ? (
+                                        <div className="p-8 border-2 border-dashed border-[var(--border-color)] dark:border-white/10 rounded-[2.5rem] text-center">
+                                            <p className="text-xs text-neutral-400 font-bold uppercase tracking-widest">No has definido metas de ahorro todavía.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            {goals.map(goal => {
+                                                const progress = Math.min(100, (goal.current_amount / goal.target_amount) * 100);
+                                                return (
+                                                    <div key={goal.id} className="bg-[var(--bg-card)]/50 dark:bg-white/5 backdrop-blur-md p-6 rounded-[2.5rem] border border-[var(--border-color)] dark:border-white/10 group relative">
+                                                        <button 
+                                                            onClick={() => handleDeleteGoal(goal.id)}
+                                                            className="absolute top-4 right-4 p-2 opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:bg-red-50 rounded-lg"
+                                                        >
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                        <div className="flex justify-between items-start mb-4">
+                                                            <h5 className="font-black text-sm uppercase tracking-wider">{goal.name}</h5>
+                                                            <span className="text-[10px] font-black text-accent">{progress.toFixed(0)}%</span>
+                                                        </div>
+                                                        <div className="h-3 bg-[var(--bg-main)] dark:bg-black/20 rounded-full mb-4 overflow-hidden border border-[var(--border-color)] dark:border-white/5">
+                                                            <div 
+                                                                className="h-full bg-accent rounded-full shadow-[0_0_10px_rgba(var(--accent-rgb),0.5)] transition-all duration-1000"
+                                                                style={{ width: `${progress}%` }}
+                                                            ></div>
+                                                        </div>
+                                                        <div className="flex justify-between items-end">
+                                                            <div>
+                                                                <p className="text-[8px] font-black text-neutral-400 uppercase tracking-widest mb-1">Acumulado</p>
+                                                                <p className="text-sm font-black text-accent">${goal.current_amount.toLocaleString()}</p>
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <p className="text-[8px] font-black text-neutral-400 uppercase tracking-widest mb-1">Objetivo</p>
+                                                                <p className="text-sm font-black opacity-40">${goal.target_amount.toLocaleString()}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+
                                 {/* Gráficas Primera Fila */}
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                                     {/* Ingresos - Pastel Pequeño */}
-                                    <div className="bg-white/70 backdrop-blur-sm p-8 rounded-[32px] border border-white shadow-sm hover:shadow-md transition-all">
+                                    <div className="bg-[var(--bg-card)]/50 dark:bg-white/5 backdrop-blur-sm p-8 rounded-[32px] border border-[var(--border-color)] dark:border-white/10 shadow-sm hover:shadow-md transition-all">
                                         <h4 className="text-sm font-black uppercase tracking-widest text-primary-dark mb-8 flex items-center gap-2">
                                             <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]"></div>
                                             Distribución de Ingresos
@@ -2284,6 +2558,78 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
 
             <Toaster />
             {ConfirmModal}
+
+            {/* SAVINGS GOAL MODAL */}
+            {isGoalFormOpen && (
+                <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 animate-fade-in">
+                    <div className="absolute inset-0 bg-primary-dark/40 backdrop-blur-md" onClick={() => setIsGoalFormOpen(false)}></div>
+                    <div className="bg-[var(--bg-card)] w-full max-w-md rounded-[3rem] p-10 shadow-2xl relative animate-scale-in border border-[var(--border-color)]">
+                        <h4 className="text-xl font-black text-[var(--text-primary)] mb-2 flex items-center gap-3">
+                            <TrendingUp size={24} className="text-accent" /> Nueva Meta de Ahorro
+                        </h4>
+                        <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest mb-8">Define un objetivo claro para tus finanzas.</p>
+
+                        <form onSubmit={handleAddGoal} className="space-y-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase text-neutral-400 ml-1">Nombre de la Meta</label>
+                                <div className="relative">
+                                    <input 
+                                        type="text" 
+                                        required 
+                                        value={goalName} 
+                                        onChange={e => setGoalName(e.target.value)}
+                                        placeholder="Ej: Fondo de Emergencia"
+                                        className="w-full bg-[var(--bg-card)] dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 rounded-2xl px-6 py-4 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-accent"
+                                    />
+                                    <div className="absolute right-6 top-1/2 -translate-y-1/2 opacity-20"><User size={16} /></div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase text-neutral-400 ml-1">Monto Objetivo ($)</label>
+                                <div className="relative">
+                                    <input 
+                                        type="number" 
+                                        required 
+                                        value={goalTarget} 
+                                        onChange={e => setGoalTarget(e.target.value === '' ? '' : Number(e.target.value))}
+                                        placeholder="0.00"
+                                        className="w-full bg-[var(--bg-card)] dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 rounded-2xl px-6 py-4 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-accent"
+                                    />
+                                    <div className="absolute right-6 top-1/2 -translate-y-1/2 opacity-20"><DollarSign size={16} /></div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase text-neutral-400 ml-1">Fecha Límite (Opcional)</label>
+                                <div className="relative">
+                                    <input 
+                                        type="date" 
+                                        value={goalDeadline} 
+                                        onChange={e => setGoalDeadline(e.target.value)}
+                                        className="w-full bg-[var(--bg-card)] dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 rounded-2xl px-6 py-4 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-accent"
+                                    />
+                                    <div className="absolute right-6 top-1/2 -translate-y-1/2 opacity-20"><Calendar size={16} /></div>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-4 pt-4">
+                                <Button outline className="flex-1 py-4" onClick={() => setIsGoalFormOpen(false)}>Cancelar</Button>
+                                <Button 
+                                    primary 
+                                    className="flex-1 py-4" 
+                                    disabled={isSavingGoal}
+                                    type="submit"
+                                >
+                                    Crear Meta
+                                </Button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            <AICopilot records={records} />
         </div>
     );
 }
