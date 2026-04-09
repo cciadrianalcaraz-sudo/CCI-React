@@ -1,13 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { supabase } from '../../lib/supabase';
-import { Plus, Trash2, Search, TrendingUp,
-    TrendingDown,
-    DollarSign,
-    Edit2,
-    Upload,
-    Download,
-    Calendar,
-    X
+import { 
+    Plus, Trash2, Search, TrendingUp, TrendingDown, DollarSign, 
+    Edit2, Upload, Download, Calendar, X, Camera, Sparkles, Printer, User 
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
@@ -16,7 +9,6 @@ import { toast } from '../../lib/toast';
 import { Toaster } from '../ui/Toaster';
 import { useConfirm } from '../../hooks/useConfirm';
 import { extractDataFromReceipt } from '../../lib/gemini';
-import { Camera, Sparkles, TrendingUp, Download, Printer, User, DollarSign, Calendar } from 'lucide-react';
 import AICopilot from './AICopilot';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -1252,8 +1244,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                         {editingId ? 'Editar Movimiento' : 'Registrar Nuevo Movimiento'}
                     </h3>
 
-                    {!editingId && (
-                        <div className="mb-8 p-6 bg-accent/5 rounded-[2rem] border border-accent/20 flex flex-col md:flex-row items-center justify-between gap-6 group hover:bg-accent/10 transition-all">
+                    <div className="mb-8 p-6 bg-accent/[0.08] rounded-[2rem] border-2 border-dashed border-accent/20 flex flex-col md:flex-row items-center justify-between gap-6 group hover:bg-accent/10 transition-all">
                             <div className="flex items-center gap-4 text-center md:text-left">
                                 <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center text-accent">
                                     <Camera size={24} />
@@ -1312,10 +1303,8 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                 className="w-full md:w-auto px-8 py-3.5 flex items-center justify-center gap-2 shadow-xl shadow-accent/20 hover:scale-105 active:scale-95 transition-all text-[11px] font-black uppercase tracking-tighter"
                                 onClick={() => ocrFileInputRef.current?.click()}
                             >
-                                <Sparkles size={16} /> Escanear Ticket
-                            </Button>
-                        </div>
-                    )}
+                        </Button>
+                    </div>
 
 
                     <datalist id="concept-options">
