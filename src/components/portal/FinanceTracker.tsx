@@ -503,6 +503,24 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
             toast.error("Error al eliminar la meta");
         }
     };
+    
+    const handleUpdateGoalAmount = async (id: string, current: number) => {
+        const amount = prompt("¿Cuánto deseas abonar a esta meta?", "0");
+        if (!amount || isNaN(Number(amount))) return;
+        
+        try {
+            const { error } = await supabase
+                .from('finance_goals')
+                .update({ current_amount: current + Number(amount) })
+                .eq('id', id);
+            if (error) throw error;
+            toast.success("Ahorro actualizado");
+            loadGoals();
+        } catch (error) {
+            console.error(error);
+            toast.error("Error al actualizar la meta");
+        }
+    };
 
     const loadRecords = async () => {
         try {
@@ -2391,7 +2409,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transform group-hover:rotate-6 transition-transform`} style={{ backgroundColor: `${goal.color}20`, color: goal.color }}>
                                                         <span className="text-2xl">{goal.icon || '🎯'}</span>
                                                     </div>
-                                                    <button onClick={() => handleDeleteGoal(goal.id, goal.name)} className="p-2 opacity-0 group-hover:opacity-100 hover:bg-red-50 text-neutral-300 hover:text-red-500 rounded-xl transition-all"><Trash2 size={16} /></button>
+                                                    <button onClick={() => handleDeleteGoal(goal.id)} className="p-2 opacity-0 group-hover:opacity-100 hover:bg-red-50 text-neutral-300 hover:text-red-500 rounded-xl transition-all"><Trash2 size={16} /></button>
                                                 </div>
                                                 <h4 className="text-lg font-black mb-1 text-[var(--text-primary)]">{goal.name}</h4>
                                                 <div className="flex justify-between items-end mb-4">
