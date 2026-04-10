@@ -49,7 +49,7 @@ export default function AICopilot({ records }: AICopilotProps) {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-8 right-8 w-16 h-16 bg-accent rounded-full shadow-2xl flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-all z-[200] group"
+        className="fixed bottom-10 right-28 w-16 h-16 bg-accent rounded-full shadow-[0_10px_40px_rgba(239,163,100,0.4)] flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-all z-[1000] group"
       >
         <Sparkles size={28} className="group-hover:rotate-12 transition-transform" />
         <div className="absolute -top-2 -right-2 bg-red-500 text-[10px] font-bold px-2 py-0.5 rounded-full border-2 border-white dark:border-primary-dark">AI</div>
@@ -58,7 +58,7 @@ export default function AICopilot({ records }: AICopilotProps) {
   }
 
   return (
-    <div className={`fixed bottom-8 right-8 z-[200] transition-all duration-500 flex flex-col ${isMinimized ? 'h-16 w-64' : 'h-[600px] w-96 max-w-[calc(100vw-2rem)]'} bg-[var(--bg-card)]/80 dark:bg-primary-dark/40 backdrop-blur-2xl rounded-[2.5rem] border border-[var(--border-color)] dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden animate-scale-in`}>
+    <div className={`fixed bottom-10 right-28 z-[1000] transition-all duration-500 flex flex-col ${isMinimized ? 'h-16 w-64' : 'h-[600px] w-96 max-w-[calc(100vw-2rem)]'} bg-[var(--bg-card)]/80 dark:bg-primary-dark/40 backdrop-blur-2xl rounded-[2.5rem] border border-[var(--border-color)] dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden animate-scale-in`}>
       {/* Header */}
       <div className="p-5 border-b border-[var(--border-color)] dark:border-white/5 flex items-center justify-between">
         <div className="flex items-center gap-3">

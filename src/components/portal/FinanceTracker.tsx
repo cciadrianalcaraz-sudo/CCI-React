@@ -1,3 +1,5 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { supabase } from '../../lib/supabase';
 import { 
     Plus, Trash2, Search, TrendingUp, TrendingDown, DollarSign, 
     Edit2, Upload, Download, Calendar, X, Camera, Sparkles, Printer, User 
@@ -577,7 +579,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                 const c = (r.concept || '').toUpperCase().trim();
                 return c !== 'SALDO INICIAL' && !c.includes('TRASPASO');
             })
-            .reduce((acc, curr) => {
+            .reduce((acc: Record<string, {concept: string, income: number, expense: number}>, curr: FinanceRecord) => {
                 const c = curr.concept || 'SIN CONCEPTO';
                 if (!acc[c]) {
                     acc[c] = { concept: c, income: 0, expense: 0 };
@@ -585,7 +587,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                 acc[c].income += Number(curr.income) || 0;
                 acc[c].expense += Number(curr.expense) || 0;
                 return acc;
-            }, {} as Record<string, {concept: string, income: number, expense: number}>);
+            }, {});
         
         const sortedSummary = Object.values(grouped).sort((a, b) => a.concept.localeCompare(b.concept));
         setSummaryData(sortedSummary);
@@ -595,7 +597,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
         // =========================================================================
         const historicalRecords = selectedMonth === 'all' 
             ? records 
-            : records.filter(r => {
+            : records.filter((r: FinanceRecord) => {
                 const rDate = r.date.includes('/') ? r.date.split('/').reverse().join('-') : r.date;
                 return rDate.substring(0, 7) < selectedMonth;
             });
@@ -610,12 +612,12 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                 const c = (r.concept || '').toUpperCase().trim();
                 return c !== 'SALDO INICIAL' && !c.includes('TRASPASO') && Number(r.expense) > 0;
             })
-            .reduce((acc, curr) => {
+            .reduce((acc: Record<string, number>, curr: FinanceRecord) => {
                 const c = curr.concept || 'SIN CONCEPTO';
                 if (!acc[c]) acc[c] = 0;
                 acc[c] += Number(curr.expense);
                 return acc;
-            }, {} as Record<string, number>);
+            }, {});
             
         const allEverConcepts = Array.from(new Set(records.map(r => (r.concept || '').toUpperCase().trim())))
             .filter(c => c !== '' && c !== 'SALDO INICIAL' && !c.includes('TRASPASO'));
@@ -1063,10 +1065,11 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
         toast.info("Generando PDF... por favor espera.");
         
         try {
+            const isDarkMode = document.documentElement.classList.contains('dark');
             const canvas = await html2canvas(element, {
                 scale: 2,
                 useCORS: true,
-                backgroundColor: theme === 'dark' ? '#151515' : '#ffffff'
+                backgroundColor: isDarkMode ? '#151515' : '#ffffff'
             });
             
             const imgData = canvas.toDataURL('image/png');
@@ -1303,7 +1306,8 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                 className="w-full md:w-auto px-8 py-3.5 flex items-center justify-center gap-2 shadow-xl shadow-accent/20 hover:scale-105 active:scale-95 transition-all text-[11px] font-black uppercase tracking-tighter"
                                 onClick={() => ocrFileInputRef.current?.click()}
                             >
-                        </Button>
+                                <Camera size={16} /> Smart Scan (AI OCR)
+                            </Button>
                     </div>
 
 
@@ -2422,22 +2426,22 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                             <div className="px-6 py-2 rounded-full flex flex-col items-center">
                                 <span className="text-[8px] font-black uppercase tracking-widest text-white/50">Ingresos</span>
                                 <span className="text-sm font-black text-green-400">
-                                    ${summaryData.reduce((acc, row) => acc + row.income, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                    ${summaryData.reduce((acc: number, row) => acc + row.income, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                 </span>
                             </div>
                             <div className="w-px h-6 bg-white/10 self-center"></div>
                             <div className="px-6 py-2 rounded-full flex flex-col items-center">
                                 <span className="text-[8px] font-black uppercase tracking-widest text-white/50">Gastos</span>
                                 <span className="text-sm font-black text-red-400">
-                                    ${summaryData.reduce((acc, row) => acc + row.expense, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                    ${summaryData.reduce((acc: number, row) => acc + row.expense, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                 </span>
                             </div>
                         </div>
                         
                         <div className="flex flex-col items-end">
                             <span className="text-[8px] font-black uppercase tracking-widest text-white/50">Utilidad Neta</span>
-                            <span className={`text-lg font-heading font-black ${(summaryData.reduce((acc, row) => acc + row.income, 0) - summaryData.reduce((acc, row) => acc + row.expense, 0)) >= 0 ? 'text-white' : 'text-red-400'}`}>
-                                ${(summaryData.reduce((acc, row) => acc + row.income, 0) - summaryData.reduce((acc, row) => acc + row.expense, 0)).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            <span className={`text-lg font-heading font-black ${(summaryData.reduce((acc: number, row: {income: number}) => acc + row.income, 0) - summaryData.reduce((acc: number, row: {expense: number}) => acc + row.expense, 0)) >= 0 ? 'text-white' : 'text-red-400'}`}>
+                                ${(summaryData.reduce((acc: number, row: {income: number}) => acc + row.income, 0) - summaryData.reduce((acc: number, row: {expense: number}) => acc + row.expense, 0)).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                             </span>
                         </div>
                     </div>
@@ -2446,8 +2450,8 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
 
             {/* FLOATING TOTALS BAR - Budget mode */}
             {viewMode === 'budget' && budgetData.length > 0 && (() => {
-                const totalBudget = budgetData.reduce((acc, row) => acc + row.avgBudget, 0);
-                const totalSpent = budgetData.reduce((acc, row) => acc + row.currentExpense, 0);
+                const totalBudget = budgetData.reduce((acc: number, row: {avgBudget: number}) => acc + row.avgBudget, 0);
+                const totalSpent = budgetData.reduce((acc: number, row: {currentExpense: number}) => acc + row.currentExpense, 0);
                 const diff = totalBudget - totalSpent;
                 const isOver = diff < 0;
                 return (

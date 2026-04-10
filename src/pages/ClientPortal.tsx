@@ -349,7 +349,10 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
     if (loading) {
         return (
             <div className="min-h-screen bg-[#faf7f2] flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent"></div>
+                <div className="flex flex-col items-center gap-4">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent"></div>
+                    <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Cargando Financial Command Center...</p>
+                </div>
             </div>
         );
     }
