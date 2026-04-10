@@ -12,49 +12,18 @@ import { Toaster } from '../ui/Toaster';
 import { useConfirm } from '../../hooks/useConfirm';
 import { extractDataFromReceipt } from '../../lib/gemini';
 import AICopilot from './AICopilot';
+import { useFinance } from '../../hooks/useFinance';
+import FinanceHeader from './finance/FinanceHeader';
+import RecordForm from './finance/RecordForm';
+import MovementsDetailedView from './finance/MovementsDetailedView';
+import MovementsSummaryView from './finance/MovementsSummaryView';
+import CreditTracker from './finance/CreditTracker';
+import SavingsGoalsView from './finance/SavingsGoalsView';
+import BudgetTracker from './finance/BudgetTracker';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-
-interface FinanceRecord {
-    id: string;
-    user_id: string;
-    concept: string;
-    date: string;
-    payment_method: string;
-    provider: string;
-    income: number;
-    expense: number;
-    description: string;
-    created_at: string;
-    expense_type: string;
-}
-
-interface PaymentMethod {
-    id: string;
-    user_id: string;
-    name: string;
-}
-
-interface FinanceCredit {
-    id: string;
-    user_id: string;
-    name: string;
-    initial_balance: number;
-    annual_rate: number;
-    start_date: string;
-    created_at: string;
-}
-
-interface FinanceGoal {
-    id: string;
-    user_id: string;
-    name: string;
-    target_amount: number;
-    current_amount: number;
-    deadline?: string;
-    icon?: string;
-    color?: string;
-}
+import { FinanceRecord, PaymentMethod, FinanceCredit, FinanceGoal } from '../../types/finance';
+import { formatDate, COLORS } from '../../utils/financeUtils';
 
 interface FinanceTrackerProps {
     user: any;
@@ -63,14 +32,20 @@ interface FinanceTrackerProps {
 }
 
 export default function FinanceTracker({ user, records: propsRecords, onRefresh }: FinanceTrackerProps) {
-    const [localRecords, setLocalRecords] = useState<FinanceRecord[]>([]);
-    const records = propsRecords || localRecords;
-    const [loading, setLoading] = useState(true);
+    const { 
+        records, 
+        loading, 
+        paymentMethods: savedPaymentMethods, 
+        credits, 
+        goals,
+        refreshRecords: loadRecords,
+        refreshPaymentMethods: loadPaymentMethods,
+        refreshCredits: loadCredits,
+        refreshGoals: loadGoals
+    } = useFinance(user, propsRecords);
+
     const [isFormOpen, setIsFormOpen] = useState(false);
     
-    // Gráficos de Colores
-    const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#6366f1', '#ec4899', '#14b8a6', '#84cc16', '#f43f5e', '#a855f7', '#0ea5e9'];
-
     // View modes
     const [viewMode, setViewMode] = useState<'detailed' | 'summary' | 'balances' | 'budget' | 'credits'>(() => {
         const saved = localStorage.getItem(`finance_view_mode_${user.id}`);
@@ -89,9 +64,6 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
     const [paymentBalancesData, setPaymentBalancesData] = useState<{method: string, initialBalance: number, income: number, expense: number, finalBalance: number}[]>([]);
     
     // ESTADO NUEVO: Almacena los datos del presupuesto calculado
-    const [budgetData, setBudgetData] = useState<{concept: string, avgBudget: number, currentExpense: number, difference: number}[]>([]);
-    const [manualBudgets, setManualBudgets] = useState<Record<string, number>>({});
-    const [isEditingBudget, setIsEditingBudget] = useState(false);
     
     // Form state
     const [concept, setConcept] = useState('');
@@ -106,9 +78,6 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
     const [isUploading, setIsUploading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     
-    // Payment Methods
-    const [savedPaymentMethods, setSavedPaymentMethods] = useState<PaymentMethod[]>([]);
-    
     // Account management states (Saldos tab)
     const [initialBalanceAmount, setInitialBalanceAmount] = useState<number | ''>('');
     const [initialBalancePM, setInitialBalancePM] = useState('');
@@ -120,31 +89,6 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
     const [transferDesc, setTransferDesc] = useState('');
     const [accMgmtTab, setAccMgmtTab] = useState<'initial' | 'transfer' | 'accounts'>('initial');
     const [newAccountName, setNewAccountName] = useState('');
-
-    // Credit Tracker states
-    const [credits, setCredits] = useState<FinanceCredit[]>([]);
-    const [creditName, setCreditName] = useState('');
-    const [creditInitialBalance, setCreditInitialBalance] = useState<number | ''>('');
-    const [creditAnnualRate, setCreditAnnualRate] = useState<number | ''>('');
-    const [creditStartDate, setCreditStartDate] = useState(new Date().toISOString().split('T')[0]);
-    const [isCreditFormOpen, setIsCreditFormOpen] = useState(false);
-    const [isSavingCredit, setIsSavingCredit] = useState(false);
-
-    // Credit Payment Form states
-    const [isCreditPaymentFormOpen, setIsCreditPaymentFormOpen] = useState(false);
-    const [activeCreditForPayment, setActiveCreditForPayment] = useState<FinanceCredit | null>(null);
-    const [paymentAmount, setPaymentAmount] = useState<number | ''>('');
-    const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
-    const [creditPaymentMethod, setCreditPaymentMethod] = useState('');
-    const [isSavingPayment, setIsSavingPayment] = useState(false);
-
-    // Savings Goals states
-    const [goals, setGoals] = useState<FinanceGoal[]>([]);
-    const [isGoalFormOpen, setIsGoalFormOpen] = useState(false);
-    const [goalName, setGoalName] = useState('');
-    const [goalTarget, setGoalTarget] = useState<number | ''>('');
-    const [goalDeadline, setGoalDeadline] = useState('');
-    const [isSavingGoal, setIsSavingGoal] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -159,43 +103,6 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
     // AI OCR States
     const [isProcessingOCR, setIsProcessingOCR] = useState(false);
     const ocrFileInputRef = useRef<HTMLInputElement>(null);
-
-    // Helper: Formato de fecha sin desajuste de zona horaria
-    const formatDate = (dateStr: string) => {
-        if (!dateStr) return '';
-        // Para YYYY-MM-DD, evitamos UTC shifts dividiendo y usando los componentes locales
-        if (dateStr.includes('-')) {
-            const [year, month, day] = dateStr.split('-');
-            return `${day}/${month}/${year}`;
-        }
-        return dateStr;
-    };
-
-    useEffect(() => {
-        if (!propsRecords) {
-            loadRecords();
-        } else {
-            setLoading(false);
-        }
-        loadCredits();
-        loadPaymentMethods();
-        loadGoals();
-    }, [user.id, propsRecords]);
-
-    const loadPaymentMethods = async () => {
-        try {
-            const { data, error } = await supabase
-                .from('finance_payment_methods')
-                .select('*')
-                .order('name', { ascending: true });
-            
-            if (error) throw error;
-            if (data) setSavedPaymentMethods(data as PaymentMethod[]);
-        } catch (error) {
-            console.error("Error loading payment methods:", error);
-        }
-    };
-
     const handleSavePaymentMethod = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newAccountName.trim()) return;
@@ -232,11 +139,18 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
         }
     };
 
-    useEffect(() => {
-        if (selectedMonth) {
-            loadBudgets(selectedMonth);
+    // Helper: Formato de fecha sin desajuste de zona horaria
+    const formatDate = (dateStr: string) => {
+        if (!dateStr) return '';
+        // Para YYYY-MM-DD, evitamos UTC shifts dividiendo y usando los componentes locales
+        if (dateStr.includes('-')) {
+            const [year, month, day] = dateStr.split('-');
+            return `${day}/${month}/${year}`;
         }
-    }, [selectedMonth, user.id]);
+        return dateStr;
+    };
+
+
 
     // Smart Categorization Logic
     useEffect(() => {
@@ -262,286 +176,9 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
         }
     }, [concept, provider, editingId]);
 
-    const loadBudgets = async (month: string) => {
-        try {
-            const { data, error } = await supabase
-                .from('finance_budgets')
-                .select('concept, amount')
-                .eq('month', month)
-                .eq('user_id', user.id);
-            
-            if (error) {
-                console.error("Error loading budgets for " + month + ":", error);
-                return;
-            }
-            
-            const budgetMap: Record<string, number> = {};
-            if (data) {
-                data.forEach(b => {
-                    budgetMap[b.concept] = Number(b.amount);
-                });
-            }
-            setManualBudgets(budgetMap);
-        } catch (error) {
-            console.error("Exception loading budgets:", error);
-        }
-    };
 
-    const handleSaveBudget = async (concept: string, amount: number) => {
-        try {
-            const { error } = await supabase
-                .from('finance_budgets')
-                .upsert({ 
-                    user_id: user.id, 
-                    concept, 
-                    month: selectedMonth,
-                    amount,
-                    updated_at: new Date().toISOString()
-                }, { onConflict: 'user_id,concept,month' });
 
-            if (error) throw error;
-            
-            setManualBudgets(prev => ({
-                ...prev,
-                [concept]: amount
-            }));
-        } catch (error) {
-            console.error('Error saving budget:', error);
-            toast.error('No se pudo guardar el presupuesto.');
-        }
-    };
 
-    const handleDeleteBudget = async (concept: string) => {
-        const ok = await confirm({
-            title: 'Reiniciar Presupuesto',
-            message: `¿Deseas eliminar el presupuesto personalizado de "${concept}"? Se usará el promedio histórico.`,
-            confirmLabel: 'Reiniciar',
-            danger: true,
-        });
-        if (!ok) return;
-        try {
-            const { error } = await supabase
-                .from('finance_budgets')
-                .delete()
-                .eq('concept', concept)
-                .eq('month', selectedMonth);
-
-            if (error) throw error;
-
-            const newBudgets = { ...manualBudgets };
-            delete newBudgets[concept];
-            setManualBudgets(newBudgets);
-            toast.success(`Presupuesto de "${concept}" reiniciado.`);
-        } catch (error) {
-            console.error('Error deleting budget:', error);
-            toast.error('No se pudo eliminar el presupuesto.');
-        }
-    };
-
-    const loadCredits = async () => {
-        try {
-            const { data, error } = await supabase
-                .from('finance_credits')
-                .select('*')
-                .eq('user_id', user.id)
-                .order('created_at', { ascending: false });
-            
-            if (error) throw error;
-            if (data) setCredits(data as FinanceCredit[]);
-        } catch (error) {
-            console.error("Error loading credits:", error);
-        }
-    };
-
-    const handleSaveCredit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsSavingCredit(true);
-        try {
-            const { data, error } = await supabase
-                .from('finance_credits')
-                .insert([{
-                    user_id: user.id,
-                    name: creditName,
-                    initial_balance: Number(creditInitialBalance),
-                    annual_rate: Number(creditAnnualRate),
-                    start_date: creditStartDate
-                }])
-                .select();
-
-            if (error) throw error;
-            if (data) {
-                setCredits([...data, ...credits]);
-                setCreditName('');
-                setCreditInitialBalance('');
-                setCreditAnnualRate('');
-                setCreditStartDate(new Date().toISOString().split('T')[0]);
-                setIsCreditFormOpen(false);
-                toast.success('Crédito registrado correctamente.');
-            }
-        } catch (error) {
-            console.error('Error saving credit:', error);
-            toast.error('Error al guardar el crédito.');
-        } finally {
-            setIsSavingCredit(false);
-        }
-    };
-
-    const handleDeleteCredit = async (id: string) => {
-        const ok = await confirm({
-            title: 'Eliminar Crédito',
-            message: '¿Seguro que quieres eliminar este crédito? Se perderá todo su historial de cálculo.',
-            confirmLabel: 'Eliminar',
-            danger: true,
-        });
-        if (!ok) return;
-        try {
-            const { error } = await supabase
-                .from('finance_credits')
-                .delete()
-                .eq('id', id);
-
-            if (error) throw error;
-            setCredits(credits.filter(c => c.id !== id));
-            toast.success('Crédito eliminado correctamente.');
-        } catch (error) {
-            console.error('Error deleting credit:', error);
-            toast.error('No se pudo eliminar el crédito.');
-        }
-    };
-
-    const handleSaveCreditPayment = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!activeCreditForPayment) return;
-        setIsSavingPayment(true);
-        try {
-            const { error } = await supabase
-                .from('finance_records')
-                .insert([{
-                    user_id: user.id,
-                    concept: `PAGO CAPITAL: ${activeCreditForPayment.name.toUpperCase()}`,
-                    date: paymentDate,
-                    payment_method: creditPaymentMethod || 'Transferencia',
-                    provider: 'Banco',
-                    income: 0,
-                    expense: Number(paymentAmount),
-                    description: `Abono directo a capital: ${activeCreditForPayment.name}`,
-                    expense_type: 'Deuda'
-                }]);
-
-            if (error) throw error;
-            
-            // Recargar datos
-            loadRecords();
-            setIsCreditPaymentFormOpen(false);
-            setPaymentAmount('');
-            setActiveCreditForPayment(null);
-            toast.success(`Pago de $${Number(paymentAmount).toLocaleString()} registrado.`);
-        } catch (error) {
-            console.error('Error saving credit payment:', error);
-            toast.error('No se pudo registrar el pago.');
-        } finally {
-            setIsSavingPayment(false);
-        }
-    };
-
-    const loadGoals = async () => {
-        try {
-            const { data, error } = await supabase
-                .from('finance_goals')
-                .select('*')
-                .order('created_at', { ascending: true });
-            if (error) throw error;
-            setGoals(data || []);
-        } catch (error) {
-            console.error("Error loading goals:", error);
-        }
-    };
-
-    const handleAddGoal = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!goalName || !goalTarget) return;
-
-        setIsSavingGoal(true);
-        try {
-            const { error } = await supabase.from('finance_goals').insert([{
-                user_id: user.id,
-                name: goalName,
-                target_amount: Number(goalTarget),
-                current_amount: 0,
-                deadline: goalDeadline || null
-            }]);
-
-            if (error) throw error;
-            toast.success("Meta de ahorro creada");
-            setGoalName('');
-            setGoalTarget('');
-            setGoalDeadline('');
-            setIsGoalFormOpen(false);
-            loadGoals();
-        } catch (error) {
-            console.error(error);
-            toast.error("Error al crear la meta");
-        } finally {
-            setIsSavingGoal(false);
-        }
-    };
-
-    const handleDeleteGoal = async (id: string) => {
-        if (!await confirm({
-            title: 'Eliminar Meta',
-            message: '¿Seguro que quieres eliminar esta meta de ahorro?',
-            confirmLabel: 'Eliminar',
-            danger: true,
-        })) return;
-        try {
-            const { error } = await supabase.from('finance_goals').delete().eq('id', id);
-            if (error) throw error;
-            toast.success("Meta eliminada");
-            loadGoals();
-        } catch (error) {
-            console.error(error);
-            toast.error("Error al eliminar la meta");
-        }
-    };
-    
-    const handleUpdateGoalAmount = async (id: string, current: number) => {
-        const amount = prompt("¿Cuánto deseas abonar a esta meta?", "0");
-        if (!amount || isNaN(Number(amount))) return;
-        
-        try {
-            const { error } = await supabase
-                .from('finance_goals')
-                .update({ current_amount: current + Number(amount) })
-                .eq('id', id);
-            if (error) throw error;
-            toast.success("Ahorro actualizado");
-            loadGoals();
-        } catch (error) {
-            console.error(error);
-            toast.error("Error al actualizar la meta");
-        }
-    };
-
-    const loadRecords = async () => {
-        try {
-            setLoading(true);
-            const { data, error } = await supabase
-                .from('finance_records')
-                .select('*')
-                .order('date', { ascending: true })
-                .order('created_at', { ascending: true });
-
-            if (error) throw error;
-            if (data) {
-                setLocalRecords(data as FinanceRecord[]);
-                if (onRefresh) onRefresh();
-            }
-        } catch (error) {
-            console.error("Error loading finance records:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     useEffect(() => {
         // 1. Obtener meses de los registros reales (normalizando formato)
@@ -582,9 +219,6 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
         }
     }, [records]);
 
-    useEffect(() => {
-        loadGoals();
-    }, []);
 
     useEffect(() => {
         if (!selectedMonth) return;
@@ -732,7 +366,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
             
         setPaymentBalancesData(balances);
         
-    }, [records, selectedMonth, manualBudgets]);
+    }, [records, selectedMonth]);
 
     const handleAddRecord = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -1203,351 +837,46 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
 
     return (
         <div className="bg-[var(--bg-card)] dark:bg-white/5 rounded-[2rem] border border-[var(--border-color)] dark:border-white/10 shadow-sm overflow-hidden animate-fade-in backdrop-blur-md">
-            <div className="p-8 border-b border-[var(--border-color)] dark:border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h2 className="text-xl font-bold">Registro de Finanzas Personales</h2>
-                    <p className="text-sm opacity-40 mt-1">Control de ingresos, gastos y saldo al día.</p>
-                </div>
-                <div className="flex flex-wrap gap-3">
-                    <input 
-                        type="file" 
-                        accept=".xlsx, .xls" 
-                        ref={fileInputRef} 
-                        className="hidden" 
-                        onChange={handleFileUpload} 
-                    />
-                    <Button outline className="text-[10px] font-black uppercase tracking-widest py-2.5 px-5 flex items-center gap-2 border-[var(--border-color)] hover:border-accent transition-all" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
-                        <Upload size={14} className="opacity-70" /> {isUploading ? 'Importando...' : 'Importar Excel'}
-                    </Button>
-                    <Button outline className="text-[10px] font-black uppercase tracking-widest py-2.5 px-5 flex items-center gap-2 border-[var(--border-color)] hover:border-accent transition-all" onClick={handleExportExcel} disabled={displayRecords.length === 0}>
-                        <Download size={14} className="opacity-70" /> Exportar
-                    </Button>
-                    <Button outline className="text-[10px] font-black uppercase tracking-widest py-2.5 px-5 flex items-center gap-2 border-[var(--border-color)] hover:border-accent transition-all" onClick={() => loadRecords()}>
-                        <Calendar size={14} className="opacity-70" /> Actualizar
-                    </Button>
-                    <div className="flex items-center gap-3">
-                        <Button 
-                            outline 
-                            className="text-[10px] font-black uppercase tracking-widest py-2.5 px-6 flex items-center gap-2"
-                            onClick={handleExportPDF}
-                        >
-                            <Printer size={14} /> Reporte PDF
-                        </Button>
-                        <Button primary className="text-[10px] font-black uppercase tracking-widest py-2.5 px-6 flex items-center gap-2 shadow-lg hover:scale-[1.02] transition-all" onClick={() => setIsFormOpen(!isFormOpen)}>
-                            <Plus size={14} /> {isFormOpen ? 'Cerrar Panel' : 'Nuevo Registro'}
-                        </Button>
-                    </div>
-                </div>
-            </div>
+            <FinanceHeader 
+                viewMode={viewMode}
+                setViewMode={setViewMode}
+                selectedMonth={selectedMonth}
+                setSelectedMonth={setSelectedMonth}
+                uniqueMonths={uniqueMonths}
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                isUploading={isUploading}
+                onImportExcel={() => fileInputRef.current?.click()}
+                onExportExcel={handleExportExcel}
+                onRefresh={loadRecords}
+                onExportPDF={handleExportPDF}
+                onToggleForm={() => setIsFormOpen(!isFormOpen)}
+                isFormOpen={isFormOpen}
+                kpis={{
+                    income: summaryData.reduce((acc, row) => acc + row.income, 0),
+                    expense: summaryData.reduce((acc, row) => acc + row.expense, 0),
+                    balance: summaryData.reduce((acc, row) => acc + row.income, 0) - summaryData.reduce((acc, row) => acc + row.expense, 0)
+                }}
+            />
 
-            {/* OCR Processing Overlay */}
-            {isProcessingOCR && (
-                <div className="fixed inset-0 z-[400] flex items-center justify-center p-4 bg-primary-dark/60 backdrop-blur-md animate-fade-in">
-                    <div className="bg-[var(--bg-card)] p-10 rounded-[3rem] border border-[var(--border-color)] shadow-2xl text-center max-w-sm">
-                        <div className="relative w-20 h-20 mx-auto mb-6">
-                            <div className="absolute inset-0 bg-accent/20 rounded-full animate-ping"></div>
-                            <div className="relative z-10 w-20 h-20 bg-accent rounded-full flex items-center justify-center text-white shadow-lg">
-                                <Sparkles size={32} className="animate-pulse" />
-                            </div>
-                        </div>
-                        <h4 className="text-xl font-black text-[var(--text-primary)] mb-2">Analizando Ticket...</h4>
-                        <p className="text-xs text-[var(--text-primary)]/40 font-bold uppercase tracking-widest leading-relaxed">
-                            Nuestra IA está extrayendo montos, fechas y conceptos para ti.
-                        </p>
-                    </div>
-                </div>
-            )}
-
-            {isFormOpen && (
-                <div className="mb-10 bg-[var(--bg-card)]/50 dark:bg-white/5 backdrop-blur-xl p-8 rounded-[32px] border border-[var(--border-color)] dark:border-white/10 shadow-sm animate-fade-in relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 rounded-full -mr-32 -mt-32 blur-3xl pointer-events-none"></div>
-                    
-                    <h3 className="text-xl font-heading font-black mb-8 flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-accent flex items-center justify-center text-white shadow-lg">
-                            <Plus size={20} />
-                        </div>
-                        {editingId ? 'Editar Movimiento' : 'Registrar Nuevo Movimiento'}
-                    </h3>
-
-                    <div className="mb-8 p-6 bg-accent/[0.08] rounded-[2rem] border-2 border-dashed border-accent/20 flex flex-col md:flex-row items-center justify-between gap-6 group hover:bg-accent/10 transition-all">
-                            <div className="flex items-center gap-4 text-center md:text-left">
-                                <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center text-accent">
-                                    <Camera size={24} />
-                                </div>
-                                <div>
-                                    <h4 className="text-sm font-black text-accent uppercase tracking-wider">¿Cero escritura manual?</h4>
-                                    <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest">Escanea tu ticket y deja que la IA llene el formulario por ti.</p>
-                                </div>
-                            </div>
-                            <input 
-                                type="file" 
-                                ref={ocrFileInputRef} 
-                                className="hidden" 
-                                accept="image/*" 
-                                onChange={async (e) => {
-                                    const file = e.target.files?.[0];
-                                    if (!file) return;
-
-                                    setIsProcessingOCR(true);
-                                    try {
-                                        const reader = new FileReader();
-                                        reader.onload = async (event) => {
-                                            const base64 = event.target?.result as string;
-                                            const data = await extractDataFromReceipt(base64);
-                                            
-                                            // Auto-poblar el formulario
-                                            if (data.amount) {
-                                                setExpense(data.amount);
-                                                setIncome('');
-                                            }
-                                            if (data.date) setDate(data.date);
-                                            if (data.provider) setProvider(data.provider);
-                                            if (data.concept) setConcept(data.concept);
-                                            
-                                            // Si Gemini sugiere una categoría, podemos intentar mappearla a expenseType
-                                            if (data.category) {
-                                                const cat = data.category.toLowerCase();
-                                                if (cat.includes('alimento') || cat.includes('servicio')) setExpenseType('Fijo');
-                                                else if (cat.includes('salud') || cat.includes('educación')) setExpenseType('Variable');
-                                            }
-                                            
-                                            toast.success("¡Ticket escaneado con éxito!");
-                                            setIsProcessingOCR(false);
-                                        };
-                                        reader.readAsDataURL(file);
-                                    } catch (err) {
-                                        console.error(err);
-                                        toast.error("Error al analizar el ticket. Inténtalo de nuevo.");
-                                        setIsProcessingOCR(false);
-                                    }
-                                    if (e.target) e.target.value = '';
-                                }}
-                            />
-                            <Button 
-                                primary 
-                                className="w-full md:w-auto px-8 py-3.5 flex items-center justify-center gap-2 shadow-xl shadow-accent/20 hover:scale-105 active:scale-95 transition-all text-[11px] font-black uppercase tracking-tighter"
-                                onClick={() => ocrFileInputRef.current?.click()}
-                            >
-                                <Camera size={16} /> Smart Scan (AI OCR)
-                            </Button>
-                    </div>
-
-
-                    <datalist id="concept-options">
-                        <option value="SALDO INICIAL" />
-                        <option value="ALIMENTOS" />
-                        <option value="AHORRO" />
-                        <option value="FAM CASTILLO" />
-                        <option value="ASEO PERSONAL" />
-                        <option value="ANGELITO" />
-                        <option value="ROPA Y CALZADO" />
-                        <option value="NEGOCIO" />
-                        <option value="SERVICIOS BASICOS" />
-                        <option value="CASA" />
-                        <option value="FAM PRECIADO" />
-                        <option value="CUMPLEAÑOS" />
-                        <option value="OTROS INGRESOS" />
-                        <option value="SUELDO" />
-                        <option value="HONORARIOS" />
-                        <option value="INFONAVIT" />
-                        <option value="FAM ALCA" />
-                        <option value="TRANSPORTE" />
-                        <option value="PPR" />
-                        <option value="SALUD" />
-                        <option value="CREDITO CARRO" />
-                        <option value="COMISIONES BANCARIAS" />
-                        <option value="VALES DE GASOLINA" />
-                        <option value="TRABAJO" />
-                        <option value="GRUPO ALCA" />
-                        <option value="DESPENSA" />
-                        <option value="ART LIMPIEZA" />
-                        <option value="PAY" />
-                        <option value="DONACION" />
-                        <option value="FIESTA ANGELITO" />
-                        <option value="CASHBACK" />
-                        <option value="FACHADA CASA" />
-                        <option value="VIAJES ALCA" />
-                        <option value="INVERSIÓN CETES" />
-                    </datalist>
-                    <form onSubmit={handleAddRecord} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 block ml-1">Concepto</label>
-                            <input list="concept-options" type="text" required value={concept} onChange={e => setConcept(e.target.value)} placeholder="Seleccione concepto..." className="w-full bg-[var(--bg-card)] dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 rounded-2xl px-5 py-3 text-sm font-medium outline-none focus:border-accent transition-all shadow-sm" />
-                        </div>
-                        
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 block ml-1">Tipo de Movimiento</label>
-                            <div className="relative">
-                                <select 
-                                    className="w-full bg-[var(--bg-card)] dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 rounded-2xl px-5 py-3 text-sm font-black text-[var(--text-primary)] outline-none focus:border-accent transition-all shadow-sm appearance-none cursor-pointer"
-                                    value={expenseType}
-                                    onChange={(e) => setExpenseType(e.target.value)}
-                                >
-                                    <option value="Variable">💅 Variable / Lujo</option>
-                                    <option value="Fijo">🏡 Gasto Fijo</option>
-                                    <option value="Ahorro">💰 Ahorro / Inversión</option>
-                                    <option value="Deuda">💳 Pago a Deuda</option>
-                                    <option value="Ingreso">💵 Ingreso</option>
-                                    <option value="Traspaso">🔄 Traspaso</option>
-                                </select>
-                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
-                                    <TrendingDown size={14} />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 block ml-1">Fecha</label>
-                            <input type="date" required value={date} onChange={e => setDate(e.target.value)} className="w-full bg-[var(--bg-card)] dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 rounded-2xl px-5 py-3 text-sm font-medium outline-none focus:border-accent transition-all shadow-sm" />
-                        </div>
-                        
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 block ml-1">Forma de pago</label>
-                            <div className="flex gap-2">
-                                <div className="relative flex-1">
-                                    <select required value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} className="w-full bg-[var(--bg-card)] dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 rounded-2xl px-5 py-3 text-sm font-medium outline-none focus:border-accent transition-all shadow-sm appearance-none cursor-pointer">
-                                        {renderPaymentOptions()}
-                                    </select>
-                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-50"><TrendingDown size={14} /></div>
-                                </div>
-                                <button type="button" onClick={() => { setViewMode('balances'); setAccMgmtTab('accounts'); setIsFormOpen(false); }} className="px-4 bg-accent text-white rounded-2xl hover:brightness-110 transition-all" title="Administrar formas de pago">
-                                    <Plus size={16} />
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 block ml-1">Proveedor / Tienda</label>
-                            <input type="text" required value={provider} onChange={e => setProvider(e.target.value)} placeholder="Ej. Amazon, Walmart..." className="w-full bg-[var(--bg-card)] dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 rounded-2xl px-5 py-3 text-sm font-medium outline-none focus:border-accent transition-all shadow-sm" />
-                        </div>
-                        
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 block ml-1">Ingreso ($)</label>
-                            <div className="relative">
-                                <span className="absolute left-5 top-1/2 -translate-y-1/2 text-green-600 font-black">$</span>
-                                <input type="number" step="0.01" value={income} onChange={e => setIncome(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0.00" className="w-full bg-[var(--bg-card)] dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 rounded-2xl pl-10 pr-5 py-3 text-sm font-black text-green-600 outline-none focus:border-accent transition-all shadow-sm" />
-                            </div>
-                        </div>
-                        
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 block ml-1">Gasto ($)</label>
-                            <div className="relative">
-                                <span className="absolute left-5 top-1/2 -translate-y-1/2 text-red-500 font-black">$</span>
-                                <input type="number" step="0.01" value={expense} onChange={e => setExpense(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0.00" className="w-full bg-[var(--bg-card)] dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 rounded-2xl pl-10 pr-5 py-3 text-sm font-black text-red-500 outline-none focus:border-accent transition-all shadow-sm" />
-                            </div>
-                        </div>
-                        
-                        <div className="space-y-2 lg:col-span-2">
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 block ml-1">Descripción / Notas</label>
-                            <input type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="Detalles adicionales del movimiento..." className="w-full bg-[var(--bg-card)] dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 rounded-2xl px-5 py-3 text-sm font-medium outline-none focus:border-accent transition-all shadow-sm" />
-                        </div>
-                        <div className="lg:col-span-4 flex justify-end gap-3 pt-6 border-t border-[var(--border-color)]">
-                            <Button outline type="button" onClick={() => { setIsFormOpen(false); resetForm(); }} className="text-[10px] font-black uppercase tracking-widest py-3 px-8 border-[var(--border-color)]">Cancelar</Button>
-                            <Button primary type="submit" className="text-[10px] font-black uppercase tracking-widest py-3 px-10 shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all">
-                                {editingId ? 'Actualizar Registro' : 'Confirmar Registro'}
-                            </Button>
-                        </div>
-                    </form>
-                </div>
-            )}
-
-            <div className="bg-[var(--bg-main)] pt-4 pb-2 border-b border-[var(--border-color)]">
-                {/* GLOBAL KPI BAR - NOT STICKY */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div className="bg-[var(--bg-card)] dark:bg-white/5 p-4 rounded-2xl border border-[var(--border-color)] dark:border-white/10 shadow-sm flex flex-col justify-center relative overflow-hidden group hover:shadow-md transition-all">
-                        <div className="absolute top-1/2 -translate-y-1/2 right-3 opacity-5 text-green-600 group-hover:scale-110 transition-transform"><TrendingUp size={40} /></div>
-                        <p className="opacity-40 font-bold uppercase tracking-widest text-[10px] mb-1">Ingresos Periodo</p>
-                        <p className="text-xl font-heading font-black text-green-600">
-                            ${summaryData.reduce((acc, row) => acc + row.income, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                        </p>
-                    </div>
-                    <div className="bg-[var(--bg-card)] dark:bg-white/5 p-4 rounded-2xl border border-[var(--border-color)] dark:border-white/10 shadow-sm flex flex-col justify-center relative overflow-hidden group hover:shadow-md transition-all">
-                        <div className="absolute top-1/2 -translate-y-1/2 right-3 opacity-5 text-red-600 group-hover:scale-110 transition-transform"><TrendingDown size={40} /></div>
-                        <p className="opacity-40 font-bold uppercase tracking-widest text-[10px] mb-1">Gastos Periodo</p>
-                        <p className="text-xl font-heading font-black text-red-500">
-                            ${summaryData.reduce((acc, row) => acc + row.expense, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                        </p>
-                    </div>
-                    <div className="bg-gradient-to-br from-primary-dark to-[#3d686d] p-4 rounded-2xl shadow-lg flex flex-col justify-center relative overflow-hidden group hover:shadow-xl transition-all">
-                        <div className="absolute top-1/2 -translate-y-1/2 right-3 opacity-20 text-white group-hover:rotate-12 transition-transform"><DollarSign size={40} /></div>
-                        <p className="text-white/70 font-bold uppercase tracking-widest text-[10px] mb-1">Balance Periodo</p>
-                        <p className="text-xl font-heading font-black text-white">
-                            ${(summaryData.reduce((acc, row) => acc + row.income, 0) - summaryData.reduce((acc, row) => acc + row.expense, 0)).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                        </p>
-                    </div>
-                </div>
-
-                <div className="flex flex-col md:flex-row justify-between items-center gap-6 bg-[var(--bg-card)]/60 dark:bg-white/5 p-2 rounded-[24px] border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md">
-                    <div className="flex bg-[var(--bg-card)]/80 dark:bg-white/5 p-1.5 rounded-full shadow-sm border border-[var(--border-color)] dark:border-white/10 w-full md:w-auto overflow-x-auto no-scrollbar">
-                        <button 
-                            onClick={() => setViewMode('detailed')}
-                            className={`px-6 py-2.5 rounded-full text-xs font-black tracking-widest uppercase transition-all whitespace-nowrap ${viewMode === 'detailed' ? 'bg-accent text-white shadow-lg scale-[1.02]' : 'opacity-40 hover:opacity-100 hover:bg-neutral-50 dark:hover:bg-white/10'}`}
-                        >
-                            Registro
-                        </button>
-                        <button 
-                            onClick={() => setViewMode('summary')}
-                            className={`px-6 py-2.5 rounded-full text-xs font-black tracking-widest uppercase transition-all whitespace-nowrap ${viewMode === 'summary' ? 'bg-accent text-white shadow-lg scale-[1.02]' : 'opacity-40 hover:opacity-100 hover:bg-neutral-50 dark:hover:bg-white/10'}`}
-                        >
-                            Resumen
-                        </button>
-                        <button 
-                            onClick={() => setViewMode('balances')}
-                            className={`px-6 py-2.5 rounded-full text-xs font-black tracking-widest uppercase transition-all whitespace-nowrap ${viewMode === 'balances' ? 'bg-accent text-white shadow-lg scale-[1.02]' : 'opacity-40 hover:opacity-100 hover:bg-neutral-50 dark:hover:bg-white/10'}`}
-                        >
-                            Saldos
-                        </button>
-                        <button 
-                            onClick={() => setViewMode('budget')}
-                            className={`px-6 py-2.5 rounded-full text-xs font-black tracking-widest uppercase transition-all whitespace-nowrap ${viewMode === 'budget' ? 'bg-accent text-white shadow-lg scale-[1.02]' : 'opacity-40 hover:opacity-100 hover:bg-neutral-50 dark:hover:bg-white/10'}`}
-                        >
-                            Presupuesto
-                        </button>
-                        <button 
-                            onClick={() => setViewMode('credits')}
-                            className={`px-6 py-2.5 rounded-full text-xs font-black tracking-widest uppercase transition-all whitespace-nowrap ${viewMode === 'credits' ? 'bg-accent text-white shadow-lg scale-[1.02]' : 'opacity-40 hover:opacity-100 hover:bg-neutral-50 dark:hover:bg-white/10'}`}
-                        >
-                            Créditos
-                        </button>
-                    </div>
-                    
-                    {uniqueMonths.length > 0 && (
-                        <div className="flex flex-col md:flex-row items-center gap-4">
-                            {viewMode === 'detailed' && (
-                                <div className="flex items-center gap-2 bg-[var(--bg-card)]/80 dark:bg-white/5 px-4 py-2 rounded-full border border-[var(--border-color)] dark:border-white/10 shadow-sm transition-all focus-within:border-accent group w-full md:w-64">
-                                    <Search size={16} className="text-neutral-400 group-focus-within:text-accent transition-colors" />
-                                    <input 
-                                        type="text"
-                                        placeholder="Buscar..."
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="bg-transparent text-sm font-bold text-[var(--text-primary)] outline-none w-full"
-                                    />
-                                    {searchTerm && (
-                                        <button onClick={() => setSearchTerm('')} className="text-neutral-400 hover:text-red-500 transition-colors">
-                                            <X size={14} />
-                                        </button>
-                                    )}
-                                </div>
-                            )}
-                            <div className="flex items-center gap-2 bg-[var(--bg-card)]/80 dark:bg-white/5 px-4 py-2 rounded-full border border-[var(--border-color)] dark:border-white/10 shadow-sm transition-all hover:border-accent group">
-                                <Calendar size={16} className="text-neutral-400 group-hover:text-accent transition-colors" />
-                                <select 
-                                    value={selectedMonth} 
-                                    onChange={(e) => setSelectedMonth(e.target.value)}
-                                    className="bg-transparent text-sm font-black text-[var(--text-primary)] outline-none cursor-pointer capitalize appearance-none pr-6 relative"
-                                    style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%234A7C82\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right center', backgroundSize: '16px' }}
-                                >
-                                    {uniqueMonths.map(m => (
-                                        <option key={m.value} value={m.value} className="bg-[var(--bg-card)]">{m.label}</option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </div>
-       
+            <RecordForm 
+                isOpen={isFormOpen}
+                isEditing={!!editingId}
+                isProcessingOCR={isProcessingOCR}
+                setIsProcessingOCR={setIsProcessingOCR}
+                onClose={() => { setIsFormOpen(false); resetForm(); }}
+                onSubmit={handleAddRecord}
+                concept={concept} setConcept={setConcept}
+                date={date} setDate={setDate}
+                paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod}
+                provider={provider} setProvider={setProvider}
+                income={income} setIncome={setIncome}
+                expense={expense} setExpense={setExpense}
+                description={description} setDescription={setDescription}
+                expenseType={expenseType} setExpenseType={setExpenseType}
+                renderPaymentOptions={renderPaymentOptions}
+            />
+        
             <div className="overflow-x-auto" id="finance-dashboard-content">
                 {loading ? (
                     <div className="p-12 flex justify-center">
@@ -1731,413 +1060,24 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                         </div>
                                     </div>
                                 );
-                            })}
-                        </div>
-                    </div>
-                ) : viewMode === 'detailed' ? (
-                    displayRecords.length === 0 ? (
-                        <div className="p-12 text-center text-neutral-400">
-                            <div className="flex justify-center mb-4">
-                                <div className="w-16 h-16 bg-primary/5 rounded-full flex items-center justify-center text-primary/30">
-                                    <Search size={24} />
-                                </div>
-                            </div>
-                            <p className="font-bold text-primary-dark mb-1">Sin registros financieros</p>
-                            <p className="text-sm">Comienza agregando tu primer movimiento.</p>
-                        </div>
-                    ) : (
-                        <div className="bg-[var(--bg-card)]/50 dark:bg-white/5 backdrop-blur-md rounded-[32px] border border-[var(--border-color)] dark:border-white/10 shadow-sm overflow-hidden">
-                            <table className="w-full text-left border-collapse animate-fade-in delay-100">
-                                <thead>
-                                    <tr className="border-b border-[var(--border-color)] dark:border-white/10">
-                                        <th className="sticky top-0 z-10 p-5 whitespace-nowrap bg-accent text-white text-[10px] font-black uppercase tracking-[0.2em]">ID</th>
-                                        <th className="sticky top-0 z-10 p-5 whitespace-nowrap bg-accent text-white text-[10px] font-black uppercase tracking-[0.2em]">Concepto</th>
-                                        <th className="sticky top-0 z-10 p-5 whitespace-nowrap bg-accent text-white text-[10px] font-black uppercase tracking-[0.2em]">Fecha</th>
-                                        <th className="sticky top-0 z-10 p-5 whitespace-nowrap bg-accent text-white text-[10px] font-black uppercase tracking-[0.2em]">Pago</th>
-                                        <th className="sticky top-0 z-10 p-5 whitespace-nowrap bg-accent text-white text-[10px] font-black uppercase tracking-[0.2em]">Proveedor</th>
-                                        <th className="sticky top-0 z-10 p-5 text-right whitespace-nowrap bg-accent text-white text-[10px] font-black uppercase tracking-[0.2em]">Ingreso</th>
-                                        <th className="sticky top-0 z-10 p-5 text-right whitespace-nowrap bg-accent text-white text-[10px] font-black uppercase tracking-[0.2em]">Gasto</th>
-                                        <th className="sticky top-0 z-10 p-5 text-right whitespace-nowrap bg-accent text-white text-[10px] font-black uppercase tracking-[0.2em]">Saldo</th>
-                                        <th className="sticky top-0 z-10 p-5 whitespace-nowrap max-w-xs bg-accent text-white text-[10px] font-black uppercase tracking-[0.2em]">Descripción</th>
-                                        <th className="sticky top-0 z-10 p-5 text-center whitespace-nowrap bg-accent text-white text-[10px] font-black uppercase tracking-[0.2em]">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-[var(--border-color)] dark:divide-white/5">
-                                    {displayRecords.map((record, index) => {
-                                        const isInitialBalance = record.concept.toUpperCase() === 'SALDO INICIAL';
-                                        return (
-                                            <tr key={record.id} className={`hover:bg-[var(--bg-main)] dark:hover:bg-white/5 transition-colors group ${isInitialBalance ? 'bg-amber-500/10' : ''}`}>
-                                                <td className="p-4 px-5 whitespace-nowrap opacity-40 font-bold text-[10px]">{index + 1}</td>
-                                                <td className="p-4 px-5 whitespace-nowrap">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="font-black text-xs uppercase tracking-wider">{record.concept}</span>
-                                                        {isInitialBalance && <span className="text-[8px] bg-accent/20 text-accent px-1.5 py-0.5 rounded-full font-black uppercase tracking-widest">Ajuste</span>}
-                                                    </div>
-                                                    <div className="mt-1">
-                                                        <span className={`text-[8px] px-2 py-0.5 rounded-md font-black uppercase tracking-widest ${
-                                                            record.expense_type === 'Fijo' ? 'bg-indigo-100 text-indigo-700' :
-                                                            record.expense_type === 'Ahorro' ? 'bg-teal-100 text-teal-700' :
-                                                            record.expense_type === 'Deuda' ? 'bg-orange-100 text-orange-700' :
-                                                            record.expense_type === 'Ingreso' ? 'bg-green-100 text-green-700' :
-                                                            'bg-neutral-100 text-neutral-500'
-                                                        }`}>
-                                                            {record.expense_type || 'Variable'}
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                                <td className="p-4 px-5 whitespace-nowrap text-xs opacity-60 font-medium">
-                                                    {formatDate(record.date)}
-                                                </td>
-                                                <td className="p-4 px-5 whitespace-nowrap">
-                                                    <span className="bg-[var(--bg-main)] dark:bg-white/10 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter">{record.payment_method}</span>
-                                                </td>
-                                                <td className="p-4 px-5 whitespace-nowrap text-xs font-medium opacity-60">{record.provider}</td>
-                                                <td className="p-4 px-5 text-right whitespace-nowrap text-green-600 font-bold text-sm">
-                                                    {isInitialBalance ? '-' : (Number(record.income) !== 0 ? `$${Number(record.income).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-')}
-                                                </td>
-                                                <td className="p-4 px-5 text-right whitespace-nowrap text-red-500 font-bold text-sm">
-                                                    {isInitialBalance ? '-' : (Number(record.expense) !== 0 ? `$${Number(record.expense).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-')}
-                                                </td>
-                                                <td className={`p-4 px-5 text-right whitespace-nowrap font-black text-sm ${Number(record.balance) < 0 ? 'text-red-500' : ''}`}>
-                                                    ${Number(record.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                                                </td>
-                                                <td className="p-4 px-5 text-xs opacity-40 max-w-xs truncate italic">{record.description}</td>
-                                                 <td className="p-4 px-5">
-                                                    <div className="flex justify-center gap-2">
-                                                        <button 
-                                                            onClick={(e) => { e.stopPropagation(); handleEditClick(record); }}
-                                                            className="p-2 hover:bg-primary-dark/10 rounded-xl text-primary-dark transition-all hover:scale-110 active:scale-95"
-                                                            title="Editar"
-                                                        >
-                                                            <Edit2 size={15} />
-                                                        </button>
-                                                        <button 
-                                                            onClick={(e) => { e.stopPropagation(); handleDelete(record.id); }}
-                                                            className="p-2 hover:bg-red-50 rounded-xl text-red-500 transition-all hover:scale-110 active:scale-95"
-                                                            title="Eliminar"
-                                                        >
-                                                            <Trash2 size={15} />
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-                    )
+                                 ) : viewMode === 'detailed' ? (
+                    <MovementsDetailedView 
+                        records={displayRecords}
+                        onEdit={handleEditClick}
+                        onDelete={handleDelete}
+                    />
                 ) : viewMode === 'summary' ? (
-                    <div className="p-8 max-w-7xl mx-auto animate-fade-in delay-100">
-                        {selectedMonth && (
-                            <h3 className="text-2xl font-black font-heading text-center text-primary-dark mb-10 capitalize flex items-center justify-center gap-4">
-                                <div className="h-px bg-neutral-200 flex-1"></div>
-                                <span className="bg-white px-6 py-2 rounded-2xl border border-neutral-100 shadow-sm">
-                                    {uniqueMonths.find(m => m.value === selectedMonth)?.label}
-                                </span>
-                                <div className="h-px bg-neutral-200 flex-1"></div>
-                            </h3>
-                        )}
-
-                        {summaryData.length > 0 ? (
-                            <>
-                                {/* WIDGET DE METAS DE AHORRO */}
-                                <div className="mb-12">
-                                    <div className="flex items-center justify-between mb-6">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-2xl bg-accent/10 flex items-center justify-center text-accent">
-                                                <TrendingUp size={20} />
-                                            </div>
-                                            <h4 className="text-xl font-heading font-black text-[var(--text-primary)]">Metas de Ahorro</h4>
-                                        </div>
-                                        <button 
-                                            onClick={() => setIsGoalFormOpen(true)}
-                                            className="px-4 py-2 bg-accent/5 hover:bg-accent text-accent hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
-                                        >
-                                            + Nueva Meta
-                                        </button>
-                                    </div>
-
-                                    {goals.length === 0 ? (
-                                        <div className="p-8 border-2 border-dashed border-[var(--border-color)] dark:border-white/10 rounded-[2.5rem] text-center">
-                                            <p className="text-xs text-neutral-400 font-bold uppercase tracking-widest">No has definido metas de ahorro todavía.</p>
-                                        </div>
-                                    ) : (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                            {goals.map(goal => {
-                                                const progress = Math.min(100, (goal.current_amount / goal.target_amount) * 100);
-                                                return (
-                                                    <div key={goal.id} className="bg-[var(--bg-card)]/50 dark:bg-white/5 backdrop-blur-md p-6 rounded-[2.5rem] border border-[var(--border-color)] dark:border-white/10 group relative">
-                                                        <button 
-                                                            onClick={() => handleDeleteGoal(goal.id)}
-                                                            className="absolute top-4 right-4 p-2 opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:bg-red-50 rounded-lg"
-                                                        >
-                                                            <Trash2 size={14} />
-                                                        </button>
-                                                        <div className="flex justify-between items-start mb-4">
-                                                            <h5 className="font-black text-sm uppercase tracking-wider">{goal.name}</h5>
-                                                            <span className="text-[10px] font-black text-accent">{progress.toFixed(0)}%</span>
-                                                        </div>
-                                                        <div className="h-3 bg-[var(--bg-main)] dark:bg-black/20 rounded-full mb-4 overflow-hidden border border-[var(--border-color)] dark:border-white/5">
-                                                            <div 
-                                                                className="h-full bg-accent rounded-full shadow-[0_0_10px_rgba(var(--accent-rgb),0.5)] transition-all duration-1000"
-                                                                style={{ width: `${progress}%` }}
-                                                            ></div>
-                                                        </div>
-                                                        <div className="flex justify-between items-end">
-                                                            <div>
-                                                                <p className="text-[8px] font-black text-neutral-400 uppercase tracking-widest mb-1">Acumulado</p>
-                                                                <p className="text-sm font-black text-accent">${goal.current_amount.toLocaleString()}</p>
-                                                            </div>
-                                                            <div className="text-right">
-                                                                <p className="text-[8px] font-black text-neutral-400 uppercase tracking-widest mb-1">Objetivo</p>
-                                                                <p className="text-sm font-black opacity-40">${goal.target_amount.toLocaleString()}</p>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Gráficas Primera Fila */}
-                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                    {/* Ingresos - Pastel Pequeño */}
-                                    <div className="bg-[var(--bg-card)]/50 dark:bg-white/5 backdrop-blur-sm p-8 rounded-[32px] border border-[var(--border-color)] dark:border-white/10 shadow-sm hover:shadow-md transition-all">
-                                        <h4 className="text-sm font-black uppercase tracking-widest text-primary-dark mb-8 flex items-center gap-2">
-                                            <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]"></div>
-                                            Distribución de Ingresos
-                                        </h4>
-                                        <div className="h-64">
-                                            {summaryData.filter(d => d.income > 0).length > 0 ? (
-                                                <ResponsiveContainer width="100%" height="100%">
-                                                    <PieChart>
-                                                        <Pie 
-                                                            data={summaryData.filter(d => d.income > 0).sort((a,b) => b.income - a.income)} 
-                                                            dataKey="income" 
-                                                            nameKey="concept" 
-                                                            cx="50%" cy="50%" 
-                                                            innerRadius={60} outerRadius={80} 
-                                                            paddingAngle={5}
-                                                        >
-                                                            {summaryData.filter(d => d.income > 0).sort((a,b) => b.income - a.income).map((_, index) => (
-                                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                                            ))}
-                                                        </Pie>
-                                                        <Tooltip formatter={(value) => `$${Number(value).toLocaleString('en-US', { minimumFractionDigits: 2 })}`} />
-                                                    </PieChart>
-                                                </ResponsiveContainer>
-                                            ) : (
-                                                <div className="h-full flex items-center justify-center text-neutral-400 text-sm italic">Sin ingresos</div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Gastos - Dona Grande */}
-                                    <div className="lg:col-span-2 bg-white/70 backdrop-blur-sm p-8 rounded-[32px] border border-white shadow-sm hover:shadow-md transition-all relative">
-                                        <h4 className="text-sm font-black uppercase tracking-widest text-primary-dark mb-8 flex items-center gap-2">
-                                            <div className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]"></div>
-                                            Análisis de Gastos por Categoría
-                                        </h4>
-                                        <div className="h-[400px]">
-                                            {summaryData.filter(d => d.expense > 0).length > 0 ? (
-                                                <ResponsiveContainer width="100%" height="100%">
-                                                    <PieChart>
-                                                        <Pie 
-                                                            data={summaryData.filter(d => d.expense > 0).sort((a,b) => b.expense - a.expense)} 
-                                                            dataKey="expense" 
-                                                            nameKey="concept" 
-                                                            cx="50%" cy="50%" 
-                                                            innerRadius={110} outerRadius={170} 
-                                                            paddingAngle={1}
-                                                            label={({ name, percent }: any) => `${name} ${(percent * 100).toFixed(1)}%`}
-                                                            labelLine={{stroke: '#9ca3af', strokeWidth: 1}}
-                                                        >
-                                                            {summaryData.filter(d => d.expense > 0).sort((a,b) => b.expense - a.expense).map((_, index) => (
-                                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                                            ))}
-                                                        </Pie>
-                                                        <Tooltip formatter={(value) => `$${Number(value).toLocaleString('en-US', { minimumFractionDigits: 2 })}`} />
-                                                    </PieChart>
-                                                </ResponsiveContainer>
-                                            ) : (
-                                                <div className="h-full flex items-center justify-center text-neutral-400 text-sm italic">Sin gastos</div>
-                                            )}
-                                        </div>
-                                        
-                                        {/* Centro decorativo de la dona */}
-                                        <div className="absolute top-[60%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center text-center -mt-4 pointer-events-none">
-                                            <span className="text-neutral-400 text-[10px] uppercase tracking-widest font-black">Total Gastos</span>
-                                            <span className="text-4xl font-heading font-black text-red-500 mt-2">
-                                                ${summaryData.reduce((a, b) => a + b.expense, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Tabla de Resumen por Concepto */}
-                                <div className="mt-12 overflow-hidden rounded-[32px] border border-neutral-200 shadow-sm bg-white/50 backdrop-blur-sm">
-                                    <table className="w-full text-left border-collapse">
-                                        <thead>
-                                            <tr className="bg-primary-dark text-white text-[10px] uppercase tracking-[0.2em] font-black">
-                                                <th className="p-5 border-r border-white/10">Concepto</th>
-                                                <th className="p-5 border-r border-white/10 text-right w-48 font-bold">Total Ingreso</th>
-                                                <th className="p-5 text-right w-48 font-bold">Total Gasto</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-[var(--border-color)] dark:divide-white/5 text-[var(--text-primary)]">
-                                            {summaryData.map((row) => (
-                                                <tr key={row.concept} className="hover:bg-[var(--bg-main)] dark:hover:bg-white/5 transition-colors">
-                                                    <td className="p-4 px-6 font-black text-xs uppercase tracking-wider">{row.concept}</td>
-                                                    <td className="p-4 px-6 text-right font-bold text-sm text-green-600">
-                                                        {row.income > 0 ? `$${row.income.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-'}
-                                                    </td>
-                                                    <td className="p-4 px-6 text-right font-bold text-sm text-red-500">
-                                                        {row.expense > 0 ? `$${row.expense.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-'}
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                        <tfoot className="bg-[var(--bg-main)] dark:bg-white/5 font-black border-t-2 border-[var(--border-color)] dark:border-white/10">
-                                            <tr>
-                                                <td className="p-5 px-6 text-[10px] uppercase tracking-widest opacity-50">Totales del Periodo</td>
-                                                <td className="p-5 px-6 text-right text-green-600 border-r border-[var(--border-color)] dark:border-white/10">
-                                                    ${summaryData.reduce((acc, row) => acc + row.income, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                                                </td>
-                                                <td className="p-5 px-6 text-right text-red-500">
-                                                    ${summaryData.reduce((acc, row) => acc + row.expense, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                                                </td>
-                                            </tr>
-                                            <tr className="bg-accent text-white">
-                                                <td colSpan={2} className="p-4 px-6 text-xs uppercase tracking-[0.15em]">Balance Neto del Mes</td>
-                                                <td className="p-4 px-6 text-right font-black text-lg">
-                                                    ${(summaryData.reduce((acc, row) => acc + row.income, 0) - summaryData.reduce((acc, row) => acc + row.expense, 0)).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                                                </td>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
-                                </div>
-                            </>
-                        ) : (
-                            <div className="p-16 text-center bg-white/40 backdrop-blur-sm rounded-[32px] border border-white/20">
-                                <div className="w-20 h-20 bg-primary/5 rounded-full flex items-center justify-center text-primary/30 mx-auto mb-6">
-                                    <Search size={32} />
-                                </div>
-                                <p className="font-heading font-black text-primary-dark text-xl mb-2">Sin movimientos en este periodo</p>
-                                <p className="text-neutral-500 max-w-sm mx-auto">No hay registros de ingresos o gastos para el mes seleccionado. Comienza agregando uno nuevo.</p>
-                            </div>
-                        )}
-                    </div>
+                    <MovementsSummaryView 
+                        summaryData={summaryData}
+                        selectedMonth={selectedMonth}
+                        uniqueMonths={uniqueMonths}
+                    />
                 ) : viewMode === 'budget' ? (
-                    <div className="p-8 max-w-7xl mx-auto animate-fade-in delay-100 text-[var(--text-primary)]">
-                        <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-10">
-                            <div>
-                                <h3 className="text-3xl font-black font-heading uppercase tracking-tighter">
-                                    Control de Presupuesto
-                                </h3>
-                                <p className="opacity-40 text-xs mt-1 font-medium tracking-wide">Planeación vs Gasto Real del periodo seleccionado.</p>
-                            </div>
-                            <Button 
-                                outline={!isEditingBudget}
-                                primary={isEditingBudget}
-                                className={`text-[10px] font-black uppercase tracking-widest py-3 px-8 shadow-xl transition-all ${isEditingBudget ? 'scale-105' : 'hover:scale-105'}`}
-                                onClick={() => setIsEditingBudget(!isEditingBudget)}
-                            >
-                                {isEditingBudget ? 'Finalizar Edición' : 'Personalizar Presupuesto'}
-                            </Button>
-                        </div>
-
-                        {isEditingBudget && (
-                            <div className="mb-8 p-6 bg-primary-dark rounded-[24px] text-white shadow-xl flex gap-4 items-start animate-slide-in relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-accent/20 rounded-full -mr-16 -mt-16 blur-3xl"></div>
-                                <div className="bg-white/10 p-2 rounded-xl">
-                                    <TrendingUp className="text-accent" size={20} />
-                                </div>
-                                <div className="relative z-10">
-                                    <p className="font-black text-[10px] uppercase tracking-widest mb-1 opacity-60">Modo Edición Activo</p>
-                                    <p className="text-sm font-medium leading-relaxed">Modifica los montos en la columna <strong className="text-accent">Presupuesto Objetivo</strong>. Los valores se sincronizarán al cambiar de campo.</p>
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="bg-[var(--bg-card)]/50 dark:bg-white/5 backdrop-blur-md overflow-hidden rounded-[32px] border border-[var(--border-color)] dark:border-white/10 shadow-sm">
-                            <table className="w-full text-left border-collapse">
-                                <thead>
-                                    <tr className="bg-accent/5 text-[var(--text-primary)] text-[10px] font-black uppercase tracking-[0.2em] border-b border-[var(--border-color)] dark:border-white/10">
-                                        <th className="p-5 border-r border-[var(--border-color)] dark:border-white/10">Concepto</th>
-                                        <th className="p-5 border-r border-[var(--border-color)] dark:border-white/10 text-right w-48">Presupuesto</th>
-                                        <th className="p-5 border-r border-[var(--border-color)] dark:border-white/10 text-right w-64">Gasto Real</th>
-                                        <th className="p-5 text-right w-40">Estado</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-neutral-100/50">
-                                    {budgetData.length > 0 ? (
-                                        budgetData.map((row) => {
-                                            const percentSpent = row.avgBudget > 0 ? (row.currentExpense / row.avgBudget) * 100 : 0;
-                                            const isOverBudget = percentSpent > 100;
-                                            const progressColor = percentSpent > 100 ? 'bg-red-500' : percentSpent > 85 ? 'bg-amber-500' : 'bg-green-500';
-                                            
-                                            return (
-                                                <tr key={row.concept} className="hover:bg-white transition-colors group">
-                                                    <td className="p-5 font-black text-xs text-primary-dark uppercase tracking-wider">{row.concept}</td>
-                                                    <td className="p-5 border-l border-neutral-100/50 bg-neutral-50/20 text-right">
-                                                        {isEditingBudget ? (
-                                                            <div className="flex items-center gap-2 bg-white border border-neutral-200 rounded-xl pl-4 pr-1.5 py-1.5 shadow-sm focus-within:border-accent transition-all group-hover:border-accent/40">
-                                                                <span className="text-accent font-black">$</span>
-                                                                <input 
-                                                                    type="number" 
-                                                                    className="w-8/12 bg-transparent outline-none text-right font-black text-sm text-primary-dark"
-                                                                    defaultValue={row.avgBudget}
-                                                                    onBlur={(e) => handleSaveBudget(row.concept, parseFloat(e.target.value) || 0)}
-                                                                />
-                                                                <button 
-                                                                    onClick={() => handleDeleteBudget(row.concept)}
-                                                                    className="p-1.5 hover:bg-red-50 text-red-400 rounded-lg transition-colors ml-auto"
-                                                                    title="Reiniciar a promedio histórico"
-                                                                >
-                                                                    <Trash2 size={12} />
-                                                                </button>
-                                                            </div>
-                                                        ) : (
-                                                            <span className="font-black text-sm text-primary-dark">
-                                                                ${row.avgBudget.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                                                            </span>
-                                                        )}
-                                                    </td>
-                                                    <td className="p-5 border-l border-neutral-100/50">
-                                                        <div className="space-y-2">
-                                                            <div className="flex justify-between items-center px-1">
-                                                                <span className="text-[10px] font-black text-neutral-400">{percentSpent.toFixed(0)}% Utilizado</span>
-                                                                <span className="text-sm font-black text-primary-dark">${row.currentExpense.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
-                                                            </div>
-                                                            <div className="w-full h-2 bg-neutral-100 rounded-full overflow-hidden">
-                                                                <div 
-                                                                    className={`h-full transition-all duration-700 ease-out rounded-full ${progressColor}`}
-                                                                    style={{ width: `${Math.min(percentSpent, 100)}%` }}
-                                                                ></div>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td className="p-5 text-right font-bold">
-                                                        <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${isOverBudget ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-green-50 text-green-600 border border-green-100'}`}>
-                                                            {isOverBudget ? 'Excedido' : 'En Control'}
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })
-                                    ) : (
-                                        <tr>
-                                            <td colSpan={4} className="p-16 text-center text-neutral-400 italic text-sm">
-                                                No hay suficientes datos para mostrar el presupuesto en este periodo.
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <BudgetTracker 
+                        userId={user.id}
+                        records={records}
+                        selectedMonth={selectedMonth}
+                    />
                 ) : viewMode === 'balances' ? (
                     <div className="p-8 max-w-7xl mx-auto animate-fade-in delay-100 text-[var(--text-primary)]">
                         {selectedMonth && (
