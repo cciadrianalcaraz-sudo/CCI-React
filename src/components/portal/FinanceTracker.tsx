@@ -1068,17 +1068,18 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                         onDelete={handleDelete}
                     />
                 ) : viewMode === 'summary' ? (
-
-                    <AIBriefingWidget 
-                        records={records} 
-                        goals={goals} 
-                        credits={credits} 
-                    />
-                    <MovementsSummaryView 
-                        summaryData={summaryData}
-                        selectedMonth={selectedMonth}
-                        uniqueMonths={uniqueMonths}
-                    />
+                    <>
+                        <AIBriefingWidget 
+                            records={records} 
+                            goals={goals} 
+                            credits={credits} 
+                        />
+                        <MovementsSummaryView 
+                            summaryData={summaryData}
+                            selectedMonth={selectedMonth}
+                            uniqueMonths={uniqueMonths}
+                        />
+                    </>
                 ) : viewMode === 'budget' ? (
                     <BudgetTracker 
                         userId={user.id}
