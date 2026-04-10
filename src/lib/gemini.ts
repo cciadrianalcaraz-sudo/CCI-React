@@ -81,45 +81,49 @@ export const chatWithFinances = async (records: any[], message: string) => {
   }
 };
 
-export const generateWeeklyBriefing = async (stats: { 
-  lastWeek: { income: number, expense: number, topCategory: string, count: number },
-  previousWeek: { income: number, expense: number, topCategory: string, count: number },
-  goals: any[]
+export const generateAIBriefing = async (stats: { 
+  currentMonth: string,
+  current: { income: number, expense: number, topCategories: {name: string, amount: number}[] },
+  previous: { income: number, expense: number, topCategories: {name: string, amount: number}[] },
+  goals: any[],
+  credits: any[]
 }) => {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const prompt = `
-      Eres un Coach Financiero experto y motivador. 
-      Analiza el desempeño de mi semana pasada comparada con la antepasada:
+      Eres un Coach Financiero Privado experto y motivador de nivel Premium. 
+      Analiza el desempeño del usuario (Adrian) en el mes actual (${stats.currentMonth}) comparado con el mes anterior.
       
-      SEMANA PASADA:
-      - Ingresos: $${stats.lastWeek.income}
-      - Gastos: $${stats.lastWeek.expense}
-      - Categoría más usada: ${stats.lastWeek.topCategory}
-      - Número de movimientos: ${stats.lastWeek.count}
+      MES ACTUAL:
+      - Ingresos: $${stats.current.income.toLocaleString()}
+      - Gastos: $${stats.current.expense.toLocaleString()}
+      - Top Categorías de Gasto: ${stats.current.topCategories.map(c => `${c.name} ($${c.amount})`).join(', ')}
       
-      SEMANA ANTEPASADA:
-      - Ingresos: $${stats.previousWeek.income}
-      - Gastos: $${stats.previousWeek.expense}
+      MES ANTERIOR:
+      - Ingresos: $${stats.previous.income.toLocaleString()}
+      - Gastos: $${stats.previous.expense.toLocaleString()}
       
       METAS ACTIVAS:
-      ${stats.goals.map(g => `- ${g.name} (Progreso: ${Math.round((g.current_amount/g.target_amount)*100)}%)`).join('\n')}
+      ${stats.goals.length > 0 ? stats.goals.map(g => `- ${g.name} (Progreso: ${Math.round((g.current_amount/g.target_amount)*100)}%)`).join('\n') : 'Sin metas activas.'}
 
-      INSTRUCCIONES:
-      1. Saluda al usuario (se llama Adrian).
-      2. Crea un breve resumen ejecutivo (máximo 3-4 párrafos).
-      3. Destaca si el ahorro (Ingresos-Gastos) mejoró o empeoró respecto a la semana antepasada.
-      4. Menciona la categoría principal de forma constructiva (ej: "Tu gasto en ${stats.lastWeek.topCategory} fue el foco esta semana").
-      5. Termina con una frase motivadora vinculada a sus metas de ahorro.
-      6. Usa un tono premium, profesional y alentador.
+      DEUDAS/CRÉDITOS ACTIVOS:
+      ${stats.credits.length > 0 ? stats.credits.map(c => `- ${c.name} (Saldo Original: $${c.initial_balance})`).join('\n') : 'Sin deudas registradas.'}
+
+      INSTRUCCIONES DE RESPUESTA (Devuelve un texto estructurado en Markdown):
+      1. Da un saludo personalizado y ejecutivo.
+      2. **Resumen Rápido:** Analiza si su liquidez (Ingresos - Gastos) mejoró o empeoró.
+      3. **Alerta de Fugas:** Detecta si alguna categoría top está muy alta y dale un regaño *amigable y constructivo*.
+      4. **Estrategia para Metas y Deudas:** Cruza la información. (Ej: "Si reduces tu gasto en X, podrías liquidar Y más rápido o alcanzar tu meta Z en menos tiempo").
+      5. Termina con un Bullet de 2 "Pasos a seguir esta semana".
+      6. MANTÉN LA RESPUESTA CONCISA, ELEGANTE Y FÁCIL DE LEER.
     `;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
     return response.text();
   } catch (error) {
-    console.error("Error en Weekly Briefing:", error);
+    console.error("Error en AI Briefing:", error);
     return null;
   }
 };

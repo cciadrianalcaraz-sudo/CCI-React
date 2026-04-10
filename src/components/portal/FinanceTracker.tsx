@@ -12,6 +12,7 @@ import { Toaster } from '../ui/Toaster';
 import { useConfirm } from '../../hooks/useConfirm';
 import { extractDataFromReceipt } from '../../lib/gemini';
 import AICopilot from './AICopilot';
+import AIBriefingWidget from './finance/AIBriefingWidget';
 import { useFinance } from '../../hooks/useFinance';
 import FinanceHeader from './finance/FinanceHeader';
 import RecordForm from './finance/RecordForm';
@@ -1067,6 +1068,12 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                         onDelete={handleDelete}
                     />
                 ) : viewMode === 'summary' ? (
+
+                    <AIBriefingWidget 
+                        records={records} 
+                        goals={goals} 
+                        credits={credits} 
+                    />
                     <MovementsSummaryView 
                         summaryData={summaryData}
                         selectedMonth={selectedMonth}
