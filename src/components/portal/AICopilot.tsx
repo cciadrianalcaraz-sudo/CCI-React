@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Sparkles, X, Send, Bot, User, Minimize2, Maximize2 } from 'lucide-react';
-import { chatWithFinances } from '../../lib/gemini';
+import { chatWithFinances, generateWeeklyBriefing } from '../../lib/gemini';
 
 interface Message {
   role: 'assistant' | 'user';
@@ -9,9 +9,10 @@ interface Message {
 
 interface AICopilotProps {
   records: any[];
+  goals: any[];
 }
 
-export default function AICopilot({ records }: AICopilotProps) {
+export default function AICopilot({ records, goals }: AICopilotProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [input, setInput] = useState('');
@@ -26,6 +27,80 @@ export default function AICopilot({ records }: AICopilotProps) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // Lógica de Reporte Semanal Proactivo
+  useEffect(() => {
+    const generateBriefing = async () => {
+      // 1. Verificar si hoy es Lunes (1 en getDay())
+      const today = new Date();
+      if (today.getDay() !== 1) return;
+
+      // 2. Verificar si ya se generó el reporte hoy
+      const todayStr = today.toISOString().split('T')[0];
+      const lastBriefingDate = localStorage.getItem('last_weekly_briefing_date');
+      if (lastBriefingDate === todayStr) return;
+
+      setIsLoading(true);
+      try {
+        // Calcular rangos de fechas (Semana Pasada: Lun a Dom anterior)
+        const lastMonday = new Date(today);
+        lastMonday.setDate(today.getDate() - 7);
+        const lastSunday = new Date(today);
+        lastSunday.setDate(today.getDate() - 1);
+
+        const prevMonday = new Date(lastMonday);
+        prevMonday.setDate(lastMonday.getDate() - 7);
+        const prevSunday = new Date(lastMonday);
+        prevSunday.setDate(lastMonday.getDate() - 1);
+
+        const filterByRange = (start: Date, end: Date) => {
+          return records.filter(r => {
+            const rDate = new Date(r.date.includes('/') ? r.date.split('/').reverse().join('-') : r.date);
+            return rDate >= start && rDate <= end;
+          });
+        };
+
+        const lastWeekRecords = filterByRange(lastMonday, lastSunday);
+        const prevWeekRecords = filterByRange(prevMonday, prevSunday);
+
+        const getStats = (recs: any[]) => {
+          const income = recs.reduce((sum, r) => sum + (Number(r.income) || 0), 0);
+          const expense = recs.reduce((sum, r) => sum + (Number(r.expense) || 0), 0);
+          const catCounts = recs.reduce((acc: any, r) => {
+            if (Number(r.expense) > 0) {
+              const cat = r.expense_type || 'Otros';
+              acc[cat] = (acc[cat] || 0) + 1;
+            }
+            return acc;
+          }, {});
+          const topCategory = Object.entries(catCounts).sort((a:any, b:any) => b[1] - a[1])[0]?.[0] || 'N/A';
+          return { income, expense, topCategory, count: recs.length };
+        };
+
+        const briefing = await generateWeeklyBriefing({
+          lastWeek: getStats(lastWeekRecords),
+          previousWeek: getStats(prevWeekRecords),
+          goals: goals
+        });
+
+        if (briefing) {
+          setMessages(prev => [
+            ...prev, 
+            { role: 'assistant', content: briefing }
+          ]);
+          localStorage.setItem('last_weekly_briefing_date', todayStr);
+        }
+      } catch (err) {
+        console.error("AI Briefing failed:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (records.length > 0) {
+      generateBriefing();
+    }
+  }, [records]);
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;

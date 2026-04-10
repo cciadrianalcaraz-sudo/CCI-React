@@ -80,3 +80,46 @@ export const chatWithFinances = async (records: any[], message: string) => {
     return "Lo siento, tuve un problema al analizar tus finanzas. Por favor intenta de nuevo en un momento.";
   }
 };
+
+export const generateWeeklyBriefing = async (stats: { 
+  lastWeek: { income: number, expense: number, topCategory: string, count: number },
+  previousWeek: { income: number, expense: number, topCategory: string, count: number },
+  goals: any[]
+}) => {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    const prompt = `
+      Eres un Coach Financiero experto y motivador. 
+      Analiza el desempeño de mi semana pasada comparada con la antepasada:
+      
+      SEMANA PASADA:
+      - Ingresos: $${stats.lastWeek.income}
+      - Gastos: $${stats.lastWeek.expense}
+      - Categoría más usada: ${stats.lastWeek.topCategory}
+      - Número de movimientos: ${stats.lastWeek.count}
+      
+      SEMANA ANTEPASADA:
+      - Ingresos: $${stats.previousWeek.income}
+      - Gastos: $${stats.previousWeek.expense}
+      
+      METAS ACTIVAS:
+      ${stats.goals.map(g => `- ${g.name} (Progreso: ${Math.round((g.current_amount/g.target_amount)*100)}%)`).join('\n')}
+
+      INSTRUCCIONES:
+      1. Saluda al usuario (se llama Adrian).
+      2. Crea un breve resumen ejecutivo (máximo 3-4 párrafos).
+      3. Destaca si el ahorro (Ingresos-Gastos) mejoró o empeoró respecto a la semana antepasada.
+      4. Menciona la categoría principal de forma constructiva (ej: "Tu gasto en ${stats.lastWeek.topCategory} fue el foco esta semana").
+      5. Termina con una frase motivadora vinculada a sus metas de ahorro.
+      6. Usa un tono premium, profesional y alentador.
+    `;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    return response.text();
+  } catch (error) {
+    console.error("Error en Weekly Briefing:", error);
+    return null;
+  }
+};

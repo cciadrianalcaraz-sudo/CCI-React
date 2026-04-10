@@ -2699,7 +2699,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                 </div>
             )}
 
-            <AICopilot records={records} />
+            <AICopilot records={records} goals={goals} />
         </div>
     );
 }
