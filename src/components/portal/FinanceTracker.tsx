@@ -583,6 +583,10 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
     }, [records]);
 
     useEffect(() => {
+        loadGoals();
+    }, []);
+
+    useEffect(() => {
         if (!selectedMonth) return;
         
         const filteredRecords = selectedMonth === 'all' 
