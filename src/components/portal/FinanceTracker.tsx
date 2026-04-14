@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { 
-    Plus, Trash2, Search, TrendingUp, TrendingDown, DollarSign, 
-    Edit2, Upload, Download, Calendar, X, Camera, Sparkles, Printer, User 
+    Plus, Trash2, TrendingUp, TrendingDown, DollarSign, 
+    Edit2, Calendar, Sparkles, User 
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+
 import Button from '../ui/Button';
 import { toast } from '../../lib/toast';
 import { Toaster } from '../ui/Toaster';
 import { useConfirm } from '../../hooks/useConfirm';
-import { extractDataFromReceipt } from '../../lib/gemini';
+
 import AICopilot from './AICopilot';
 import AIBriefingWidget from './finance/AIBriefingWidget';
 import { useFinance } from '../../hooks/useFinance';
@@ -18,16 +18,14 @@ import FinanceHeader from './finance/FinanceHeader';
 import RecordForm from './finance/RecordForm';
 import MovementsDetailedView from './finance/MovementsDetailedView';
 import MovementsSummaryView from './finance/MovementsSummaryView';
-import CreditTracker from './finance/CreditTracker';
-import SavingsGoalsView from './finance/SavingsGoalsView';
+
 import BudgetTracker from './finance/BudgetTracker';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { FinanceRecord, PaymentMethod, FinanceCredit, FinanceGoal } from '../../types/finance';
-import { formatDate, COLORS } from '../../utils/financeUtils';
+import { FinanceRecord } from '../../types/finance';
 
 interface FinanceTrackerProps {
-    user: any;
+    user: { id: string; [key: string]: unknown };
     records?: FinanceRecord[];
     onRefresh?: () => void;
 }
@@ -40,9 +38,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
         credits, 
         goals,
         refreshRecords: loadRecords,
-        refreshPaymentMethods: loadPaymentMethods,
-        refreshCredits: loadCredits,
-        refreshGoals: loadGoals
+        refreshPaymentMethods: loadPaymentMethods
     } = useFinance(user, propsRecords);
 
     const [isFormOpen, setIsFormOpen] = useState(false);
@@ -103,7 +99,6 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
 
     // AI OCR States
     const [isProcessingOCR, setIsProcessingOCR] = useState(false);
-    const ocrFileInputRef = useRef<HTMLInputElement>(null);
     const handleSavePaymentMethod = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newAccountName.trim()) return;
@@ -115,7 +110,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
             setNewAccountName('');
             loadPaymentMethods();
             toast.success('Cuenta agregada correctamente.');
-        } catch (error: any) {
+        } catch (error) {
             console.error('Error saving payment method:', error);
             toast.error('No se pudo agregar la cuenta. ¿Ya existe una con ese nombre?');
         }
@@ -141,9 +136,8 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
     };
 
     // Helper: Formato de fecha sin desajuste de zona horaria
-    const formatDate = (dateStr: string) => {
+    const formatDateLocal = (dateStr: string) => {
         if (!dateStr) return '';
-        // Para YYYY-MM-DD, evitamos UTC shifts dividiendo y usando los componentes locales
         if (dateStr.includes('-')) {
             const [year, month, day] = dateStr.split('-');
             return `${day}/${month}/${year}`;
@@ -212,13 +206,13 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
         
         setUniqueMonths([{label: 'Todos los meses', value: 'all'}, ...formattedMonths]);
         
-        // Inicializar mes seleccionado si está vacíoo (usar el mes actual si existe en la lista)
+        // Inicializar mes seleccionado si está vacío (usar el mes actual si existe en la lista)
         if (!selectedMonth && formattedMonths.length > 0) {
             const currentMonthStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
             const hasCurrentMonth = formattedMonths.some(m => m.value === currentMonthStr);
             setSelectedMonth(hasCurrentMonth ? currentMonthStr : formattedMonths[0].value);
         }
-    }, [records]);
+    }, [records, selectedMonth]);
 
 
     useEffect(() => {
@@ -560,6 +554,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
@@ -573,7 +568,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
             const sheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[sheetName];
             
-            const jsonData = XLSX.utils.sheet_to_json<any>(worksheet, { defval: '' });
+            const jsonData = XLSX.utils.sheet_to_json<Record<string, unknown>>(worksheet, { defval: '' });
 
             if (jsonData.length === 0) {
                 throw new Error('El archivo está vacío o no tiene el formato correcto.');
@@ -607,7 +602,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                     return foundKey ? row[foundKey] : undefined;
                 };
 
-                const parseNumber = (val: any) => {
+                const parseNumber = (val: unknown) => {
                     if (typeof val === 'number') return val;
                     if (!val) return 0;
                     
@@ -701,7 +696,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
             toast.success(`¡Importación exitosa! Se añadieron ${recordsToInsert.length} registros.`);
             loadRecords();
 
-        } catch (error: any) {
+        } catch (error) {
             console.error("Error detallado al importar excel:", error);
             toast.error(`Error al importar: ${error.message || 'Verifica el formato del archivo'}`);
         } finally {
@@ -959,7 +954,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                 // Cálculo Progresivo Día a Día
                                 let currentBalance = credit.initial_balance;
                                 let interestSinceLastPayment = 0;
-                                let iterDate = new Date(start);
+                                const iterDate = new Date(start);
 
                                 // Iterar día por día desde el inicio hasta hoy
                                 while (iterDate <= today) {
@@ -1014,7 +1009,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-[10px] font-black text-accent uppercase tracking-widest">{credit.annual_rate}% Tasa Anual</span>
                                                     <div className="w-1 h-1 rounded-full bg-neutral-200"></div>
-                                                    <span className="text-[10px] font-bold text-neutral-400">Inicio: {formatDate(credit.start_date)}</span>
+                                                    <span className="text-[10px] font-bold text-neutral-400">Inicio: {formatDateLocal(credit.start_date)}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -1061,7 +1056,10 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                         </div>
                                     </div>
                                 );
-                                 ) : viewMode === 'detailed' ? (
+                            })}
+                        </div>
+                    </div>
+                ) : viewMode === 'detailed' ? (
                     <MovementsDetailedView 
                         records={displayRecords}
                         onEdit={handleEditClick}

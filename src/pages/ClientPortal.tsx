@@ -321,7 +321,23 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
             if (docsData) setDocs(docsData);
 
             if (!isMaster) {
-                const { data: recordsData } = await supabase.from('finance_records').select('*').order('date', { ascending: false });
+                // Resolver IDs de compañeros de empresa (mismo full_name en profiles)
+                let companyUserIds: string[] = [user.id];
+                if (profileData?.full_name) {
+                    const { data: companions } = await supabase
+                        .from('profiles')
+                        .select('id')
+                        .eq('full_name', profileData.full_name);
+                    if (companions && companions.length > 0) {
+                        companyUserIds = companions.map((p: { id: string }) => p.id);
+                    }
+                }
+
+                const { data: recordsData } = await supabase
+                    .from('finance_records')
+                    .select('*')
+                    .in('user_id', companyUserIds)
+                    .order('date', { ascending: false });
                 if (recordsData) {
                     setRecords(recordsData);
                     const recordMonths = Array.from(new Set(recordsData.map(r => {
