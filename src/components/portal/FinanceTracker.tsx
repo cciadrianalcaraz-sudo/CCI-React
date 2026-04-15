@@ -23,7 +23,7 @@ import BudgetTracker from './finance/BudgetTracker';
 import DashboardView from './finance/DashboardView';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { FinanceRecord } from '../../types/finance';
+import type { FinanceRecord } from '../../types/finance';
 
 interface FinanceTrackerProps {
     user: { id: string; [key: string]: unknown };
@@ -61,6 +61,10 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
     const [uniqueMonths, setUniqueMonths] = useState<{label: string, value: string}[]>([]);
     const [summaryData, setSummaryData] = useState<{concept: string, income: number, expense: number}[]>([]);
     const [paymentBalancesData, setPaymentBalancesData] = useState<{method: string, initialBalance: number, income: number, expense: number, finalBalance: number}[]>([]);
+    
+    // Budget states
+    const [budgetData, setBudgetData] = useState<any[]>([]);
+    const [manualBudgets, setManualBudgets] = useState<Record<string, number>>({});
     
     // ESTADO NUEVO: Almacena los datos del presupuesto calculado
     
@@ -146,6 +150,35 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
         }
         return dateStr;
     };
+
+    const loadManualBudgets = async (month: string) => {
+        if (!month || month === 'all') return;
+        try {
+            const { data, error } = await supabase
+                .from('finance_budgets')
+                .select('concept, amount')
+                .eq('month', month)
+                .eq('user_id', user.id);
+            
+            if (error) throw error;
+            
+            const budgetMap: Record<string, number> = {};
+            if (data) {
+                data.forEach((b: any) => {
+                    budgetMap[b.concept] = Number(b.amount);
+                });
+            }
+            setManualBudgets(budgetMap);
+        } catch (error) {
+            console.error("Error loading budgets:", error);
+        }
+    };
+
+    useEffect(() => {
+        if (selectedMonth) {
+            loadManualBudgets(selectedMonth);
+        }
+    }, [selectedMonth, user.id]);
 
 
 
@@ -422,7 +455,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
             }
         } catch (error) {
             console.error('Error adding/updating record:', error);
-            toast.error('Hubo un error al guardar el registro.');
+            toast.error(`Hubo un error al guardar el registro: ${(error as Error).message}`);
         }
     };
 
@@ -522,7 +555,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
             if (onRefresh) {
                 onRefresh();
             } else {
-                setLocalRecords(records.filter(r => r.id !== id));
+                loadRecords();
             }
         } catch (error) {
             console.error('Error deleting record:', error);
@@ -700,7 +733,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
 
         } catch (error) {
             console.error("Error detallado al importar excel:", error);
-            toast.error(`Error al importar: ${error.message || 'Verifica el formato del archivo'}`);
+            toast.error(`Error al importar: ${(error as Error).message || 'Verifica el formato del archivo'}`);
         } finally {
             setIsUploading(false);
             if (fileInputRef.current) {
@@ -1654,7 +1687,14 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                 </div>
             )}
 
-            <AICopilot records={records} goals={goals} />
+            <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                accept=".xlsx, .xls"
+                className="hidden"
+            />
+            <AICopilot records={records} />
         </div>
     );
 }

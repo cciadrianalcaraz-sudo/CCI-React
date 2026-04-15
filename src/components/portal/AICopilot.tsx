@@ -9,10 +9,9 @@ interface Message {
 
 interface AICopilotProps {
   records: any[];
-  goals: any[];
 }
 
-export default function AICopilot({ records, goals }: AICopilotProps) {
+export default function AICopilot({ records }: AICopilotProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [input, setInput] = useState('');
