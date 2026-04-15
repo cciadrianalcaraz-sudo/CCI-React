@@ -7,12 +7,25 @@ import type { FinanceRecord, PaymentMethod, FinanceCredit, FinanceGoal } from '.
  * (comparten el mismo `full_name` en la tabla `profiles`).
  * Si el usuario no tiene perfil, devuelve solo su propio ID.
  */
-export async function getCompanyUserIds(userId: string): Promise<string[]> {
-    const { data: profileData } = await supabase
+export async function getCompanyUserIds(userId: string, email?: string): Promise<string[]> {
+    let { data: profileData } = await supabase
         .from('profiles')
         .select('full_name') // full_name se usa como identificador de empresa/familia
         .eq('id', userId)
         .single();
+    
+    // Fallback por Email si no se encuentra por ID
+    if (!profileData?.full_name && email) {
+        console.log(`[useFinance] Profile not found by ID, trying email: ${email}`);
+        const { data: emailData } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('email', email)
+            .single();
+        if (emailData) {
+            profileData = emailData;
+        }
+    }
 
     if (!profileData || !profileData.full_name) {
         console.log(`[useFinance] No company profile found for user ${userId}, using single ID.`);
@@ -39,21 +52,22 @@ export const useFinance = (user: { id: string; [key: string]: unknown }, propsRe
     const [credits, setCredits] = useState<FinanceCredit[]>([]);
     const [goals, setGoals] = useState<FinanceGoal[]>([]);
     const [companyIds, setCompanyIds] = useState<string[]>([user.id]);
+    const userEmail = (user as any)?.email;
 
     // ── IDs de Empresa ────────────────────────────────────────────────────────
     useEffect(() => {
         const fetchIds = async () => {
-            const ids = await getCompanyUserIds(user.id);
+            const ids = await getCompanyUserIds(user.id, userEmail);
             setCompanyIds(ids);
         };
         fetchIds();
-    }, [user.id]);
+    }, [user.id, userEmail]);
 
     // ── Registros ──────────────────────────────────────────────────────────────
     const loadRecords = useCallback(async () => {
         try {
             setLoading(true);
-            const ids = await getCompanyUserIds(user.id);
+            const ids = await getCompanyUserIds(user.id, userEmail);
             const { data, error } = await supabase
                 .from('finance_records')
                 .select('*')
@@ -73,7 +87,7 @@ export const useFinance = (user: { id: string; [key: string]: unknown }, propsRe
     // ── Formas de pago ─────────────────────────────────────────────────────────
     const loadPaymentMethods = useCallback(async () => {
         try {
-            const ids = await getCompanyUserIds(user.id);
+            const ids = await getCompanyUserIds(user.id, userEmail);
             const { data, error } = await supabase
                 .from('finance_payment_methods')
                 .select('*')
@@ -98,7 +112,7 @@ export const useFinance = (user: { id: string; [key: string]: unknown }, propsRe
     // ── Créditos ───────────────────────────────────────────────────────────────
     const loadCredits = useCallback(async () => {
         try {
-            const ids = await getCompanyUserIds(user.id);
+            const ids = await getCompanyUserIds(user.id, userEmail);
             const { data, error } = await supabase
                 .from('finance_credits')
                 .select('*')
@@ -114,7 +128,7 @@ export const useFinance = (user: { id: string; [key: string]: unknown }, propsRe
     // ── Metas de ahorro ────────────────────────────────────────────────────────
     const loadGoals = useCallback(async () => {
         try {
-            const ids = await getCompanyUserIds(user.id);
+            const ids = await getCompanyUserIds(user.id, userEmail);
             const { data, error } = await supabase
                 .from('finance_goals')
                 .select('*')

@@ -315,12 +315,26 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
     const loadDashboardData = async () => {
         setLoading(true);
         try {
-            // 1. Cargar Perfil del Usuario
-            const { data: profileData, error: profileError } = await supabase
+            // 1. Cargar Perfil del Usuario (con Fallback por Email)
+            let { data: profileData, error: profileError } = await supabase
                 .from('profiles')
                 .select('*')
                 .eq('id', user.id)
                 .single();
+            
+            // Si no se encuentra por ID, intentar por Email
+            if (!profileData && user.email) {
+                console.log(`[ClientPortal] Profile not found by ID, trying email: ${user.email}`);
+                const { data: emailData } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('email', user.email)
+                    .single();
+                if (emailData) {
+                    profileData = emailData;
+                    profileError = null;
+                }
+            }
             
             if (profileError) {
                 console.error("[ClientPortal] Error loading profile:", profileError);
@@ -329,7 +343,7 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
             if (profileData) {
                 setProfile(profileData);
             } else {
-                console.log("[ClientPortal] No profile data found for user:", user.id);
+                console.log("[ClientPortal] No profile record found for user:", user.id, user.email);
             }
 
             // 2. Cargar Documentos
