@@ -14,16 +14,22 @@ export async function getCompanyUserIds(userId: string): Promise<string[]> {
         .eq('id', userId)
         .single();
 
-    if (!profileData?.full_name) return [userId];
+    if (!profileData || !profileData.full_name) {
+        console.log(`[useFinance] No company profile found for user ${userId}, using single ID.`);
+        return [userId];
+    }
+
+    const companyName = profileData.full_name?.trim() || '';
+    if (!companyName) return [userId];
 
     const { data: companions } = await supabase
         .from('profiles')
         .select('id')
-        .ilike('full_name', profileData.full_name.trim());
+        .ilike('full_name', companyName);
 
     const ids = (companions || []).map((p: { id: string }) => p.id);
-    console.log(`[useFinance] Found ${ids.length} users for company: ${profileData.full_name}`);
-    return ids;
+    console.log(`[useFinance] Found ${ids.length} users for company: "${companyName}"`);
+    return ids.length > 0 ? ids : [userId];
 }
 
 export const useFinance = (user: { id: string; [key: string]: unknown }, propsRecords?: FinanceRecord[]) => {

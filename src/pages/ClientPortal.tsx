@@ -315,31 +315,59 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
     const loadDashboardData = async () => {
         setLoading(true);
         try {
-            const { data: profileData } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-            if (profileData) setProfile(profileData);
-            const { data: docsData } = await supabase.from('documents').select('*').order('created_at', { ascending: false });
+            // 1. Cargar Perfil del Usuario
+            const { data: profileData, error: profileError } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', user.id)
+                .single();
+            
+            if (profileError) {
+                console.error("[ClientPortal] Error loading profile:", profileError);
+            }
+            
+            if (profileData) {
+                setProfile(profileData);
+            } else {
+                console.log("[ClientPortal] No profile data found for user:", user.id);
+            }
+
+            // 2. Cargar Documentos
+            const { data: docsData } = await supabase
+                .from('documents')
+                .select('*')
+                .order('created_at', { ascending: false });
             if (docsData) setDocs(docsData);
 
+            // 3. Cargar Registros Financieros (Compartidos por Empresa)
             if (!isMaster) {
-                // Resolver IDs de compañeros de empresa (mismo full_name en profiles)
                 let companyUserIds: string[] = [user.id];
-                if (profileData?.full_name) {
-                    const { data: companions } = await supabase
+                const companyName = profileData?.full_name?.trim() || '';
+
+                if (companyName) {
+                    const { data: companions, error: companionsError } = await supabase
                         .from('profiles')
                         .select('id')
-                        .ilike('full_name', profileData.full_name.trim());
-                    if (companions && companions.length > 0) {
+                        .ilike('full_name', companyName);
+                    
+                    if (companionsError) {
+                        console.error("[ClientPortal] Error looking for companions:", companionsError);
+                    } else if (companions && companions.length > 0) {
                         companyUserIds = companions.map((p: { id: string }) => p.id);
                     }
                 }
-                console.log(`[ClientPortal] Tracking ${companyUserIds.length} users for company: ${profileData?.full_name}`);
+                
+                console.log(`[ClientPortal] Tracking ${companyUserIds.length} users for company: "${companyName || 'N/A'}"`);
 
-                const { data: recordsData } = await supabase
+                const { data: recordsData, error: recordsError } = await supabase
                     .from('finance_records')
                     .select('*')
                     .in('user_id', companyUserIds)
                     .order('date', { ascending: false });
-                if (recordsData) {
+                
+                if (recordsError) {
+                    console.error("[ClientPortal] Error loading finance records:", recordsError);
+                } else if (recordsData) {
                     setRecords(recordsData);
                     const recordMonths = Array.from(new Set(recordsData.map(r => {
                         const date = r.date;
