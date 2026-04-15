@@ -8,10 +8,10 @@ import { toast } from '../lib/toast';
  * (comparten el mismo `full_name` en la tabla `profiles`).
  * Si el usuario no tiene perfil, devuelve solo su propio ID.
  */
-async function getCompanyUserIds(userId: string): Promise<string[]> {
+export async function getCompanyUserIds(userId: string): Promise<string[]> {
     const { data: profileData } = await supabase
         .from('profiles')
-        .select('full_name')
+        .select('full_name') // full_name se usa como identificador de empresa/familia
         .eq('id', userId)
         .single();
 
@@ -30,15 +30,27 @@ export const useFinance = (user: { id: string; [key: string]: unknown }, propsRe
     const [loading, setLoading] = useState(!propsRecords);
     const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
     const [credits, setCredits] = useState<FinanceCredit[]>([]);
+    const [goals, setGoals] = useState<FinanceGoal[]>([]);
+    const [companyIds, setCompanyIds] = useState<string[]>([user.id]);
+
+    // ── IDs de Empresa ────────────────────────────────────────────────────────
+    useEffect(() => {
+        const fetchIds = async () => {
+            const ids = await getCompanyUserIds(user.id);
+            setCompanyIds(ids);
+        };
+        fetchIds();
+    }, [user.id]);
 
     // ── Registros ──────────────────────────────────────────────────────────────
     const loadRecords = useCallback(async () => {
         try {
             setLoading(true);
-            // Con RLS actualizado en Supabase, SELECT devuelve toda la empresa
+            const ids = await getCompanyUserIds(user.id);
             const { data, error } = await supabase
                 .from('finance_records')
                 .select('*')
+                .in('user_id', ids)
                 .order('date', { ascending: true })
                 .order('created_at', { ascending: true });
 
@@ -46,26 +58,23 @@ export const useFinance = (user: { id: string; [key: string]: unknown }, propsRe
             if (data) setRecords(data as FinanceRecord[]);
         } catch (error) {
             console.error('Error loading finance records:', error);
-            toast.error('Error al cargar los movimientos');
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [user.id]);
 
     // ── Formas de pago ─────────────────────────────────────────────────────────
     const loadPaymentMethods = useCallback(async () => {
         try {
-            const companyIds = await getCompanyUserIds(user.id);
-
+            const ids = await getCompanyUserIds(user.id);
             const { data, error } = await supabase
                 .from('finance_payment_methods')
                 .select('*')
-                .in('user_id', companyIds)
+                .in('user_id', ids)
                 .order('name', { ascending: true });
 
             if (error) throw error;
             if (data) {
-                // Deduplicar por nombre (por si varios usuarios crearon la misma cuenta)
                 const seen = new Set<string>();
                 const unique = (data as PaymentMethod[]).filter(pm => {
                     if (seen.has(pm.name)) return false;
@@ -82,22 +91,35 @@ export const useFinance = (user: { id: string; [key: string]: unknown }, propsRe
     // ── Créditos ───────────────────────────────────────────────────────────────
     const loadCredits = useCallback(async () => {
         try {
-            // Con RLS actualizado, SELECT devuelve toda la empresa
+            const ids = await getCompanyUserIds(user.id);
             const { data, error } = await supabase
                 .from('finance_credits')
                 .select('*')
+                .in('user_id', ids)
                 .order('created_at', { ascending: true });
             if (error) throw error;
             setCredits(data || []);
         } catch (error) {
             console.error('Error loading credits:', error);
         }
-    }, []);
+    }, [user.id]);
 
     // ── Metas de ahorro ────────────────────────────────────────────────────────
-    // finance_goals no existe en la BD; se mantiene como array vacío para
-    // que los componentes que lo reciben no rompan.
-    const goals: FinanceGoal[] = [];
+    const loadGoals = useCallback(async () => {
+        try {
+            const ids = await getCompanyUserIds(user.id);
+            const { data, error } = await supabase
+                .from('finance_goals')
+                .select('*')
+                .in('user_id', ids)
+                .order('created_at', { ascending: true });
+            
+            if (error) throw error;
+            setGoals(data || []);
+        } catch (error) {
+            console.error('Error loading goals:', error);
+        }
+    }, [user.id]);
 
     useEffect(() => {
         if (!propsRecords) {
@@ -105,7 +127,8 @@ export const useFinance = (user: { id: string; [key: string]: unknown }, propsRe
         }
         loadPaymentMethods();
         loadCredits();
-    }, [user.id]); // eslint-disable-line react-hooks/exhaustive-deps
+        loadGoals();
+    }, [user.id, loadRecords, loadPaymentMethods, loadCredits, loadGoals, propsRecords]);
 
     return {
         records,
@@ -113,9 +136,10 @@ export const useFinance = (user: { id: string; [key: string]: unknown }, propsRe
         paymentMethods,
         credits,
         goals,
+        companyIds,
         refreshRecords: loadRecords,
         refreshPaymentMethods: loadPaymentMethods,
         refreshCredits: loadCredits,
-        refreshGoals: () => Promise.resolve(), // no-op: tabla no existe
+        refreshGoals: loadGoals,
     };
 };

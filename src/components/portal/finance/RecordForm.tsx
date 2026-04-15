@@ -130,7 +130,20 @@ const RecordForm: React.FC<RecordFormProps> = ({
                 <form onSubmit={onSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
                     <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 block ml-1">Concepto</label>
-                        <input type="text" required value={concept} onChange={e => setConcept(e.target.value)} placeholder="Ej. Despensa, Renta..." className="w-full bg-[var(--bg-card)] dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 rounded-2xl px-5 py-3 text-sm font-medium outline-none focus:border-accent transition-all shadow-sm" />
+                        <input 
+                            type="text" 
+                            required 
+                            list="concepts-list"
+                            value={concept} 
+                            onChange={e => setConcept(e.target.value)} 
+                            placeholder="Ej. Despensa, Renta..." 
+                            className="w-full bg-[var(--bg-card)] dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 rounded-2xl px-5 py-3 text-sm font-medium outline-none focus:border-accent transition-all shadow-sm" 
+                        />
+                        <datalist id="concepts-list">
+                            {concepts.map((c, i) => (
+                                <option key={i} value={c} />
+                            ))}
+                        </datalist>
                     </div>
                     
                     <div className="space-y-2">

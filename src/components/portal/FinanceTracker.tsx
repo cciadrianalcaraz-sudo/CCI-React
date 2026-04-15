@@ -38,8 +38,10 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
         paymentMethods: savedPaymentMethods, 
         credits, 
         goals,
+        companyIds,
         refreshRecords: loadRecords,
-        refreshPaymentMethods: loadPaymentMethods
+        refreshPaymentMethods: loadPaymentMethods,
+        refreshGoals: loadGoals
     } = useFinance(user, propsRecords);
 
     const [isFormOpen, setIsFormOpen] = useState(false);
@@ -60,6 +62,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
     const [selectedMonth, setSelectedMonth] = useState<string>('');
     const [uniqueMonths, setUniqueMonths] = useState<{label: string, value: string}[]>([]);
     const [summaryData, setSummaryData] = useState<{concept: string, income: number, expense: number}[]>([]);
+    const [uniqueConcepts, setUniqueConcepts] = useState<string[]>([]);
     const [paymentBalancesData, setPaymentBalancesData] = useState<{method: string, initialBalance: number, income: number, expense: number, finalBalance: number}[]>([]);
     
     // Budget states
@@ -341,7 +344,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                 .from('finance_budgets')
                 .select('concept, amount')
                 .eq('month', month)
-                .eq('user_id', user.id);
+                .in('user_id', companyIds);
             
             if (error) throw error;
             
@@ -514,6 +517,9 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
             .sort((a,b) => b.avgBudget - a.avgBudget);
           
         setBudgetData(budgetArr);
+        
+        // Actualizar lista de conceptos únicos para el autocompletado del formulario
+        setUniqueConcepts(allEverConcepts);
         // =========================================================================
 
         const paymentMap: Record<string, { initial: number, income: number, expense: number, finalBalance: number }> = {};
@@ -1089,6 +1095,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                 description={description} setDescription={setDescription}
                 expenseType={expenseType} setExpenseType={setExpenseType}
                 renderPaymentOptions={renderPaymentOptions}
+                concepts={uniqueConcepts}
             />
         
             <div className="overflow-x-auto" id="finance-dashboard-content">
@@ -1774,7 +1781,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                                 .from('finance_records')
                                                 .update({ payment_method: reassignTarget })
                                                 .eq('payment_method', reassignModal.method)
-                                                .eq('user_id', user.id);
+                                                .in('user_id', companyIds);
                                             
                                             if (error) throw error;
                                             toast.success(`Movidos ${reassignModal.count} registros a ${reassignTarget}`);
