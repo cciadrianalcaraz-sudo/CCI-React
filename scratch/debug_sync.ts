@@ -1,5 +1,4 @@
 
-import { createClient } from '@supabase/supabase-client';
 import * as dotenv from 'dotenv';
 
 // Cargar variables de entorno si existen, o usar las del proyecto

@@ -315,35 +315,34 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
     const loadDashboardData = async () => {
         setLoading(true);
         try {
-            // 1. Cargar Perfil del Usuario (con Fallback por Email)
-            let { data: profileData, error: profileError } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', user.id)
-                .single();
-            
-            // Si no se encuentra por ID, intentar por Email
-            if (!profileData && user.email) {
-                console.log(`[ClientPortal] Profile not found by ID, trying email: ${user.email}`);
-                const { data: emailData } = await supabase
-                    .from('profiles')
-                    .select('*')
-                    .eq('email', user.email)
-                    .single();
-                if (emailData) {
-                    profileData = emailData;
-                    profileError = null;
-                }
+            // 1. Búsqueda Agresiva del Perfil (ID -> Email -> Manual)
+            let profileData: any = null;
+            const userEmail = user.email?.toLowerCase().trim();
+
+            // Intento A: Por ID exacto
+            const { data: byId } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
+            profileData = byId;
+
+            // Intento B: Por Email exacto (si falló ID)
+            if (!profileData && userEmail) {
+                console.log(`[ClientPortal] Profile not found by ID, trying email: ${userEmail}`);
+                const { data: byEmail } = await supabase.from('profiles').select('*').eq('email', userEmail).maybeSingle();
+                profileData = byEmail;
             }
-            
-            if (profileError) {
-                console.error("[ClientPortal] Error loading profile:", profileError);
+
+            // Intento C: Búsqueda manual (si falló todo lo anterior)
+            if (!profileData && userEmail) {
+                console.log(`[ClientPortal] Still no profile, performing manual search...`);
+                const { data: allProfiles } = await supabase.from('profiles').select('*').limit(100);
+                profileData = allProfiles?.find(p => p.email?.toLowerCase().trim() === userEmail) || null;
+                if (profileData) console.log(`[ClientPortal] MANUALLY FOUND PROFILE BY EMAIL`);
             }
             
             if (profileData) {
                 setProfile(profileData);
+                console.log(`[ClientPortal] Profile loaded: ${profileData.full_name}`);
             } else {
-                console.log("[ClientPortal] No profile record found for user:", user.id, user.email);
+                console.warn("[ClientPortal] ABANDON: No profile record found anywhere for user:", user.id, userEmail);
             }
 
             // 2. Cargar Documentos

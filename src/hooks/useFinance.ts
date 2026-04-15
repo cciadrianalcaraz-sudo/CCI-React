@@ -8,23 +8,24 @@ import type { FinanceRecord, PaymentMethod, FinanceCredit, FinanceGoal } from '.
  * Si el usuario no tiene perfil, devuelve solo su propio ID.
  */
 export async function getCompanyUserIds(userId: string, email?: string): Promise<string[]> {
-    let { data: profileData } = await supabase
-        .from('profiles')
-        .select('full_name') // full_name se usa como identificador de empresa/familia
-        .eq('id', userId)
-        .single();
+    let profileData: any = null;
+    const userEmail = email?.toLowerCase().trim();
+
+    // Intento A: Por ID
+    const { data: byId } = await supabase.from('profiles').select('id, full_name').eq('id', userId).maybeSingle();
+    profileData = byId;
     
-    // Fallback por Email si no se encuentra por ID
-    if (!profileData?.full_name && email) {
-        console.log(`[useFinance] Profile not found by ID, trying email: ${email}`);
-        const { data: emailData } = await supabase
-            .from('profiles')
-            .select('full_name')
-            .eq('email', email)
-            .single();
-        if (emailData) {
-            profileData = emailData;
-        }
+    // Intento B: Por Email (si falló ID)
+    if (!profileData?.full_name && userEmail) {
+        console.log(`[useFinance] Profile not found by ID, trying email: ${userEmail}`);
+        const { data: byEmail } = await supabase.from('profiles').select('id, full_name').eq('email', userEmail).maybeSingle();
+        profileData = byEmail;
+    }
+
+    // Intento C: Búsqueda manual
+    if (!profileData?.full_name && userEmail) {
+        const { data: allProfiles } = await supabase.from('profiles').select('id, full_name, email').limit(100);
+        profileData = allProfiles?.find(p => p.email?.toLowerCase().trim() === userEmail) || null;
     }
 
     if (!profileData || !profileData.full_name) {
