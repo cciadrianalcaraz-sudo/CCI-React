@@ -1,14 +1,14 @@
 import React, { useMemo } from 'react';
 import { 
-    TrendingUp, TrendingDown, DollarSign, Target, 
-    ArrowUpRight, ArrowDownRight, Wallet, PieChart, 
-    BarChart3, Sparkles, Activity, CreditCard
+    Target, 
+    ArrowUpRight, Wallet, PieChart, 
+    Activity
 } from 'lucide-react';
 import { 
     AreaChart, Area, XAxis, YAxis, CartesianGrid, 
     Tooltip, ResponsiveContainer, BarChart, Bar, Cell
 } from 'recharts';
-import { FinanceRecord, FinanceGoal, FinanceCredit } from '../../../types/finance';
+import type { FinanceRecord, FinanceGoal, FinanceCredit } from '../../../types/finance';
 import AIBriefingWidget from './AIBriefingWidget';
 
 interface DashboardViewProps {
@@ -214,7 +214,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ records, goals, credits, 
                                     contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}
                                 />
                                 <Bar dataKey="value" radius={[0, 10, 10, 0]} barSize={20}>
-                                    {categoryData.map((entry, index) => (
+                                    {categoryData.map((_, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Bar>

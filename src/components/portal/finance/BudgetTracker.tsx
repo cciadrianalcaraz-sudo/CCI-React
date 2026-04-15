@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, Trash2 } from 'lucide-react';
-import { supabase } from '../../../supabaseClient';
-import { toast } from 'react-toastify';
-import { confirm } from '../../../components/ConfirmDialog';
-import Button from '../../../components/ui/Button';
-import { FinanceRecord } from '../../../types/finance';
+import { supabase } from '../../../lib/supabase';
+import { toast } from '../../../lib/toast';
+import { useConfirm } from '../../../hooks/useConfirm';
+import Button from '../../ui/Button';
+import type { FinanceRecord } from '../../../types/finance';
 
 interface BudgetData {
     concept: string;
@@ -24,6 +24,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
     records,
     selectedMonth
 }) => {
+    const { confirm, ConfirmModal } = useConfirm();
     const [budgetData, setBudgetData] = useState<BudgetData[]>([]);
     const [manualBudgets, setManualBudgets] = useState<Record<string, number>>({});
     const [isEditingBudget, setIsEditingBudget] = useState(false);
@@ -271,6 +272,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
                     </tbody>
                 </table>
             </div>
+            {ConfirmModal}
         </div>
     );
 };

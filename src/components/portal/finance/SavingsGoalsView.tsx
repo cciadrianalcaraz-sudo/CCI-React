@@ -4,7 +4,7 @@ import Button from '../../ui/Button';
 import { supabase } from '../../../lib/supabase';
 import { toast } from '../../../lib/toast';
 import { useConfirm } from '../../../hooks/useConfirm';
-import { FinanceGoal } from '../../../types/finance';
+import type { FinanceGoal } from '../../../types/finance';
 
 interface SavingsGoalsViewProps {
     userId: string;

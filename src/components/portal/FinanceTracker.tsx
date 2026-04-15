@@ -105,6 +105,29 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
 
     // AI OCR States
     const [isProcessingOCR, setIsProcessingOCR] = useState(false);
+
+    // Savings Goal States
+    const [isGoalFormOpen, setIsGoalFormOpen] = useState(false);
+    const [goalName, setGoalName] = useState('');
+    const [goalTarget, setGoalTarget] = useState<number | ''>('');
+    const [goalDeadline, setGoalDeadline] = useState('');
+    const [isSavingGoal, setIsSavingGoal] = useState(false);
+
+    // Credit States
+    const [isCreditFormOpen, setIsCreditFormOpen] = useState(false);
+    const [creditName, setCreditName] = useState('');
+    const [creditInitialBalance, setCreditInitialBalance] = useState<number | ''>('');
+    const [creditAnnualRate, setCreditAnnualRate] = useState<number | ''>('');
+    const [creditStartDate, setCreditStartDate] = useState(new Date().toISOString().split('T')[0]);
+    const [isSavingCredit, setIsSavingCredit] = useState(false);
+
+    // Credit Payment States
+    const [isCreditPaymentFormOpen, setIsCreditPaymentFormOpen] = useState(false);
+    const [activeCreditForPayment, setActiveCreditForPayment] = useState<any | null>(null);
+    const [paymentAmount, setPaymentAmount] = useState<number | ''>('');
+    const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
+    const [creditPaymentMethod, setCreditPaymentMethod] = useState('');
+    const [isSavingPayment, setIsSavingPayment] = useState(false);
     const handleSavePaymentMethod = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newAccountName.trim()) return;
@@ -118,7 +141,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
             toast.success('Cuenta agregada correctamente.');
         } catch (error) {
             console.error('Error saving payment method:', error);
-            toast.error('No se pudo agregar la cuenta. ¿Ya existe una con ese nombre?');
+            toast.error(`No se pudo agregar la cuenta: ${(error as any).message || '¿Ya existe una con ese nombre?'}`);
         }
     };
 
@@ -140,6 +163,166 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
             toast.error('No se pudo eliminar la cuenta.');
         }
     };
+
+
+    // SAVINGS GOALS HANDLERS
+    const handleAddGoal = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!goalName.trim() || !goalTarget) return;
+
+        setIsSavingGoal(true);
+        try {
+            const { error } = await supabase
+                .from('finance_goals')
+                .insert([{
+                    user_id: user.id,
+                    name: goalName.trim().toUpperCase(),
+                    target_amount: Number(goalTarget),
+                    current_amount: 0,
+                    deadline: goalDeadline || null,
+                    color: '#4A7C82' // Default color
+                }]);
+
+            if (error) throw error;
+            toast.success('Meta de ahorro creada.');
+            setIsGoalFormOpen(false);
+            setGoalName('');
+            setGoalTarget('');
+            setGoalDeadline('');
+            loadRecords(); // Refresh logic if needed
+        } catch (error) {
+            console.error('Error saving goal:', error);
+            toast.error(`No se pudo crear la meta: ${(error as any).message}`);
+        } finally {
+            setIsSavingGoal(false);
+        }
+    };
+
+    const handleDeleteGoal = async (id: string, name: string) => {
+        const ok = await confirm({
+            title: 'Eliminar Meta',
+            message: `¿Seguro que deseas eliminar la meta "${name}"?`,
+            confirmLabel: 'Eliminar',
+            danger: true
+        });
+        if (!ok) return;
+
+        try {
+            const { error } = await supabase.from('finance_goals').delete().eq('id', id);
+            if (error) throw error;
+            toast.success('Meta eliminada.');
+            loadRecords();
+        } catch (error) {
+            console.error('Error deleting goal:', error);
+            toast.error('No se pudo eliminar la meta.');
+        }
+    };
+
+    const handleUpdateGoalAmount = async (id: string, currentAmount: number) => {
+        const amount = prompt('¿Cuánto deseas abonar a esta meta?');
+        if (!amount || isNaN(Number(amount))) return;
+
+        try {
+            const { error } = await supabase
+                .from('finance_goals')
+                .update({ current_amount: currentAmount + Number(amount) })
+                .eq('id', id);
+
+            if (error) throw error;
+            toast.success('Abono registrado con éxito.');
+            loadRecords();
+        } catch (error) {
+            console.error('Error updating goal:', error);
+            toast.error(`No se pudo actualizar la meta: ${(error as any).message}`);
+        }
+    };
+
+    // CREDIT HANDLERS
+    const handleSaveCredit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!creditName.trim() || !creditInitialBalance) return;
+
+        setIsSavingCredit(true);
+        try {
+            const { error } = await supabase
+                .from('finance_credits')
+                .insert([{
+                    user_id: user.id,
+                    name: creditName.trim().toUpperCase(),
+                    initial_balance: Number(creditInitialBalance),
+                    annual_rate: Number(creditAnnualRate) || 0,
+                    start_date: creditStartDate
+                }]);
+
+            if (error) throw error;
+            toast.success('Línea de crédito registrada.');
+            setIsCreditFormOpen(false);
+            setCreditName('');
+            setCreditInitialBalance('');
+            setCreditAnnualRate('');
+            loadRecords();
+        } catch (error) {
+            console.error('Error saving credit:', error);
+            toast.error(`Error: ${(error as any).message}`);
+        } finally {
+            setIsSavingCredit(false);
+        }
+    };
+
+    const handleDeleteCredit = async (id: string, name: string) => {
+        const ok = await confirm({
+            title: 'Eliminar Crédito',
+            message: `¿Seguro que deseas eliminar el crédito "${name}"?`,
+            confirmLabel: 'Eliminar',
+            danger: true
+        });
+        if (!ok) return;
+
+        try {
+            const { error } = await supabase.from('finance_credits').delete().eq('id', id);
+            if (error) throw error;
+            toast.success('Crédito eliminado.');
+            loadRecords();
+        } catch (error) {
+            console.error('Error deleting credit:', error);
+            toast.error(`No se pudo eliminar el crédito: ${(error as any).message}`);
+        }
+    };
+
+    const handleSaveCreditPayment = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!activeCreditForPayment || !paymentAmount) return;
+
+        setIsSavingPayment(true);
+        try {
+            const { error } = await supabase
+                .from('finance_records')
+                .insert([{
+                    user_id: user.id,
+                    concept: `PAGO CRÉDITO: ${activeCreditForPayment.name}`,
+                    date: paymentDate,
+                    payment_method: creditPaymentMethod || 'TARJETA CRÉDITO',
+                    expense: Number(paymentAmount),
+                    income: 0,
+                    expense_type: 'Deuda',
+                    provider: activeCreditForPayment.name,
+                    description: `Abono a línea de crédito ${activeCreditForPayment.name}`
+                }]);
+
+            if (error) throw error;
+            toast.success('Abono registrado correctamente.');
+            setIsCreditPaymentFormOpen(false);
+            setActiveCreditForPayment(null);
+            setPaymentAmount('');
+            loadRecords();
+        } catch (error) {
+            console.error('Error saving payment:', error);
+            toast.error(`No se pudo registrar el pago: ${(error as any).message}`);
+        } finally {
+            setIsSavingPayment(false);
+        }
+    };
+
 
     // Helper: Formato de fecha sin desajuste de zona horaria
     const formatDateLocal = (dateStr: string) => {
@@ -532,7 +715,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
             toast.success('Traspaso registrado correctamente.');
         } catch (error) {
             console.error('Error creating transfer:', error);
-            toast.error('No se pudo realizar el traspaso.');
+            toast.error(`No se pudo realizar el traspaso: ${(error as any).message}`);
         }
     };
 
@@ -559,7 +742,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
             }
         } catch (error) {
             console.error('Error deleting record:', error);
-            toast.error('No se pudo eliminar el registro.');
+            toast.error(`No se pudo eliminar el registro: ${(error as any).message}`);
         }
     };
 

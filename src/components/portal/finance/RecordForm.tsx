@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Plus, Camera, Sparkles, TrendingDown } from 'lucide-react';
+import { Plus, Camera, Sparkles } from 'lucide-react';
 import Button from '../../ui/Button';
 import { extractDataFromReceipt } from '../../../lib/gemini';
 import { toast } from '../../../lib/toast';

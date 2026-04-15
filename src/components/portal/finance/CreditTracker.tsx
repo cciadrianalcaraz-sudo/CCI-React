@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Plus, TrendingDown, DollarSign, Trash2, TrendingUp } from 'lucide-react';
+import { Plus, DollarSign, Trash2 } from 'lucide-react';
 import Button from '../../ui/Button';
 import { supabase } from '../../../lib/supabase';
 import { toast } from '../../../lib/toast';
 import { useConfirm } from '../../../hooks/useConfirm';
-import { FinanceCredit, FinanceRecord, PaymentMethod } from '../../../types/finance';
+import type { FinanceCredit, FinanceRecord, PaymentMethod } from '../../../types/finance';
 import { formatDate } from '../../../utils/financeUtils';
 
 interface CreditTrackerProps {

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Sparkles, X, Send, Bot, User, Minimize2, Maximize2 } from 'lucide-react';
 import { chatWithFinances } from '../../lib/gemini';
+import type { FinanceRecord } from '../../types/finance';
 
 interface Message {
   role: 'assistant' | 'user';
@@ -8,7 +9,7 @@ interface Message {
 }
 
 interface AICopilotProps {
-  records: any[];
+  records: FinanceRecord[];
 }
 
 export default function AICopilot({ records }: AICopilotProps) {
@@ -40,6 +41,7 @@ export default function AICopilot({ records }: AICopilotProps) {
       const response = await chatWithFinances(records, userMessage);
       setMessages(prev => [...prev, { role: 'assistant', content: response }]);
     } catch (error) {
+      console.error('AI Copilot error:', error);
       setMessages(prev => [...prev, { role: 'assistant', content: 'Lo siento, hubo un error al procesar tu consulta.' }]);
     } finally {
       setIsLoading(false);

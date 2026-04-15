@@ -1,6 +1,6 @@
 import React from 'react';
 import { Search, Edit2, Trash2 } from 'lucide-react';
-import { FinanceRecord } from '../../../types/finance';
+import type { FinanceRecord } from '../../../types/finance';
 import { formatDate } from '../../../utils/financeUtils';
 
 interface MovementsDetailedViewProps {

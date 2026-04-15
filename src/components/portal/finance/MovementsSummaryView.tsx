@@ -1,6 +1,6 @@
 import React from 'react';
-import { Search, TrendingUp, TrendingDown, DollarSign, Target, AlertTriangle, ArrowRight, Activity } from 'lucide-react';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { Search, TrendingUp, TrendingDown, DollarSign, Target, AlertTriangle, Activity } from 'lucide-react';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis } from 'recharts';
 import { COLORS } from '../../../utils/financeUtils';
 
 interface MovementsSummaryViewProps {

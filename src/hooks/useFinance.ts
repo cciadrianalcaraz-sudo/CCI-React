@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { FinanceRecord, PaymentMethod, FinanceCredit, FinanceGoal } from '../types/finance';
+import type { FinanceRecord, PaymentMethod, FinanceCredit, FinanceGoal } from '../types/finance';
 import { toast } from '../lib/toast';
 
 /**

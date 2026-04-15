@@ -10,6 +10,7 @@ export interface FinanceRecord {
     description: string;
     created_at: string;
     expense_type: string;
+    balance?: number;
 }
 
 export interface PaymentMethod {

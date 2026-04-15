@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Sparkles, RefreshCw, Bot, AlertCircle } from 'lucide-react';
 import { generateAIBriefing } from '../../../lib/gemini';
 import Button from '../../../components/ui/Button';
-import { FinanceRecord, FinanceGoal, FinanceCredit } from '../../../types/finance';
+import type { FinanceRecord, FinanceGoal, FinanceCredit } from '../../../types/finance';
 import ReactMarkdown from 'react-markdown';
 
 interface AIBriefingWidgetProps {
