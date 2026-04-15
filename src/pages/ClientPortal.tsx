@@ -327,11 +327,12 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                     const { data: companions } = await supabase
                         .from('profiles')
                         .select('id')
-                        .eq('full_name', profileData.full_name);
+                        .ilike('full_name', profileData.full_name.trim());
                     if (companions && companions.length > 0) {
                         companyUserIds = companions.map((p: { id: string }) => p.id);
                     }
                 }
+                console.log(`[ClientPortal] Tracking ${companyUserIds.length} users for company: ${profileData?.full_name}`);
 
                 const { data: recordsData } = await supabase
                     .from('finance_records')

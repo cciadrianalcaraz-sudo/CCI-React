@@ -19,9 +19,11 @@ export async function getCompanyUserIds(userId: string): Promise<string[]> {
     const { data: companions } = await supabase
         .from('profiles')
         .select('id')
-        .eq('full_name', profileData.full_name);
+        .ilike('full_name', profileData.full_name.trim());
 
-    return (companions || []).map((p: { id: string }) => p.id);
+    const ids = (companions || []).map((p: { id: string }) => p.id);
+    console.log(`[useFinance] Found ${ids.length} users for company: ${profileData.full_name}`);
+    return ids;
 }
 
 export const useFinance = (user: { id: string; [key: string]: unknown }, propsRecords?: FinanceRecord[]) => {
