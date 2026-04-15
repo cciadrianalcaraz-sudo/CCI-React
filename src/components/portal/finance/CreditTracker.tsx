@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, TrendingDown, DollarSign, Trash2, TrendingUp } from 'lucide-react';
+import { Plus, TrendingDown, DollarSign, Trash2 } from 'lucide-react';
 import Button from '../../ui/Button';
 import { supabase } from '../../../lib/supabase';
 import { toast } from '../../../lib/toast';
