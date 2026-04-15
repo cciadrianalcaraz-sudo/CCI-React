@@ -1214,7 +1214,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                             >
                                                 <DollarSign size={18} />
                                             </button>
-                                            <button onClick={() => handleDeleteCredit(credit.id)} className="w-10 h-10 rounded-full bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm">
+                                            <button onClick={() => handleDeleteCredit(credit.id, credit.name)} className="w-10 h-10 rounded-full bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm">
                                                 <Trash2 size={18} />
                                             </button>
                                         </div>
@@ -1577,7 +1577,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                                                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transform group-hover:rotate-6 transition-transform`} style={{ backgroundColor: `${goal.color}20`, color: goal.color }}>
                                                         <span className="text-2xl">{goal.icon || '🎯'}</span>
                                                     </div>
-                                                    <button onClick={() => handleDeleteGoal(goal.id)} className="p-2 opacity-0 group-hover:opacity-100 hover:bg-red-50 text-neutral-300 hover:text-red-500 rounded-xl transition-all"><Trash2 size={16} /></button>
+                                                    <button onClick={() => handleDeleteGoal(goal.id, goal.name)} className="p-2 opacity-0 group-hover:opacity-100 hover:bg-red-50 text-neutral-300 hover:text-red-500 rounded-xl transition-all"><Trash2 size={16} /></button>
                                                 </div>
                                                 <h4 className="text-lg font-black mb-1 text-[var(--text-primary)]">{goal.name}</h4>
                                                 <div className="flex justify-between items-end mb-4">
