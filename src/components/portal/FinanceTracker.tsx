@@ -40,8 +40,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
         goals,
         companyIds,
         refreshRecords: loadRecords,
-        refreshPaymentMethods: loadPaymentMethods,
-        refreshGoals: loadGoals
+        refreshPaymentMethods: loadPaymentMethods
     } = useFinance(user, propsRecords);
 
     const [isFormOpen, setIsFormOpen] = useState(false);

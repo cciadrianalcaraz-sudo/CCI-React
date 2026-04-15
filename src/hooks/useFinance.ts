@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import type { FinanceRecord, PaymentMethod, FinanceCredit, FinanceGoal } from '../types/finance';
-import { toast } from '../lib/toast';
 
 /**
  * Obtiene los IDs de todos los usuarios que pertenecen a la misma empresa

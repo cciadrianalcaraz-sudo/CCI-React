@@ -23,6 +23,7 @@ interface RecordFormProps {
     expenseType: string; setExpenseType: (v: string) => void;
     
     renderPaymentOptions: () => React.ReactNode;
+    concepts?: string[];
 }
 
 const RecordForm: React.FC<RecordFormProps> = ({
@@ -35,7 +36,8 @@ const RecordForm: React.FC<RecordFormProps> = ({
     expense, setExpense,
     description, setDescription,
     expenseType, setExpenseType,
-    renderPaymentOptions
+    renderPaymentOptions,
+    concepts = []
 }) => {
     const ocrFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -140,7 +142,7 @@ const RecordForm: React.FC<RecordFormProps> = ({
                             className="w-full bg-[var(--bg-card)] dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 rounded-2xl px-5 py-3 text-sm font-medium outline-none focus:border-accent transition-all shadow-sm" 
                         />
                         <datalist id="concepts-list">
-                            {concepts.map((c, i) => (
+                            {concepts.map((c: string, i: number) => (
                                 <option key={i} value={c} />
                             ))}
                         </datalist>
