@@ -20,6 +20,7 @@ import MovementsDetailedView from './finance/MovementsDetailedView';
 import MovementsSummaryView from './finance/MovementsSummaryView';
 
 import BudgetTracker from './finance/BudgetTracker';
+import DashboardView from './finance/DashboardView';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { FinanceRecord } from '../../types/finance';
@@ -44,9 +45,10 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
     const [isFormOpen, setIsFormOpen] = useState(false);
     
     // View modes
-    const [viewMode, setViewMode] = useState<'detailed' | 'summary' | 'balances' | 'budget' | 'credits'>(() => {
+    const [viewMode, setViewMode] = useState<'dashboard' | 'detailed' | 'summary' | 'balances' | 'budget' | 'credits'>(() => {
         const saved = localStorage.getItem(`finance_view_mode_${user.id}`);
-        return (saved === 'detailed' || saved === 'summary' || saved === 'balances' || saved === 'budget' || saved === 'credits') ? saved : 'detailed';
+        const validModes = ['dashboard', 'detailed', 'summary', 'balances', 'budget', 'credits'];
+        return (saved && validModes.includes(saved)) ? (saved as any) : 'dashboard';
     });
 
     // Save viewMode to localStorage whenever it changes
@@ -1380,6 +1382,13 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                             )}
                         </div>
                     </div>
+                ) : viewMode === 'dashboard' ? (
+                    <DashboardView 
+                        records={records} 
+                        goals={goals} 
+                        credits={credits} 
+                        selectedMonth={selectedMonth}
+                    />
                 ) : null}
             </div>
 

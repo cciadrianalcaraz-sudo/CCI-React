@@ -6,8 +6,8 @@ import {
 import Button from '../../ui/Button';
 
 interface FinanceHeaderProps {
-    viewMode: 'detailed' | 'summary' | 'balances' | 'budget' | 'credits';
-    setViewMode: (mode: 'detailed' | 'summary' | 'balances' | 'budget' | 'credits') => void;
+    viewMode: 'dashboard' | 'detailed' | 'summary' | 'balances' | 'budget' | 'credits';
+    setViewMode: (mode: 'dashboard' | 'detailed' | 'summary' | 'balances' | 'budget' | 'credits') => void;
     selectedMonth: string;
     setSelectedMonth: (month: string) => void;
     uniqueMonths: {label: string, value: string}[];
@@ -95,13 +95,14 @@ const FinanceHeader: React.FC<FinanceHeaderProps> = ({
 
                 <div className="flex flex-col md:flex-row justify-between items-center gap-6 bg-[var(--bg-card)]/60 dark:bg-white/5 p-2 mx-8 rounded-[24px] border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md">
                     <div className="flex bg-[var(--bg-card)]/80 dark:bg-white/5 p-1.5 rounded-full shadow-sm border border-[var(--border-color)] dark:border-white/10 w-full md:w-auto overflow-x-auto no-scrollbar">
-                        {(['detailed', 'summary', 'balances', 'budget', 'credits'] as const).map((mode) => (
+                        {(['dashboard', 'detailed', 'summary', 'balances', 'budget', 'credits'] as const).map((mode) => (
                             <button 
                                 key={mode}
                                 onClick={() => setViewMode(mode)}
                                 className={`px-6 py-2.5 rounded-full text-xs font-black tracking-widest uppercase transition-all whitespace-nowrap ${viewMode === mode ? 'bg-accent text-white shadow-lg scale-[1.02]' : 'opacity-40 hover:opacity-100 hover:bg-neutral-50 dark:hover:bg-white/10'}`}
                             >
-                                {mode === 'detailed' ? 'Registro' : 
+                                {mode === 'dashboard' ? 'General' :
+                                 mode === 'detailed' ? 'Registro' : 
                                  mode === 'summary' ? 'Resumen' : 
                                  mode === 'balances' ? 'Saldos' : 
                                  mode === 'budget' ? 'Presupuesto' : 'Créditos'}
