@@ -19,12 +19,6 @@ import {
 
 const MASTER_EMAIL = 'cci.adrianalcaraz@gmail.com';
 
-// Mapeo de Emergencia (Si RLS en Supabase falla)
-const EMERGENCY_COMPANY_MAP: Record<string, string> = {
-    'a.alcarazpreciado@gmail.com': 'GRUPO ALCA',
-    'cci.lauracastillo@gmail.com': 'GRUPO ALCA'
-};
-
 // Robust Date Normalization Helper
 const normalizeDate = (dateStr: string) => {
     if (!dateStr) return '';
@@ -339,34 +333,12 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                 const { data: byEmail } = await supabase.from('profiles').select('*').eq('email', userEmail).maybeSingle();
                 profileData = byEmail;
             }
-
-            // Intento C: Búsqueda manual (si falló todo lo anterior)
-            if (!profileData && userEmail) {
-                console.log(`[ClientPortal] Still no profile, performing manual search...`);
-                const { data: allProfiles } = await supabase.from('profiles').select('*').limit(100);
-                profileData = allProfiles?.find(p => p.email?.toLowerCase().trim() === userEmail) || null;
-                if (profileData) console.log(`[ClientPortal] MANUALLY FOUND PROFILE BY EMAIL`);
-            }
             
             if (profileData) {
                 setProfile(profileData);
                 console.log(`[ClientPortal] Profile loaded: ${profileData.full_name}`);
             } else {
-                // FALLBACK DE EMERGENCIA POR CODIGO
-                if (userEmail && EMERGENCY_COMPANY_MAP[userEmail]) {
-                    const virtualName = EMERGENCY_COMPANY_MAP[userEmail];
-                    console.warn(`[ClientPortal] RLS BLOCK DETECTED. Applying Emergency Mapping for ${virtualName}`);
-                    const virtualProfile: any = {
-                        full_name: virtualName,
-                        status: 'activo',
-                        rfc: 'PENDIENTE',
-                        advisor_name: 'Adrián Alcaraz'
-                    };
-                    profileData = virtualProfile;
-                    setProfile(virtualProfile);
-                } else {
-                    console.warn("[ClientPortal] ABANDON: No profile record found anywhere for user:", user.id, userEmail);
-                }
+                console.warn("[ClientPortal] ABANDON: No profile record found anywhere for user:", user.id, userEmail);
             }
 
             // 2. Cargar Documentos
@@ -451,10 +423,7 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                 Sesión Segura
                             </span>
                             <span className="text-xs text-neutral-400 font-medium">
-                                Empresa: <span className="font-bold text-primary-dark">
-                                    {profile?.full_name ? profile.full_name : 
-                                     (loading ? "Buscando Perfil..." : `Sin Perfil (${user.email})`)}
-                                </span>
+                                Empresa: <span className="font-bold text-primary-dark">{profile?.full_name || user.email}</span>
                             </span>
                             {profile?.status && (
                                 <span className={`ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${profile.status === 'activo' ? 'bg-green-100 text-green-700' : profile.status === 'suspendido' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
