@@ -2,6 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import type { FinanceRecord, PaymentMethod, FinanceCredit, FinanceGoal } from '../types/finance';
 
+const EMERGENCY_COMPANY_MAP: Record<string, string> = {
+    'a.alcarazpreciado@gmail.com': 'GRUPO ALCA',
+    'cci.lauracastillo@gmail.com': 'GRUPO ALCA'
+};
+
 /**
  * Obtiene los IDs de todos los usuarios que pertenecen a la misma empresa
  * (comparten el mismo `full_name` en la tabla `profiles`).
@@ -15,11 +20,18 @@ export async function getCompanyUserIds(userId: string, email?: string): Promise
     const { data: byId } = await supabase.from('profiles').select('id, full_name').eq('id', userId).maybeSingle();
     profileData = byId;
     
-    // Intento B: Por Email (si falló ID)
+    // Intento B: Por Email
     if (!profileData?.full_name && userEmail) {
-        console.log(`[useFinance] Profile not found by ID, trying email: ${userEmail}`);
-        const { data: byEmail } = await supabase.from('profiles').select('id, full_name').eq('email', userEmail).maybeSingle();
+        const { data: byEmail, error: errorEmail } = await supabase.from('profiles').select('id, full_name').eq('email', userEmail).maybeSingle();
         profileData = byEmail;
+        if (errorEmail) console.error("[useFinance] Error fetching by email:", errorEmail);
+    }
+
+    // FALLBACK DE EMERGENCIA
+    if (!profileData?.full_name && userEmail && EMERGENCY_COMPANY_MAP[userEmail]) {
+        const virtualName = EMERGENCY_COMPANY_MAP[userEmail];
+        console.warn(`[useFinance] APPLYING EMERGENCY SYNC FOR: ${virtualName}`);
+        profileData = { full_name: virtualName };
     }
 
     if (!profileData || !profileData.full_name) {

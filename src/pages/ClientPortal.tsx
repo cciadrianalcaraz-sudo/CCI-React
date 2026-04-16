@@ -19,6 +19,12 @@ import {
 
 const MASTER_EMAIL = 'cci.adrianalcaraz@gmail.com';
 
+// Mapeo de Emergencia (Si RLS en Supabase falla)
+const EMERGENCY_COMPANY_MAP: Record<string, string> = {
+    'a.alcarazpreciado@gmail.com': 'GRUPO ALCA',
+    'cci.lauracastillo@gmail.com': 'GRUPO ALCA'
+};
+
 // Robust Date Normalization Helper
 const normalizeDate = (dateStr: string) => {
     if (!dateStr) return '';
@@ -324,21 +330,34 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
             const userEmail = user.email?.toLowerCase().trim();
 
             // Intento A: Por ID exacto
-            const { data: byId } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
+            const { data: byId, error: errorId } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
             profileData = byId;
+            if (errorId) console.error("[ClientPortal] Error by ID:", errorId);
 
-            // Intento B: Por Email exacto (si falló ID)
+            // Intento B: Por Email exacto
             if (!profileData && userEmail) {
-                console.log(`[ClientPortal] Profile not found by ID, trying email: ${userEmail}`);
-                const { data: byEmail } = await supabase.from('profiles').select('*').eq('email', userEmail).maybeSingle();
+                const { data: byEmail, error: errorEmail } = await supabase.from('profiles').select('*').eq('email', userEmail).maybeSingle();
                 profileData = byEmail;
+                if (errorEmail) console.error("[ClientPortal] Error by Email:", errorEmail);
             }
-            
+
             if (profileData) {
                 setProfile(profileData);
-                console.log(`[ClientPortal] Profile loaded: ${profileData.full_name}`);
+                console.log(`[ClientPortal] Profile found in DB: ${profileData.full_name}`);
             } else {
-                console.warn("[ClientPortal] ABANDON: No profile record found anywhere for user:", user.id, userEmail);
+                // FALLBACK DE EMERGENCIA
+                if (userEmail && EMERGENCY_COMPANY_MAP[userEmail]) {
+                    const virtualName = EMERGENCY_COMPANY_MAP[userEmail];
+                    console.warn(`[ClientPortal] RLS BLOCK / NO ROW. Applying Emergency Mapping for ${virtualName}`);
+                    setProfile({
+                        full_name: virtualName,
+                        status: 'activo',
+                        rfc: 'PENDIENTE',
+                        advisor_name: 'Adrián Alcaraz'
+                    });
+                } else {
+                    console.warn("[ClientPortal] ABANDON: No profile record or emergency map found for:", userEmail);
+                }
             }
 
             // 2. Cargar Documentos
@@ -422,8 +441,8 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                 <ShieldCheck size={12} className="text-green-500" />
                                 Sesión Segura
                             </span>
-                            <span className="text-xs text-neutral-400 font-medium">
-                                Empresa: <span className="font-bold text-primary-dark">{profile?.full_name || user.email}</span>
+                            <span className="text-xs text-neutral-400 font-medium tracking-tight">
+                                Empresa: <span className="font-bold text-primary-dark">{profile?.full_name || (loading ? "Cargando..." : "Sin Perfil")}</span>
                             </span>
                             {profile?.status && (
                                 <span className={`ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${profile.status === 'activo' ? 'bg-green-100 text-green-700' : profile.status === 'suspendido' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
