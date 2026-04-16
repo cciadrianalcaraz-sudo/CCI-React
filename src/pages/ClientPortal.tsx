@@ -205,6 +205,10 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
         if (user?.id) localStorage.setItem(`portal_active_tab_${user.id}`, activeTab);
     }, [activeTab, user?.id]);
 
+    useEffect(() => {
+        console.log("[DashboardView] Current Profile State:", profile);
+    }, [profile]);
+
     const [selectedDashboardMonth, setSelectedDashboardMonth] = useState<string>('');
     const [availableMonths, setAvailableMonths] = useState<{label: string, value: string}[]>([]);
     const [isCommandCenterOpen, setIsCommandCenterOpen] = useState(false);
@@ -421,9 +425,17 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6 animate-fade-in">
                     <div>
                         <h1 className="text-3xl font-bold mb-2">Resumen Financiero Digital</h1>
-                        <p className="opacity-60 flex items-center gap-2">
-                            <ShieldCheck size={16} className="text-green-600" />
-                            Empresa: <span className="font-bold">{profile?.full_name || user.email}</span>
+                        <div className="flex items-center gap-6 mt-1 flex-wrap">
+                            <span className="flex items-center gap-1.5 text-xs text-green-600/70 font-medium">
+                                <ShieldCheck size={12} className="text-green-500" />
+                                Sesión Segura
+                            </span>
+                            <span className="text-xs text-neutral-400 font-medium">
+                                Empresa: <span className="font-bold text-primary-dark">
+                                    {profile?.full_name ? profile.full_name : 
+                                     (loading ? "Buscando Perfil..." : `Sin Perfil (${user.email})`)}
+                                </span>
+                            </span>
                             {profile?.status && (
                                 <span className={`ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${profile.status === 'activo' ? 'bg-green-100 text-green-700' : profile.status === 'suspendido' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
                                     {profile.status}
