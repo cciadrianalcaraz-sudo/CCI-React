@@ -441,7 +441,7 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                                     {profile.status}
                                 </span>
                             )}
-                        </p>
+                        </div>
                     </div>
                     <div className="flex items-center gap-4">
                         <button onClick={toggleTheme} className="p-3 bg-white dark:bg-white/10 rounded-xl border border-light-beige dark:border-white/10 hover:border-accent transition-all text-primary-dark dark:text-white relative group">
