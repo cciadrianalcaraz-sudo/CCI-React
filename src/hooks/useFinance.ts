@@ -2,6 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import type { FinanceRecord, PaymentMethod, FinanceCredit, FinanceGoal } from '../types/finance';
 
+const EMERGENCY_COMPANY_MAP: Record<string, string> = {
+    'a.alcarazpreciado@gmail.com': 'GRUPO ALCA',
+    'cci.lauracastillo@gmail.com': 'GRUPO ALCA'
+};
+
 /**
  * Obtiene los IDs de todos los usuarios que pertenecen a la misma empresa
  * (comparten el mismo `full_name` en la tabla `profiles`).
@@ -26,6 +31,12 @@ export async function getCompanyUserIds(userId: string, email?: string): Promise
     if (!profileData?.full_name && userEmail) {
         const { data: allProfiles } = await supabase.from('profiles').select('id, full_name, email').limit(100);
         profileData = allProfiles?.find(p => p.email?.toLowerCase().trim() === userEmail) || null;
+    }
+
+    // FALLBACK DE EMERGENCIA (Si falla todo lo anterior por RLS)
+    if (!profileData?.full_name && userEmail && EMERGENCY_COMPANY_MAP[userEmail]) {
+        console.warn(`[useFinance] RLS BLOCK. Applying Emergency Sync for: ${EMERGENCY_COMPANY_MAP[userEmail]}`);
+        profileData = { full_name: EMERGENCY_COMPANY_MAP[userEmail] };
     }
 
     if (!profileData || !profileData.full_name) {

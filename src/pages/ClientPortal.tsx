@@ -19,6 +19,12 @@ import {
 
 const MASTER_EMAIL = 'cci.adrianalcaraz@gmail.com';
 
+// Mapeo de Emergencia (Si RLS en Supabase falla)
+const EMERGENCY_COMPANY_MAP: Record<string, string> = {
+    'a.alcarazpreciado@gmail.com': 'GRUPO ALCA',
+    'cci.lauracastillo@gmail.com': 'GRUPO ALCA'
+};
+
 // Robust Date Normalization Helper
 const normalizeDate = (dateStr: string) => {
     if (!dateStr) return '';
@@ -346,7 +352,21 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                 setProfile(profileData);
                 console.log(`[ClientPortal] Profile loaded: ${profileData.full_name}`);
             } else {
-                console.warn("[ClientPortal] ABANDON: No profile record found anywhere for user:", user.id, userEmail);
+                // FALLBACK DE EMERGENCIA POR CODIGO
+                if (userEmail && EMERGENCY_COMPANY_MAP[userEmail]) {
+                    const virtualName = EMERGENCY_COMPANY_MAP[userEmail];
+                    console.warn(`[ClientPortal] RLS BLOCK DETECTED. Applying Emergency Mapping for ${virtualName}`);
+                    const virtualProfile: any = {
+                        full_name: virtualName,
+                        status: 'activo',
+                        rfc: 'PENDIENTE',
+                        advisor_name: 'Adrián Alcaraz'
+                    };
+                    profileData = virtualProfile;
+                    setProfile(virtualProfile);
+                } else {
+                    console.warn("[ClientPortal] ABANDON: No profile record found anywhere for user:", user.id, userEmail);
+                }
             }
 
             // 2. Cargar Documentos
