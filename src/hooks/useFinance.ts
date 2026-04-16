@@ -22,15 +22,13 @@ export async function getCompanyUserIds(userId: string, email?: string): Promise
     
     // Intento B: Por Email
     if (!profileData?.full_name && userEmail) {
-        const { data: byEmail, error: errorEmail } = await supabase.from('profiles').select('id, full_name').eq('email', userEmail).maybeSingle();
+        const { data: byEmail } = await supabase.from('profiles').select('id, full_name').eq('email', userEmail).maybeSingle();
         profileData = byEmail;
-        if (errorEmail) console.error("[useFinance] Error fetching by email:", errorEmail);
     }
 
     // FALLBACK DE EMERGENCIA
     if (!profileData?.full_name && userEmail && EMERGENCY_COMPANY_MAP[userEmail]) {
         const virtualName = EMERGENCY_COMPANY_MAP[userEmail];
-        console.warn(`[useFinance] APPLYING EMERGENCY SYNC FOR: ${virtualName}`);
         profileData = { full_name: virtualName };
     }
 
@@ -75,7 +73,6 @@ export const useFinance = (user: { id: string; [key: string]: unknown }, propsRe
         try {
             setLoading(true);
             const ids = await getCompanyUserIds(user.id, userEmail);
-            console.log(`[useFinance] 🔎 SOLICITANDO REGISTROS para IDs:`, ids);
             
             const { data, error } = await supabase
                 .from('finance_records')
@@ -84,12 +81,7 @@ export const useFinance = (user: { id: string; [key: string]: unknown }, propsRe
                 .order('date', { ascending: true })
                 .order('created_at', { ascending: true });
 
-            if (error) {
-                console.error('[useFinance] ❌ ERROR AL CARGAR REGISTROS:', error);
-                throw error;
-            }
-            
-            console.log(`[useFinance] ✅ REGISTROS RECUPERADOS:`, data?.length || 0, data);
+            if (error) throw error;
             if (data) setRecords(data as FinanceRecord[]);
         } catch (error) {
             console.error('Error loading finance records:', error);
@@ -102,18 +94,13 @@ export const useFinance = (user: { id: string; [key: string]: unknown }, propsRe
     const loadPaymentMethods = useCallback(async () => {
         try {
             const ids = await getCompanyUserIds(user.id, userEmail);
-            console.log(`[useFinance] 🔎 SOLICITANDO FORMAS DE PAGO para IDs:`, ids);
             const { data, error } = await supabase
                 .from('finance_payment_methods')
                 .select('*')
                 .in('user_id', ids)
                 .order('name', { ascending: true });
 
-            if (error) {
-                console.error('[useFinance] ❌ ERROR FORMAS DE PAGO:', error);
-                throw error;
-            }
-            console.log(`[useFinance] ✅ FORMAS DE PAGO RECUPERADAS:`, data?.length || 0, data);
+            if (error) throw error;
             if (data) {
                 const seen = new Set<string>();
                 const unique = (data as PaymentMethod[]).filter(pm => {

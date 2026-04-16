@@ -330,33 +330,27 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
             const userEmail = user.email?.toLowerCase().trim();
 
             // Intento A: Por ID exacto
-            const { data: byId, error: errorId } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
+            const { data: byId } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
             profileData = byId;
-            if (errorId) console.error("[ClientPortal] Error by ID:", errorId);
 
             // Intento B: Por Email exacto
             if (!profileData && userEmail) {
-                const { data: byEmail, error: errorEmail } = await supabase.from('profiles').select('*').eq('email', userEmail).maybeSingle();
+                const { data: byEmail } = await supabase.from('profiles').select('*').eq('email', userEmail).maybeSingle();
                 profileData = byEmail;
-                if (errorEmail) console.error("[ClientPortal] Error by Email:", errorEmail);
             }
 
             if (profileData) {
                 setProfile(profileData);
-                console.log(`[ClientPortal] Profile found in DB: ${profileData.full_name}`);
             } else {
                 // FALLBACK DE EMERGENCIA
                 if (userEmail && EMERGENCY_COMPANY_MAP[userEmail]) {
                     const virtualName = EMERGENCY_COMPANY_MAP[userEmail];
-                    console.warn(`[ClientPortal] RLS BLOCK / NO ROW. Applying Emergency Mapping for ${virtualName}`);
                     setProfile({
                         full_name: virtualName,
                         status: 'activo',
                         rfc: 'PENDIENTE',
                         advisor_name: 'Adrián Alcaraz'
                     });
-                } else {
-                    console.warn("[ClientPortal] ABANDON: No profile record or emergency map found for:", userEmail);
                 }
             }
 
