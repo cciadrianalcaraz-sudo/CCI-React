@@ -33,7 +33,7 @@ export default async function handler(req: { method: string, body: any }, res: {
 }
 
 async function handleExtractData({ base64Image }: { base64Image: string }) {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }, { apiVersion: "v1" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" }, { apiVersion: "v1" });
     const prompt = `
       Analiza esta imagen de un ticket de compra o factura. 
       Extrae la siguiente información en formato JSON puro (sin markdown, sin bloques de código):
@@ -64,7 +64,7 @@ async function handleExtractData({ base64Image }: { base64Image: string }) {
 }
 
 async function handleChat({ records, message }: { records: { date: string, concept: string, income: number, expense: number, expense_type: string, provider: string }[], message: string }) {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }, { apiVersion: "v1" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" }, { apiVersion: "v1" });
     const summary = records.slice(0, 100).map(r => ({
         fecha: r.date,
         concepto: r.concept,
@@ -89,7 +89,7 @@ async function handleChat({ records, message }: { records: { date: string, conce
 }
 
 async function handleBriefing({ stats }: { stats: { currentMonth: string, current: unknown, previous: unknown, goals: unknown[], credits: unknown[] } }) {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }, { apiVersion: "v1" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" }, { apiVersion: "v1" });
     const prompt = `
       Eres un Coach Financiero Privado experto y motivador de nivel Premium. 
       Analiza el desempeño del usuario (Adrian) en el mes actual (${stats.currentMonth}) comparado con el mes anterior.
