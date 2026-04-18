@@ -4,6 +4,10 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 export default async function handler(req: { method: string, body: any }, res: { status: (c: number) => { json: (d: any) => void } }) {
+    if (!process.env.GEMINI_API_KEY) {
+        return res.status(500).json({ error: 'Configuración incompleta: GEMINI_API_KEY no encontrada en el servidor' });
+    }
+
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }

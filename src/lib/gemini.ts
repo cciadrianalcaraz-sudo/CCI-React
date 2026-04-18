@@ -10,7 +10,10 @@ export const extractDataFromReceipt = async (base64Image: string) => {
       body: JSON.stringify({ action: 'extractDataFromReceipt', payload: { base64Image } })
     });
 
-    if (!response.ok) throw new Error('Error en el proxy de IA');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Error en el proxy de IA (${response.status})`);
+    }
     return await response.json();
   } catch (error) {
     console.error("Error en Gemini OCR:", error);
@@ -26,7 +29,10 @@ export const chatWithFinances = async (records: { date: string, concept: string,
       body: JSON.stringify({ action: 'chatWithFinances', payload: { records, message } })
     });
 
-    if (!response.ok) throw new Error('Error en el proxy de IA');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Error en el proxy de IA (${response.status})`);
+    }
     return await response.json();
   } catch (error) {
     console.error("Error en Gemini Chat:", error);
