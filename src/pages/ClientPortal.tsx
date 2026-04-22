@@ -23,17 +23,7 @@ const EMERGENCY_COMPANY_MAP: Record<string, string> = {
     'cci.lauracastillo@gmail.com': 'GRUPO ALCA'
 };
 
-// Robust Date Normalization Helper
-const normalizeDate = (dateStr: string) => {
-    if (!dateStr) return '';
-    if (dateStr.includes('-')) return dateStr;
-    const parts = dateStr.split('/');
-    if (parts.length === 3) {
-        // Assume DD/MM/YYYY
-        return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-    }
-    return dateStr;
-};
+// robust date normalization logic is now handled within the data hooks or components
 
 // Define interfaces for our real data
 interface Profile {
