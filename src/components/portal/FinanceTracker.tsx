@@ -1016,6 +1016,10 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
     let runningBalanceFlow = 0;
     const displayRecords = filteredRecords
         .filter(record => {
+            const c = (record.concept || '').toUpperCase().trim();
+            const isInternal = c === 'SALDO INICIAL' || c.includes('TRASPASO');
+            if (isInternal) return false;
+            
             if (!searchTerm) return true;
             const search = searchTerm.toLowerCase();
             return (
