@@ -11,13 +11,13 @@ import { toast } from '../../lib/toast';
 import { Toaster } from '../ui/Toaster';
 import { useConfirm } from '../../hooks/useConfirm';
 
-import AICopilot from './AICopilot';
-import AIBriefingWidget from './finance/AIBriefingWidget';
+// import AICopilot from './AICopilot';
+// import AIBriefingWidget from './finance/AIBriefingWidget';
 import { useFinance } from '../../hooks/useFinance';
 import FinanceHeader from './finance/FinanceHeader';
 import RecordForm from './finance/RecordForm';
 import MovementsDetailedView from './finance/MovementsDetailedView';
-import MovementsSummaryView from './finance/MovementsSummaryView';
+// import MovementsSummaryView from './finance/MovementsSummaryView';
 
 import BudgetTracker from './finance/BudgetTracker';
 import DashboardView from './finance/DashboardView';
@@ -46,7 +46,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
     const [isFormOpen, setIsFormOpen] = useState(false);
     
     // View modes
-    const [viewMode, setViewMode] = useState<'dashboard' | 'detailed' | 'summary' | 'balances' | 'budget' | 'credits'>(() => {
+    const [viewMode, setViewMode] = useState<'dashboard' | 'detailed' | 'balances' | 'budget' | 'credits'>(() => {
         const saved = localStorage.getItem(`finance_view_mode_${user.id}`);
         const validModes = ['dashboard', 'detailed', 'balances', 'budget', 'credits'];
         return (saved && validModes.includes(saved)) ? (saved as any) : 'dashboard';

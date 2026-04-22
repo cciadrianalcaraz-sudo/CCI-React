@@ -2,8 +2,7 @@ import React, { useMemo } from 'react';
 import { 
     Target, 
     ArrowUpRight, Wallet, PieChart, 
-    Activity, AlertTriangle, TrendingUp, TrendingDown,
-    DollarSign
+    Activity, AlertTriangle, TrendingUp
 } from 'lucide-react';
 import { 
     AreaChart, Area, XAxis, YAxis, CartesianGrid, 
@@ -24,7 +23,7 @@ interface DashboardViewProps {
 
 const DashboardView: React.FC<DashboardViewProps> = ({ 
     records, goals, credits, selectedMonth, 
-    summaryData, uniqueMonths 
+    summaryData
 }) => {
     
     // 1. Cálculos de KPIs principales
