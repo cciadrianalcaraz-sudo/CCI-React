@@ -6,8 +6,8 @@ import {
 import Button from '../../ui/Button';
 
 interface FinanceHeaderProps {
-    viewMode: 'dashboard' | 'detailed' | 'summary' | 'balances' | 'budget' | 'credits';
-    setViewMode: (mode: 'dashboard' | 'detailed' | 'summary' | 'balances' | 'budget' | 'credits') => void;
+    viewMode: 'dashboard' | 'detailed' | 'balances' | 'budget' | 'credits';
+    setViewMode: (mode: 'dashboard' | 'detailed' | 'balances' | 'budget' | 'credits') => void;
     selectedMonth: string;
     setSelectedMonth: (month: string) => void;
     uniqueMonths: {label: string, value: string}[];
@@ -95,7 +95,7 @@ const FinanceHeader: React.FC<FinanceHeaderProps> = ({
 
                 <div className="flex flex-col md:flex-row justify-between items-center gap-6 bg-[var(--bg-card)]/60 dark:bg-white/5 p-2 mx-8 rounded-[24px] border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md">
                     <div className="flex bg-[var(--bg-card)]/80 dark:bg-white/5 p-1.5 rounded-full shadow-sm border border-[var(--border-color)] dark:border-white/10 w-full md:w-auto overflow-x-auto no-scrollbar">
-                        {(['dashboard', 'detailed', 'summary', 'balances', 'budget', 'credits'] as const).map((mode) => (
+                        {(['dashboard', 'detailed', 'balances', 'budget', 'credits'] as const).map((mode) => (
                             <button 
                                 key={mode}
                                 onClick={() => setViewMode(mode)}
@@ -103,7 +103,6 @@ const FinanceHeader: React.FC<FinanceHeaderProps> = ({
                             >
                                 {mode === 'dashboard' ? 'General' :
                                  mode === 'detailed' ? 'Registro' : 
-                                 mode === 'summary' ? 'Resumen' : 
                                  mode === 'balances' ? 'Saldos' : 
                                  mode === 'budget' ? 'Presupuesto' : 'Créditos'}
                             </button>

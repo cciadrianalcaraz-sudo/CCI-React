@@ -48,7 +48,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
     // View modes
     const [viewMode, setViewMode] = useState<'dashboard' | 'detailed' | 'summary' | 'balances' | 'budget' | 'credits'>(() => {
         const saved = localStorage.getItem(`finance_view_mode_${user.id}`);
-        const validModes = ['dashboard', 'detailed', 'summary', 'balances', 'budget', 'credits'];
+        const validModes = ['dashboard', 'detailed', 'balances', 'budget', 'credits'];
         return (saved && validModes.includes(saved)) ? (saved as any) : 'dashboard';
     });
 
@@ -1289,19 +1289,6 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                         onEdit={handleEditClick}
                         onDelete={handleDelete}
                     />
-                ) : viewMode === 'summary' ? (
-                    <>
-                        <AIBriefingWidget 
-                            records={records} 
-                            goals={goals} 
-                            credits={credits} 
-                        />
-                        <MovementsSummaryView 
-                            summaryData={summaryData}
-                            selectedMonth={selectedMonth}
-                            uniqueMonths={uniqueMonths}
-                        />
-                    </>
                 ) : viewMode === 'budget' ? (
                     <BudgetTracker 
                         userId={user.id}
@@ -1610,6 +1597,8 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                         goals={goals} 
                         credits={credits} 
                         selectedMonth={selectedMonth}
+                        summaryData={summaryData}
+                        uniqueMonths={uniqueMonths}
                     />
                 ) : null}
             </div>
@@ -1883,7 +1872,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                 accept=".xlsx, .xls"
                 className="hidden"
             />
-            <AICopilot records={records} />
+{/* <AICopilot records={records} /> */}
         </div>
     );
 }

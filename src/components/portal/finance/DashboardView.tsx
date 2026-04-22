@@ -2,23 +2,30 @@ import React, { useMemo } from 'react';
 import { 
     Target, 
     ArrowUpRight, Wallet, PieChart, 
-    Activity
+    Activity, AlertTriangle, TrendingUp, TrendingDown,
+    DollarSign
 } from 'lucide-react';
 import { 
     AreaChart, Area, XAxis, YAxis, CartesianGrid, 
-    Tooltip, ResponsiveContainer, BarChart, Bar, Cell
+    Tooltip, ResponsiveContainer, BarChart, Bar, Cell,
+    PieChart as RePieChart, Pie
 } from 'recharts';
 import type { FinanceRecord, FinanceGoal, FinanceCredit } from '../../../types/finance';
-import AIBriefingWidget from './AIBriefingWidget';
+import { COLORS } from '../../../utils/financeUtils';
 
 interface DashboardViewProps {
     records: FinanceRecord[];
     goals: FinanceGoal[];
     credits: FinanceCredit[];
     selectedMonth: string;
+    summaryData: {concept: string, income: number, expense: number}[];
+    uniqueMonths: {label: string, value: string}[];
 }
 
-const DashboardView: React.FC<DashboardViewProps> = ({ records, goals, credits, selectedMonth }) => {
+const DashboardView: React.FC<DashboardViewProps> = ({ 
+    records, goals, credits, selectedMonth, 
+    summaryData, uniqueMonths 
+}) => {
     
     // 1. Cálculos de KPIs principales
     const stats = useMemo(() => {
@@ -37,7 +44,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ records, goals, credits, 
         const balance = income - expense;
         const savingsRate = income > 0 ? ((income - expense) / income) * 100 : 0;
         
-        const totalDebt = credits.reduce((acc, c) => acc + (c.initial_balance || 0), 0); // Simplificado para el KPI
+        const totalDebt = credits.reduce((acc, c) => acc + (c.initial_balance || 0), 0); 
         
         return { income, expense, balance, savingsRate, totalDebt };
     }, [records, selectedMonth, credits]);
@@ -85,13 +92,32 @@ const DashboardView: React.FC<DashboardViewProps> = ({ records, goals, credits, 
             .map(([name, value]) => ({ name, value }));
     }, [records, selectedMonth]);
 
-    const COLORS = ['#4A7C82', '#6366f1', '#ec4899', '#f59e0b', '#10b981'];
+    // 4. Lógica de Resumen (Integrada)
+    const totalExpenses = summaryData.reduce((a, b) => a + b.expense, 0);
+    const totalIncome = summaryData.reduce((a, b) => a + b.income, 0);
+    
+    const topExpenseData = [...summaryData].sort((a,b) => b.expense - a.expense)[0];
+    const topExpenseConcept = topExpenseData?.expense > 0 ? topExpenseData.concept : null;
+    const topExpenseAmount = topExpenseData?.expense > 0 ? topExpenseData.expense : 0;
+    const topExpensePercentage = totalExpenses > 0 ? (topExpenseAmount / totalExpenses) * 100 : 0;
+
+    const CustomTooltip = ({ active, payload }: any) => {
+        if (active && payload && payload.length) {
+            return (
+                <div className="bg-[#1a1a1a]/90 backdrop-blur-xl border border-white/10 p-4 rounded-2xl shadow-2xl">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-1">{payload[0].name}</p>
+                    <p className="text-lg font-black text-white">${Number(payload[0].value).toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                </div>
+            );
+        }
+        return null;
+    };
 
     return (
         <div className="p-8 space-y-8 animate-fade-in text-[var(--text-primary)]">
             
-            {/* AI Strategic Widget - Executive Priority */}
-            <AIBriefingWidget records={records} goals={goals} credits={credits} />
+            {/* AI Strategic Widget - Executive Priority (OCULTO POR SOLICITUD) */}
+            {/* <AIBriefingWidget records={records} goals={goals} credits={credits} /> */}
 
             {/* Bento Grid Layout */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -170,29 +196,50 @@ const DashboardView: React.FC<DashboardViewProps> = ({ records, goals, credits, 
                         <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-[40px] -mr-16 -mt-16"></div>
                     </div>
 
+                    {/* Fuga Principal (Importada de Resumen) */}
+                    <div className="bg-[var(--bg-card)] dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm relative group overflow-hidden">
+                        <div className="absolute bottom-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-[50px] group-hover:bg-red-500/10 transition-all duration-500"></div>
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 flex items-center gap-2 mb-4">
+                            <AlertTriangle size={14} className="text-red-500" /> Mayor Gasto (Periodo)
+                        </h4>
+                        
+                        {topExpenseConcept ? (
+                            <div className="flex flex-col justify-between flex-1">
+                                <div>
+                                    <p className="text-xl font-black font-heading text-[var(--text-primary)] leading-tight mb-1 capitalize truncate" title={topExpenseConcept}>
+                                        {topExpenseConcept.toLowerCase()}
+                                    </p>
+                                    <p className="text-sm font-bold text-red-500">
+                                        ${topExpenseAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                    </p>
+                                </div>
+                                
+                                <div className="mt-4 flex items-center gap-3 bg-red-500/5 dark:bg-red-500/10 p-3 rounded-2xl border border-red-500/10">
+                                    <div className="flex-1">
+                                        <div className="w-full h-1.5 bg-red-500/20 rounded-full overflow-hidden">
+                                            <div className="h-full bg-red-500 rounded-full" style={{ width: `${topExpensePercentage}%` }}></div>
+                                        </div>
+                                    </div>
+                                    <span className="text-sm font-black text-red-500">{topExpensePercentage.toFixed(0)}%</span>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center opacity-30 py-4">
+                                <Target size={24} />
+                                <p className="text-[10px] uppercase tracking-widest font-bold mt-2">Sin gastos</p>
+                            </div>
+                        )}
+                    </div>
+
                     <div className="bg-[var(--bg-card)] dark:bg-white/5 rounded-[2.5rem] p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md relative group">
-                        <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">Balance del Mes</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">Balance del Periodo</p>
                         <h4 className={`text-3xl font-black tracking-tight ${stats.balance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
                             ${stats.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                         </h4>
-                        <div className="flex items-center gap-2 mt-4 text-[10px] font-bold opacity-60">
-                            <div className="w-8 h-8 rounded-xl bg-green-500/10 flex items-center justify-center text-green-600">
-                                <ArrowUpRight size={14} />
-                            </div>
-                            <span>Ingresos: ${stats.income.toLocaleString()}</span>
-                        </div>
-                    </div>
-
-                    <div className="bg-[var(--bg-card)] dark:bg-white/5 rounded-[2.5rem] p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md">
-                        <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">Compromisos Totales</p>
-                        <h4 className="text-3xl font-black tracking-tight text-red-400">
-                            ${stats.totalDebt.toLocaleString()}
-                        </h4>
-                        <p className="text-[9px] font-bold opacity-40 uppercase tracking-widest mt-2">Suma de saldos iniciales de crédito</p>
                     </div>
                 </div>
 
-                {/* Distribution Chart (Medium Area) */}
+                {/* Gastos por Tipo (BARRAS) */}
                 <div className="lg:col-span-5 bg-[var(--bg-card)] dark:bg-white/5 rounded-[2.5rem] p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md relative">
                     <h3 className="text-lg font-black mb-6 flex items-center gap-3">
                         <PieChart size={20} className="text-purple-500" />
@@ -223,21 +270,56 @@ const DashboardView: React.FC<DashboardViewProps> = ({ records, goals, credits, 
                     </div>
                 </div>
 
-                {/* Goals Preview (Medium Area) */}
-                <div className="lg:col-span-7 bg-[var(--bg-card)] dark:bg-white/5 rounded-[2.5rem] p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md overflow-hidden relative group">
+                {/* Entradas de Capital (PIE) - Importado de Resumen */}
+                <div className="lg:col-span-3 bg-[var(--bg-card)] dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm flex flex-col">
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 flex items-center gap-2 mb-4">
+                        <TrendingUp size={14} className="text-green-500" /> Entradas de Capital
+                    </h4>
+                    <p className="text-xl font-heading font-black text-[var(--text-primary)] mb-6">
+                        ${totalIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </p>
+                    
+                    <div className="flex-1 h-[140px] w-full relative">
+                        {summaryData.filter(d => d.income > 0).length > 0 ? (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <RePieChart>
+                                    <Pie 
+                                        data={summaryData.filter(d => d.income > 0).sort((a,b) => b.income - a.income)} 
+                                        dataKey="income" 
+                                        nameKey="concept" 
+                                        cx="50%" cy="50%" 
+                                        innerRadius={45} 
+                                        outerRadius={65} 
+                                        paddingAngle={5}
+                                        stroke="none"
+                                    >
+                                        {summaryData.filter(d => d.income > 0).map((_, index) => (
+                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip content={<CustomTooltip />} />
+                                </RePieChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div className="absolute inset-0 flex items-center justify-center text-neutral-300 text-[10px] font-black uppercase tracking-widest">Sin ingresos</div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Goals Preview */}
+                <div className="lg:col-span-4 bg-[var(--bg-card)] dark:bg-white/5 rounded-[2.5rem] p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md overflow-hidden relative group">
                     <div className="flex justify-between items-center mb-8">
                         <div>
                             <h3 className="text-lg font-black flex items-center gap-3">
                                 <Target size={20} className="text-amber-500" />
-                                Metas Prioritarias
+                                Metas
                             </h3>
-                            <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest">Enfoque de ahorro actual</p>
                         </div>
                     </div>
                     
-                    <div className="space-y-6">
+                    <div className="space-y-5">
                         {goals.length === 0 ? (
-                            <div className="py-12 text-center opacity-30 italic text-sm">No hay metas activas</div>
+                            <div className="py-12 text-center opacity-30 italic text-sm font-bold uppercase tracking-widest">Sin metas</div>
                         ) : (
                             goals.slice(0, 3).map(goal => {
                                 const progress = Math.min(100, (goal.current_amount / goal.target_amount) * 100);
@@ -245,12 +327,11 @@ const DashboardView: React.FC<DashboardViewProps> = ({ records, goals, credits, 
                                     <div key={goal.id} className="relative">
                                         <div className="flex justify-between items-end mb-2">
                                             <div className="flex items-center gap-3">
-                                                <span className="text-xl">{goal.icon || '🎯'}</span>
                                                 <span className="text-sm font-black uppercase tracking-wider">{goal.name}</span>
                                             </div>
                                             <span className="text-[10px] font-black text-accent">{Math.round(progress)}%</span>
                                         </div>
-                                        <div className="h-2 w-full bg-neutral-100 dark:bg-white/10 rounded-full overflow-hidden">
+                                        <div className="h-1.5 w-full bg-neutral-100 dark:bg-white/10 rounded-full overflow-hidden">
                                             <div 
                                                 className="h-full rounded-full transition-all duration-1000" 
                                                 style={{ width: `${progress}%`, backgroundColor: goal.color }}
@@ -263,11 +344,11 @@ const DashboardView: React.FC<DashboardViewProps> = ({ records, goals, credits, 
                     </div>
                 </div>
 
-                {/* Liquidity List (Bottom Area) */}
+                {/* Liquidity List */}
                 <div className="lg:col-span-12 bg-white/30 dark:bg-white/5 rounded-[2.5rem] p-6 border border-white/20 dark:border-white/10 shadow-sm backdrop-blur-xl">
                     <div className="flex items-center gap-4 mb-4">
                         <Wallet size={18} className="text-accent" />
-                        <h4 className="text-xs font-black uppercase tracking-[0.2em] opacity-60">Liquidez por Cuenta</h4>
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Liquidez por Cuenta</h4>
                     </div>
                     <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
                         {records.reduce((acc: any[], r) => {
@@ -286,6 +367,79 @@ const DashboardView: React.FC<DashboardViewProps> = ({ records, goals, credits, 
                     </div>
                 </div>
 
+            </div>
+
+            {/* TABLA DE DESGLOSE AVANZADA (Importada de Resumen) */}
+            <div className="bg-[var(--bg-card)] dark:bg-white/5 backdrop-blur-xl overflow-hidden rounded-[3rem] border border-[var(--border-color)] dark:border-white/10 shadow-sm">
+                <div className="p-8 border-b border-[var(--border-color)] dark:border-white/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h4 className="text-lg font-heading font-black text-[var(--text-primary)] flex items-center gap-3">
+                            <Activity size={20} className="text-accent" />
+                            Desglose Detallado por Concepto
+                        </h4>
+                        <p className="text-xs text-neutral-400 font-bold uppercase tracking-widest mt-1">Comparativa de flujos y peso sobre el gasto total</p>
+                    </div>
+                </div>
+                
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-[var(--bg-main)] dark:bg-white/5 text-[10px] uppercase tracking-[0.2em] font-black text-neutral-400 border-b-2 border-[var(--border-color)] dark:border-white/10">
+                                <th className="p-6">Concepto / Categoría</th>
+                                <th className="p-6 w-1/4">Peso en Gasto</th>
+                                <th className="p-6 text-right w-40">Ingreso</th>
+                                <th className="p-6 text-right w-40">Gasto</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[var(--border-color)] dark:divide-white/5">
+                            {summaryData.length === 0 ? (
+                                <tr>
+                                    <td colSpan={4} className="p-12 text-center text-neutral-400 font-bold uppercase tracking-widest text-xs italic">
+                                        Sin datos en el periodo seleccionado
+                                    </td>
+                                </tr>
+                            ) : summaryData.sort((a,b) => b.expense - a.expense).map((row, i) => {
+                                const weight = totalExpenses > 0 ? (row.expense / totalExpenses) * 100 : 0;
+                                return (
+                                    <tr key={row.concept} className="hover:bg-[var(--bg-main)] dark:hover:bg-white/5 transition-colors group">
+                                        <td className="p-6 font-black text-xs uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-3">
+                                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: row.expense > 0 ? COLORS[i % COLORS.length] : 'transparent' }}></div>
+                                            {row.concept}
+                                        </td>
+                                        <td className="p-6">
+                                            {row.expense > 0 ? (
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-full h-1.5 bg-neutral-100 dark:bg-white/5 rounded-full overflow-hidden flex-1">
+                                                        <div className="h-full rounded-full transition-all group-hover:brightness-110" 
+                                                             style={{ width: `${weight}%`, backgroundColor: COLORS[i % COLORS.length] }}></div>
+                                                    </div>
+                                                    <span className="text-[10px] font-black text-neutral-400 w-8">{weight.toFixed(0)}%</span>
+                                                </div>
+                                            ) : <span className="text-neutral-300 dark:text-neutral-600">-</span>}
+                                        </td>
+                                        <td className="p-6 text-right font-bold text-sm text-green-600">
+                                            {row.income > 0 ? `$${row.income.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-'}
+                                        </td>
+                                        <td className="p-6 text-right font-bold text-sm text-red-500">
+                                            {row.expense > 0 ? `$${row.expense.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-'}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                        <tfoot className="bg-[var(--bg-main)] dark:bg-white/5 font-black">
+                            <tr>
+                                <td colSpan={2} className="p-6 text-[10px] uppercase tracking-[0.2em] opacity-40">Totales Globales</td>
+                                <td className="p-6 text-right text-green-600 border-x border-[var(--border-color)] dark:border-white/10">
+                                    ${totalIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                </td>
+                                <td className="p-6 text-right text-red-500">
+                                    ${totalExpenses.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
             </div>
         </div>
     );
