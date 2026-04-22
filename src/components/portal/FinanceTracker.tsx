@@ -46,10 +46,10 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
     const [isFormOpen, setIsFormOpen] = useState(false);
     
     // View modes
-    const [viewMode, setViewMode] = useState<'dashboard' | 'detailed' | 'balances' | 'budget' | 'credits'>(() => {
+    const [viewMode, setViewMode] = useState<'detailed' | 'balances' | 'budget' | 'credits'>(() => {
         const saved = localStorage.getItem(`finance_view_mode_${user.id}`);
-        const validModes = ['dashboard', 'detailed', 'balances', 'budget', 'credits'];
-        return (saved && validModes.includes(saved)) ? (saved as any) : 'dashboard';
+        const validModes = ['detailed', 'balances', 'budget', 'credits'];
+        return (saved && validModes.includes(saved)) ? (saved as any) : 'detailed';
     });
 
     // Save viewMode to localStorage whenever it changes
@@ -1591,15 +1591,6 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                             )}
                         </div>
                     </div>
-                ) : viewMode === 'dashboard' ? (
-                    <DashboardView 
-                        records={records} 
-                        goals={goals} 
-                        credits={credits} 
-                        selectedMonth={selectedMonth}
-                        summaryData={summaryData}
-                        uniqueMonths={uniqueMonths}
-                    />
                 ) : null}
             </div>
 

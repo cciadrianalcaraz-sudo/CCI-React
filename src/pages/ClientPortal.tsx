@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import {
-    Lock, FileText, PieChart, ShieldCheck,
-    LogOut, Download, TrendingUp, TrendingDown,
-    Bell, DollarSign, Plus, Upload,
+    Lock, FileText, ShieldCheck,
+    LogOut, Download, 
+    Bell, Plus, Upload,
     LayoutDashboard, BarChart3, Search,
     ArrowRight, Sun, Moon
 } from "lucide-react";
@@ -11,11 +11,9 @@ import { supabase } from "../lib/supabase";
 import FinanceTracker from "../components/portal/FinanceTracker";
 import AdminDashboard from "../components/portal/AdminDashboard";
 import TicketUploader from "../components/portal/TicketUploader";
-import { 
-    ResponsiveContainer, Tooltip as RechartsTooltip,
-    PieChart as RechartsPieChart, Pie, Cell,
-    BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid
-} from 'recharts';
+import FinancialDashboard from "../components/portal/finance/DashboardView";
+import { useFinance } from "../hooks/useFinance";
+// Recharts imports removed as they are now handled by FinancialDashboard
 
 const MASTER_EMAIL = 'cci.adrianalcaraz@gmail.com';
 
@@ -100,7 +98,7 @@ export default function ClientPortal() {
     };
 
     if (user) {
-        return <DashboardView user={user} onLogout={handleLogout} />;
+        return <PortalView user={user} onLogout={handleLogout} />;
     }
 
     return (
@@ -197,7 +195,7 @@ export default function ClientPortal() {
     );
 }
 
-function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) {
+function PortalView({ user, onLogout }: { user: any, onLogout: () => void }) {
     const [profile, setProfile] = useState<Profile | null>(null);
     const [docs, setDocs] = useState<Document[]>([]);
     const [records, setRecords] = useState<any[]>([]);
@@ -210,6 +208,35 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
     useEffect(() => {
         if (user?.id) localStorage.setItem(`portal_active_tab_${user.id}`, activeTab);
     }, [activeTab, user?.id]);
+
+    const { 
+        records: financeRecords, 
+        goals, 
+        credits
+    } = useFinance(user);
+
+    const summaryData = useMemo(() => {
+        const month = selectedDashboardMonth || 'all';
+        const filtered = month === 'all' ? financeRecords : financeRecords.filter(r => {
+             const rDate = r.date.includes('/') ? r.date.split('/').reverse().join('-') : r.date;
+             return rDate.startsWith(month);
+        });
+        
+        const grouped = filtered
+            .filter(r => {
+                const c = (r.concept || '').toUpperCase().trim();
+                return c !== 'SALDO INICIAL' && !c.includes('TRASPASO');
+            })
+            .reduce((acc: any, curr) => {
+                const c = curr.concept || 'SIN CONCEPTO';
+                if (!acc[c]) acc[c] = { concept: c, income: 0, expense: 0 };
+                acc[c].income += Number(curr.income) || 0;
+                acc[c].expense += Number(curr.expense) || 0;
+                return acc;
+            }, {});
+        
+        return Object.values(grouped).sort((a: any, b: any) => a.concept.localeCompare(b.concept)) as any[];
+    }, [financeRecords, selectedDashboardMonth]);
 
     useEffect(() => {
         console.log("[DashboardView] Current Profile State:", profile);
@@ -474,150 +501,15 @@ function DashboardView({ user, onLogout }: { user: any, onLogout: () => void }) 
                         </div>
 
                         {activeTab === 'dashboard' ? (
-                            <div className="animate-fade-in space-y-10 pb-10 text-[var(--text-primary)]">
-                                {/* Row 1: KPIs */}
-                                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
-                                    <div className="bg-primary-dark rounded-[3rem] p-10 text-white relative overflow-hidden shadow-2xl group">
-                                        <div className="relative z-10">
-                                            <div className="flex items-center gap-3 mb-8">
-                                                <div className="w-12 h-12 rounded-[1.25rem] bg-white/10 flex items-center justify-center border border-white/10"><DollarSign size={24} className="text-accent" /></div>
-                                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 block">Liquididad</span>
-                                            </div>
-                                            <h3 className="text-5xl font-heading font-black tracking-tighter">${(financialMetrics?.totalBalance || 0).toLocaleString()}</h3>
-                                            <div className="mt-4 flex items-center gap-2">
-                                                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${financialMetrics?.balanceChange.startsWith('+') ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-                                                    {financialMetrics?.balanceChange.startsWith('+') ? '▲' : '▼'} {financialMetrics?.balanceChange}
-                                                </span>
-                                                <span className="text-[10px] text-white/30 font-bold uppercase tracking-wider">vs mes anterior</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-[var(--bg-card)] rounded-[3rem] p-10 border border-[var(--border-color)] dark:border-white/10 shadow-sm relative overflow-hidden group backdrop-blur-md">
-                                        <div className="flex flex-col items-center justify-between h-full">
-                                            <span className="w-full text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Salud Financiera</span>
-                                            <div className="relative flex items-center justify-center my-4">
-                                                <svg className="w-32 h-32 transform -rotate-90">
-                                                    <circle cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="8" fill="transparent" className="opacity-10" />
-                                                    <circle cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="10" fill="transparent" strokeDasharray={364.4} strokeDashoffset={364.4 - (364.4 * (financialMetrics?.healthScore || 0)) / 100} strokeLinecap="round" className={(financialMetrics?.healthScore || 0) > 80 ? 'text-green-500' : 'text-amber-500'} />
-                                                </svg>
-                                                <span className="absolute text-4xl font-black">{financialMetrics?.healthScore || 0}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-gradient-to-br from-indigo-950 to-primary-dark rounded-[3rem] p-10 text-white relative overflow-hidden shadow-2xl group">
-                                        <h3 className="text-[10px] font-black uppercase tracking-widest text-indigo-300 mb-8">Libre para Hoy</h3>
-                                        <h3 className="text-5xl font-heading font-black tracking-tighter">${((financialMetrics?.totalBalance || 0) - (financialMetrics?.pendingFijo || 0)).toLocaleString()}</h3>
-                                        <div className="mt-8 pt-6 border-t border-white/5 flex justify-between">
-                                            <span className="text-[10px] font-black text-indigo-300">Smart Forecast</span>
-                                            <span className="font-bold text-teal-400">${(financialMetrics?.projection || 0).toLocaleString()}</span>
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-[var(--bg-card)] dark:bg-white/5 backdrop-blur-xl rounded-[3rem] p-10 border border-[var(--border-color)] dark:border-white/10 shadow-sm relative overflow-hidden group">
-                                        <div className="flex items-center justify-between mb-8">
-                                            <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Rendimiento</span>
-                                            <select value={selectedDashboardMonth} onChange={e => setSelectedDashboardMonth(e.target.value)} className="bg-transparent text-[10px] font-black text-accent uppercase outline-none">
-                                                {availableMonths.map(m => <option key={m.value} value={m.value} className="bg-[var(--bg-card)]">{m.label}</option>)}
-                                            </select>
-                                        </div>
-                                        <div className="space-y-4">
-                                            <div>
-                                                <div className="flex justify-between text-[10px] font-bold mb-1">
-                                                    <span className="flex items-center gap-2">INGRESOS <span className={financialMetrics?.incomeChange.startsWith('+') ? 'text-green-600' : 'text-red-500'}>{financialMetrics?.incomeChange}</span></span>
-                                                    <span>${financialMetrics?.monthIncome.toLocaleString()}</span>
-                                                </div>
-                                                <div className="h-1.5 bg-neutral-100 dark:bg-white/10 rounded-full"><div className="h-full bg-[var(--text-primary)] rounded-full" style={{width: '70%'}}></div></div>
-                                            </div>
-                                            <div>
-                                                <div className="flex justify-between text-[10px] font-bold mb-1">
-                                                    <span className="flex items-center gap-2">GASTOS <span className={financialMetrics?.expenseChange.startsWith('+') ? 'text-red-500' : 'text-green-600'}>{financialMetrics?.expenseChange}</span></span>
-                                                    <span>${financialMetrics?.monthExpense.toLocaleString()}</span>
-                                                </div>
-                                                <div className="h-1.5 bg-neutral-100 dark:bg-white/10 rounded-full"><div className="h-full bg-accent rounded-full" style={{width: '40%'}}></div></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Row 2: Performance Chart */}
-                                <div className="bg-[var(--bg-card)] dark:bg-white/5 backdrop-blur-xl rounded-[3rem] p-10 border border-[var(--border-color)] dark:border-white/10 shadow-sm transition-all duration-500">
-                                    <h2 className="text-xl font-black mb-10">Comparativa de Rendimiento</h2>
-                                    <div className="h-80 w-full">
-                                        {(() => {
-                                            const chartData = availableMonths.slice(0, 6).reverse().map(m => {
-                                                const moves = records.filter(r => normalizeDate(r.date).startsWith(m.value) && (r.concept || '').toUpperCase().trim() !== 'SALDO INICIAL');
-                                                return { month: m.label.split(' ')[0], ingresos: moves.reduce((a, r) => a + Number(r.income), 0), gastos: moves.reduce((a, r) => a + Number(r.expense), 0) };
-                                            });
-                                            return (
-                                                <ResponsiveContainer>
-                                                    <RechartsBarChart data={chartData}>
-                                                        <CartesianGrid vertical={false} stroke={theme === 'light' ? '#f0f0f0' : '#ffffff10'} />
-                                                        <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900, fill: 'currentColor'}} />
-                                                        <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fill: 'currentColor'}} />
-                                                        <RechartsTooltip />
-                                                        <Bar dataKey="ingresos" fill={theme === 'light' ? '#1a1a1a' : '#f8fafc'} radius={[6,6,0,0]} barSize={24} />
-                                                        <Bar dataKey="gastos" fill="#EFA364" radius={[6,6,0,0]} barSize={24} />
-                                                    </RechartsBarChart>
-                                                </ResponsiveContainer>
-                                            );
-                                        })()}
-                                    </div>
-                                </div>
-
-                                {/* Row 3: Distribution & Activity */}
-                                <div className="grid lg:grid-cols-2 gap-8">
-                                    <div className="bg-[var(--bg-card)] dark:bg-white/5 rounded-[3rem] p-10 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md">
-                                        <h2 className="text-xl font-black mb-10">Distribución de Gastos</h2>
-                                        <div className="h-64 flex flex-col md:flex-row items-center gap-8">
-                                            <div className="flex-1 w-full h-full relative">
-                                                <ResponsiveContainer>
-                                                    <RechartsPieChart>
-                                                        <Pie data={[{name: 'Gastos', value: financialMetrics?.monthExpense || 1}]} innerRadius={60} outerRadius={80} dataKey="value"><Cell fill={theme === 'light' ? '#1a1a1a' : '#f8fafc'} /></Pie>
-                                                        <RechartsTooltip />
-                                                    </RechartsPieChart>
-                                                </ResponsiveContainer>
-                                                <div className="absolute inset-0 flex items-center justify-center p-2"><PieChart size={24} className="text-accent/20" /></div>
-                                            </div>
-                                            <div className="flex-1 space-y-2">
-                                                <div className="flex justify-between text-[10px] font-bold uppercase"><span>Categoría</span><span>Pje</span></div>
-                                                <div className="h-0.5 bg-neutral-100 dark:bg-white/10"></div>
-                                                <p className="text-[10px] opacity-40">Análisis detallado disponible en finanzas.</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="bg-[var(--bg-card)] dark:bg-white/5 rounded-[3rem] p-10 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md">
-                                        <h2 className="text-xl font-black mb-10">Actividad Reciente</h2>
-                                        <div className="space-y-4">
-                                            {records.slice(0, 4).map(r => (
-                                                <div key={r.id} className="flex justify-between items-center p-3 rounded-2xl bg-[var(--bg-main)] dark:bg-white/5">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className={Number(r.income) > 0 ? 'text-green-600' : 'text-red-500'}>{Number(r.income) > 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}</div>
-                                                        <span className="text-xs font-bold truncate w-32">{r.concept}</span>
-                                                    </div>
-                                                    <span className="text-xs font-black">${Number(r.income || r.expense).toLocaleString()}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Row 4: Shortcuts & Docs */}
-                                <div className="grid lg:grid-cols-3 gap-8">
-                                    <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <button onClick={() => setActiveTab('finance')} className="bg-accent rounded-[2.5rem] p-10 text-white shadow-xl hover:-translate-y-1 transition-all"><Plus size={24} className="mb-4" /><h3 className="text-2xl font-black">Nuevo Registro</h3></button>
-                                        <button onClick={() => setActiveTab('tickets')} className="bg-[var(--bg-card)] dark:bg-white/5 rounded-[2.5rem] p-10 border border-[var(--border-color)] dark:border-white/10 hover:shadow-xl transition-all"><Upload size={24} className="mb-4 opacity-70" /><h3 className="text-2xl font-black">Subir Ticket</h3></button>
-                                    </div>
-                                    <div className="bg-[var(--bg-card)] dark:bg-white/5 rounded-[2.5rem] p-10 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md">
-                                        <h3 className="font-black mb-8 flex justify-between items-center">Expediente <FileText size={16}/></h3>
-                                        <div className="space-y-4">
-                                            {docs.slice(0, 3).map(d => (
-                                                <div key={d.id} className="flex justify-between items-center p-3 rounded-xl bg-[var(--bg-main)] dark:bg-white/5"><span className="text-xs font-bold truncate w-32">{d.name}</span><a href={d.file_url} target="_blank" rel="noreferrer"><Download size={14}/></a></div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
+                            <div className="animate-fade-in -mt-4">
+                                <FinancialDashboard 
+                                    records={financeRecords}
+                                    goals={goals}
+                                    credits={credits}
+                                    selectedMonth={selectedDashboardMonth}
+                                    summaryData={summaryData}
+                                    uniqueMonths={availableMonths}
+                                />
                             </div>
                         ) : activeTab === 'finance' ? (
                             <div className="animate-fade-in"><FinanceTracker user={user} records={records} onRefresh={loadDashboardData} /></div>
