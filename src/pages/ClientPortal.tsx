@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import {
-    Lock, FileText, ShieldCheck,
-    LogOut, Download, 
-    Bell, Plus, Upload,
+    Lock, FileText, PieChart, ShieldCheck,
+    LogOut, 
+    Bell, 
     LayoutDashboard, BarChart3, Search,
     ArrowRight, Sun, Moon
 } from "lucide-react";
@@ -209,6 +209,9 @@ function PortalView({ user, onLogout }: { user: any, onLogout: () => void }) {
         if (user?.id) localStorage.setItem(`portal_active_tab_${user.id}`, activeTab);
     }, [activeTab, user?.id]);
 
+    const [selectedDashboardMonth, setSelectedDashboardMonth] = useState<string>('');
+    const [availableMonths, setAvailableMonths] = useState<{label: string, value: string}[]>([]);
+
     const { 
         records: financeRecords, 
         goals, 
@@ -242,8 +245,7 @@ function PortalView({ user, onLogout }: { user: any, onLogout: () => void }) {
         console.log("[DashboardView] Current Profile State:", profile);
     }, [profile]);
 
-    const [selectedDashboardMonth, setSelectedDashboardMonth] = useState<string>('');
-    const [availableMonths, setAvailableMonths] = useState<{label: string, value: string}[]>([]);
+
     const [isCommandCenterOpen, setIsCommandCenterOpen] = useState(false);
     const [theme, setTheme] = useState<'light' | 'dark'>(() => {
         const saved = localStorage.getItem('portal_theme');
@@ -261,82 +263,7 @@ function PortalView({ user, onLogout }: { user: any, onLogout: () => void }) {
 
     const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
 
-    const financialMetrics = useMemo(() => {
-        if (!records.length) return null;
-        const selectedMonth = selectedDashboardMonth || new Date().toISOString().substring(0, 7);
-        const [year, month] = selectedMonth.split('-').map(Number);
-        
-        const monthRecords = records.filter(r => {
-            const c = (r.concept || '').toUpperCase().trim();
-            const nDate = normalizeDate(r.date);
-            return nDate.startsWith(selectedMonth) && c !== 'SALDO INICIAL' && !c.includes('TRASPASO');
-        });
 
-        const monthIncome = monthRecords.reduce((acc, r) => acc + Number(r.income), 0);
-        const monthExpense = monthRecords.reduce((acc, r) => acc + Number(r.expense), 0);
-        const savings = monthIncome - monthExpense;
-        const savingsRate = monthIncome > 0 ? (savings / monthIncome) * 100 : 0;
-
-        const totalBalance = records
-            .filter(r => normalizeDate(r.date).substring(0, 7) <= selectedMonth && (r.concept || '').toUpperCase().trim() !== 'SALDO INICIAL')
-            .reduce((acc, r) => acc + (Number(r.income) - Number(r.expense)), 0);
-
-        // Previous month logic for comparison
-        const prevMonthDate = new Date(year, month - 2, 1);
-        const prevMonthStr = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, '0')}`;
-        
-        const prevMonthRecords = records.filter(r => {
-            const c = (r.concept || '').toUpperCase().trim();
-            const nDate = normalizeDate(r.date);
-            return nDate.startsWith(prevMonthStr) && c !== 'SALDO INICIAL' && !c.includes('TRASPASO');
-        });
-
-        const prevIncome = prevMonthRecords.reduce((acc, r) => acc + Number(r.income), 0);
-        const prevExpense = prevMonthRecords.reduce((acc, r) => acc + Number(r.expense), 0);
-        const prevBalance = records
-            .filter(r => normalizeDate(r.date).substring(0, 7) <= prevMonthStr && (r.concept || '').toUpperCase().trim() !== 'SALDO INICIAL')
-            .reduce((acc, r) => acc + (Number(r.income) - Number(r.expense)), 0);
-
-        const calculateChange = (current: number, previous: number) => {
-            if (previous === 0) return current > 0 ? '+100%' : '0%';
-            const change = ((current - previous) / previous) * 100;
-            return `${change >= 0 ? '+' : ''}${change.toFixed(0)}%`;
-        };
-
-        const incomeChange = calculateChange(monthIncome, prevIncome);
-        const expenseChange = calculateChange(monthExpense, prevExpense);
-        const balanceChange = calculateChange(totalBalance, prevBalance);
-
-        const fijosByMonth: Record<string, number> = {};
-        records.forEach(r => {
-            if (r.expense_type === 'Fijo' && r.expense > 0) {
-                const m = normalizeDate(r.date).substring(0, 7);
-                fijosByMonth[m] = (fijosByMonth[m] || 0) + Number(r.expense);
-            }
-        });
-        const fijosMonths = Object.keys(fijosByMonth).filter(m => m !== new Date().toISOString().substring(0, 7));
-        const avgFijo = fijosMonths.length > 0 ? fijosMonths.reduce((a, m) => a + fijosByMonth[m], 0) / fijosMonths.length : 0;
-        const currentFijos = monthRecords.filter(r => r.expense_type === 'Fijo').reduce((a, r) => a + Number(r.expense), 0);
-        const pendingFijo = Math.max(0, avgFijo - currentFijos);
-
-        const isCurrentMonth = selectedMonth === new Date().toISOString().substring(0, 7);
-        const daysInMonth = new Date(year, month, 0).getDate();
-        const currentDay = isCurrentMonth ? new Date().getDate() : daysInMonth;
-        const remainingDays = daysInMonth - currentDay;
-        const dailyBurn = currentDay > 0 ? monthExpense / currentDay : 0;
-        const projection = totalBalance - (dailyBurn * remainingDays) - pendingFijo;
-
-        const savingsScore = Math.min(100, Math.max(0, (savingsRate / 20) * 100));
-        const controlScore = Math.min(100, Math.max(0, 100 - (monthExpense > avgFijo ? ((monthExpense / (avgFijo || 1)) - 1) * 50 : 0)));
-        const safetyScore = Math.min(100, (Math.max(0, totalBalance - pendingFijo) / (totalBalance || 1)) * 100);
-        const healthScore = Math.round((savingsScore * 0.5) + (controlScore * 0.3) + (safetyScore * 0.2));
-
-        return { 
-            totalBalance, healthScore, monthIncome, monthExpense, 
-            projection, pendingFijo, selectedMonth,
-            incomeChange, expenseChange, balanceChange
-        };
-    }, [records, selectedDashboardMonth]);
 
     const isMaster = user.email === MASTER_EMAIL;
 

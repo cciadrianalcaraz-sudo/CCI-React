@@ -20,7 +20,6 @@ import MovementsDetailedView from './finance/MovementsDetailedView';
 // import MovementsSummaryView from './finance/MovementsSummaryView';
 
 import BudgetTracker from './finance/BudgetTracker';
-import DashboardView from './finance/DashboardView';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import type { FinanceRecord } from '../../types/finance';

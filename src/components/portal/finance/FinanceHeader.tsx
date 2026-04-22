@@ -6,8 +6,8 @@ import {
 import Button from '../../ui/Button';
 
 interface FinanceHeaderProps {
-    viewMode: 'dashboard' | 'detailed' | 'balances' | 'budget' | 'credits';
-    setViewMode: (mode: 'dashboard' | 'detailed' | 'balances' | 'budget' | 'credits') => void;
+    viewMode: 'detailed' | 'balances' | 'budget' | 'credits';
+    setViewMode: (mode: 'detailed' | 'balances' | 'budget' | 'credits') => void;
     selectedMonth: string;
     setSelectedMonth: (month: string) => void;
     uniqueMonths: {label: string, value: string}[];
