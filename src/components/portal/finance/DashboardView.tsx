@@ -1,8 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { 
     Target, 
     ArrowUpRight, Wallet, PieChart, 
-    Activity, AlertTriangle, TrendingUp
+    Activity, AlertTriangle, TrendingUp,
+    ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { 
     AreaChart, Area, XAxis, YAxis, CartesianGrid, 
@@ -25,6 +26,15 @@ const DashboardView: React.FC<DashboardViewProps> = ({
     records, goals, credits, selectedMonth, 
     summaryData
 }) => {
+    const scrollRef = useRef<HTMLDivElement>(null);
+    
+    const scroll = (direction: 'left' | 'right') => {
+        if (scrollRef.current) {
+            const { scrollLeft } = scrollRef.current;
+            const scrollTo = direction === 'left' ? scrollLeft - 300 : scrollLeft + 300;
+            scrollRef.current.scrollTo({ left: scrollTo, behavior: 'smooth' });
+        }
+    };
     
     // 1. Cálculos de KPIs principales
     const stats = useMemo(() => {
@@ -348,12 +358,25 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
 
                 {/* Liquidity List */}
-                <div className="lg:col-span-12 bg-white/30 dark:bg-white/5 rounded-[2.5rem] p-6 border border-white/20 dark:border-white/10 shadow-sm backdrop-blur-xl">
-                    <div className="flex items-center gap-4 mb-4">
-                        <Wallet size={18} className="text-accent" />
-                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Liquidez por Cuenta</h4>
+                <div className="lg:col-span-12 bg-white/30 dark:bg-white/5 rounded-[2.5rem] p-6 border border-white/20 dark:border-white/10 shadow-sm backdrop-blur-xl group">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-4">
+                            <Wallet size={18} className="text-accent" />
+                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Liquidez por Cuenta</h4>
+                        </div>
+                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => scroll('left')} className="w-8 h-8 rounded-full bg-white dark:bg-white/10 flex items-center justify-center hover:bg-accent hover:text-white transition-all shadow-sm">
+                                <ChevronLeft size={16} />
+                            </button>
+                            <button onClick={() => scroll('right')} className="w-8 h-8 rounded-full bg-white dark:bg-white/10 flex items-center justify-center hover:bg-accent hover:text-white transition-all shadow-sm">
+                                <ChevronRight size={16} />
+                            </button>
+                        </div>
                     </div>
-                    <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
+                    <div 
+                        ref={scrollRef}
+                        className="flex gap-4 overflow-x-auto no-scrollbar pb-2 scroll-smooth"
+                    >
                         {records.reduce((acc: any[], r) => {
                             if (!r.payment_method) return acc;
                             const existing = acc.find(a => a.name === r.payment_method);
@@ -362,8 +385,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                             else acc.push({ name: r.payment_method, balance: val });
                             return acc;
                         }, []).sort((a, b) => b.balance - a.balance).map((acc, i) => (
-                            <div key={i} className="min-w-[180px] bg-[var(--bg-card)] dark:bg-white/10 p-5 rounded-3xl border border-[var(--border-color)] dark:border-white/10 shadow-sm group hover:-translate-y-1 transition-all">
-                                <p className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-1 group-hover:text-accent transition-colors">{acc.name}</p>
+                            <div key={i} className="min-w-[180px] bg-[var(--bg-card)] dark:bg-white/10 p-5 rounded-3xl border border-[var(--border-color)] dark:border-white/10 shadow-sm group/card hover:-translate-y-1 transition-all">
+                                <p className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-1 group-hover/card:text-accent transition-colors">{acc.name}</p>
                                 <p className="text-lg font-black tracking-tighter">${acc.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
                             </div>
                         ))}
