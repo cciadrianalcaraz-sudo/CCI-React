@@ -10,7 +10,7 @@ import {
     Tooltip, ResponsiveContainer, BarChart, Bar, Cell,
     PieChart as RePieChart, Pie
 } from 'recharts';
-import type { FinanceRecord, FinanceGoal, FinanceCredit } from '../../../types/finance';
+import type { FinanceRecord, FinanceGoal, FinanceCredit, PaymentMethod } from '../../../types/finance';
 import { COLORS } from '../../../utils/financeUtils';
 
 interface DashboardViewProps {
@@ -20,11 +20,12 @@ interface DashboardViewProps {
     selectedMonth: string;
     summaryData: {concept: string, income: number, expense: number}[];
     uniqueMonths: {label: string, value: string}[];
+    paymentMethods: PaymentMethod[];
 }
 
 const DashboardView: React.FC<DashboardViewProps> = ({ 
     records, goals, credits, selectedMonth, 
-    summaryData
+    summaryData, paymentMethods
 }) => {
     const scrollRef = useRef<HTMLDivElement>(null);
     
@@ -105,7 +106,40 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             .map(([name, value]) => ({ name, value }));
     }, [records, selectedMonth]);
 
-    // 4. Lógica de Resumen (Integrada)
+    // 4. Cálculo de Saldos de Cuentas (Sincronizado con FinanceTracker)
+    const accountBalances = useMemo(() => {
+        const paymentMap: Record<string, number> = {};
+        
+        // Ordenar cronológicamente para manejar correctamente el SALDO INICIAL
+        const sortedRecords = [...records].sort((a, b) => {
+            const dateA = new Date(a.date).getTime();
+            const dateB = new Date(b.date).getTime();
+            if (dateA !== dateB) return dateA - dateB;
+            return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
+        });
+
+        sortedRecords.forEach(r => {
+            const pm = (r.payment_method || 'SIN ESPECIFICAR').toUpperCase().trim();
+            const isInitial = (r.concept || '').toUpperCase().trim() === 'SALDO INICIAL';
+            const val = (Number(r.income) || 0) - (Number(r.expense) || 0);
+
+            if (isInitial) {
+                paymentMap[pm] = val;
+            } else {
+                paymentMap[pm] = (paymentMap[pm] || 0) + val;
+            }
+        });
+
+        // Filtrar solo las cuentas que están registradas oficialmente
+        const registeredNames = new Set(paymentMethods.map(pm => pm.name.toUpperCase().trim()));
+
+        return Object.entries(paymentMap)
+            .filter(([name]) => registeredNames.has(name))
+            .map(([name, balance]) => ({ name, balance }))
+            .sort((a, b) => b.balance - a.balance);
+    }, [records, paymentMethods]);
+
+    // 5. Lógica de Resumen (Integrada)
     const totalExpenses = summaryData.reduce((a, b) => a + b.expense, 0);
     const totalIncome = summaryData.reduce((a, b) => a + b.income, 0);
     
@@ -377,19 +411,16 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                         ref={scrollRef}
                         className="flex gap-4 overflow-x-auto no-scrollbar pb-2 scroll-smooth"
                     >
-                        {records.reduce((acc: any[], r) => {
-                            if (!r.payment_method) return acc;
-                            const existing = acc.find(a => a.name === r.payment_method);
-                            const val = (Number(r.income) || 0) - (Number(r.expense) || 0);
-                            if (existing) existing.balance += val;
-                            else acc.push({ name: r.payment_method, balance: val });
-                            return acc;
-                        }, []).sort((a, b) => b.balance - a.balance).map((acc, i) => (
-                            <div key={i} className="min-w-[180px] bg-[var(--bg-card)] dark:bg-white/10 p-5 rounded-3xl border border-[var(--border-color)] dark:border-white/10 shadow-sm group/card hover:-translate-y-1 transition-all">
-                                <p className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-1 group-hover/card:text-accent transition-colors">{acc.name}</p>
-                                <p className="text-lg font-black tracking-tighter">${acc.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
-                            </div>
-                        ))}
+                        {accountBalances.length > 0 ? (
+                            accountBalances.map((acc, i) => (
+                                <div key={i} className="min-w-[180px] bg-[var(--bg-card)] dark:bg-white/10 p-5 rounded-3xl border border-[var(--border-color)] dark:border-white/10 shadow-sm group/card hover:-translate-y-1 transition-all">
+                                    <p className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-1 group-hover/card:text-accent transition-colors">{acc.name}</p>
+                                    <p className="text-lg font-black tracking-tighter">${acc.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="p-4 text-xs font-bold opacity-30 uppercase tracking-widest">No hay cuentas registradas con movimientos</div>
+                        )}
                     </div>
                 </div>
 

@@ -205,7 +205,8 @@ function PortalView({ user, onLogout }: { user: any, onLogout: () => void }) {
     const { 
         records: financeRecords, 
         goals, 
-        credits
+        credits,
+        paymentMethods
     } = useFinance(user);
 
     const summaryData = useMemo(() => {
@@ -426,6 +427,7 @@ function PortalView({ user, onLogout }: { user: any, onLogout: () => void }) {
                                     selectedMonth={selectedDashboardMonth}
                                     summaryData={summaryData}
                                     uniqueMonths={availableMonths}
+                                    paymentMethods={paymentMethods}
                                 />
                             </div>
                         ) : activeTab === 'finance' ? (
