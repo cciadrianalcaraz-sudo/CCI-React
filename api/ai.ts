@@ -95,13 +95,13 @@ async function handleBriefing({ stats }: { stats: { currentMonth: string, curren
       Analiza el desempeño del usuario (Adrian) en el mes actual (${stats.currentMonth}) comparado con el mes anterior.
       
       MES ACTUAL:
-      - Ingresos: $${stats.current.income.toLocaleString()}
-      - Gastos: $${stats.current.expense.toLocaleString()}
-      - Top Categorías de Gasto: ${stats.current.topCategories.map((c: { name: string, amount: number }) => `${c.name} ($${c.amount})`).join(', ')}
+      - Ingresos: $${(stats.current as any).income.toLocaleString()}
+      - Gastos: $${(stats.current as any).expense.toLocaleString()}
+      - Top Categorías de Gasto: ${(stats.current as any).topCategories.map((c: { name: string, amount: number }) => `${c.name} ($${c.amount})`).join(', ')}
       
       MES ANTERIOR:
-      - Ingresos: $${stats.previous.income.toLocaleString()}
-      - Gastos: $${stats.previous.expense.toLocaleString()}
+      - Ingresos: $${(stats.previous as any).income.toLocaleString()}
+      - Gastos: $${(stats.previous as any).expense.toLocaleString()}
       
       METAS ACTIVAS:
       ${stats.goals.length > 0 ? stats.goals.map((g: { name: string, current_amount: number, target_amount: number }) => `- ${g.name} (Progreso: ${Math.round((g.current_amount/g.target_amount)*100)}%)`).join('\n') : 'Sin metas activas.'}
