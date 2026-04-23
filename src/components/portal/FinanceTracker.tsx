@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { 
     Plus, Trash2, TrendingUp, TrendingDown, DollarSign, 
-    Edit2, Calendar, Sparkles, User 
+    Edit2, Calendar, Sparkles, User, Wallet,
+    ChevronLeft, ChevronRight 
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -98,6 +99,14 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
 
     // Toast & Confirm
     const { confirm, ConfirmModal } = useConfirm();
+    const balancesScrollRef = useRef<HTMLDivElement>(null);
+    const scrollBalances = (direction: 'left' | 'right') => {
+        if (balancesScrollRef.current) {
+            const { scrollLeft } = balancesScrollRef.current;
+            const scrollTo = direction === 'left' ? scrollLeft - 300 : scrollLeft + 300;
+            balancesScrollRef.current.scrollTo({ left: scrollTo, behavior: 'smooth' });
+        }
+    };
 
     // Reassign account modal
     const [reassignModal, setReassignModal] = useState<{ method: string; count: number } | null>(null);
@@ -1310,6 +1319,36 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                             </h3>
                         )}
                         
+                        
+                        {/* Liquidez por Cuenta en pestaña de Saldos */}
+                        <div className="bg-[var(--bg-card)] dark:bg-white/5 rounded-[2.5rem] p-6 mb-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-xl group/liquidity">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-4">
+                                    <Wallet size={18} className="text-accent" />
+                                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Resumen de Liquidez</h4>
+                                </div>
+                                <div className="flex gap-2 opacity-0 group-hover/liquidity:opacity-100 transition-opacity">
+                                    <button onClick={() => scrollBalances('left')} className="w-8 h-8 rounded-full bg-[var(--bg-main)] dark:bg-white/10 flex items-center justify-center hover:bg-accent hover:text-white transition-all shadow-sm">
+                                        <ChevronLeft size={16} />
+                                    </button>
+                                    <button onClick={() => scrollBalances('right')} className="w-8 h-8 rounded-full bg-[var(--bg-main)] dark:bg-white/10 flex items-center justify-center hover:bg-accent hover:text-white transition-all shadow-sm">
+                                        <ChevronRight size={16} />
+                                    </button>
+                                </div>
+                            </div>
+                            <div 
+                                ref={balancesScrollRef}
+                                className="flex gap-4 overflow-x-auto no-scrollbar pb-2 scroll-smooth"
+                            >
+                                {paymentBalancesData.map((acc, i) => (
+                                    <div key={i} className="min-w-[200px] bg-[var(--bg-main)] dark:bg-white/10 p-5 rounded-3xl border border-[var(--border-color)] dark:border-white/10 shadow-sm group/card hover:-translate-y-1 transition-all">
+                                        <p className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-1 group-hover/card:text-accent transition-colors">{acc.method}</p>
+                                        <p className="text-xl font-black tracking-tighter">${acc.finalBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
                         <div className="grid gap-8 lg:grid-cols-3">
                             {/* Tabla Balance por Forma de Pago */}
                             <div className="lg:col-span-2 bg-[var(--bg-card)]/50 dark:bg-white/5 backdrop-blur-md overflow-hidden rounded-[32px] border border-[var(--border-color)] dark:border-white/10 shadow-sm">
