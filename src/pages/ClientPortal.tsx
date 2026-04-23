@@ -459,9 +459,9 @@ function PortalView({ user, onLogout }: { user: any, onLogout: () => void }) {
                         <div className="p-4 space-y-2">
                             <button onClick={() => { setActiveTab('dashboard'); setIsCommandCenterOpen(false); }} className="w-full flex items-center justify-between p-4 hover:bg-neutral-50 rounded-2xl transition-all"><div className="flex items-center gap-4"><LayoutDashboard size={18}/><span className="font-bold text-sm">Dashboard</span></div><ArrowRight size={14}/></button>
                             <button onClick={() => { setActiveTab('finance'); setIsCommandCenterOpen(false); }} className="w-full flex items-center justify-between p-4 hover:bg-neutral-50 rounded-2xl transition-all"><div className="flex items-center gap-4"><BarChart3 size={18}/><span className="font-bold text-sm">Finanzas</span></div><ArrowRight size={14}/></button>
-                        </div>
                     </div>
                 </div>
+            )}
 
             {/* Mobile Bottom Navigation */}
             <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-[400px] bg-white/80 dark:bg-black/40 backdrop-blur-2xl border border-white/20 dark:border-white/10 rounded-[2rem] p-2 shadow-2xl z-[100] flex items-center justify-around overflow-hidden animate-slide-up">
@@ -494,7 +494,6 @@ function PortalView({ user, onLogout }: { user: any, onLogout: () => void }) {
                     <span className="text-[10px] font-black uppercase tracking-widest">Buscar</span>
                 </button>
             </div>
-            )}
         </div>
     );
 }
