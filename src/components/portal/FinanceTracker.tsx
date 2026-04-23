@@ -2,8 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { 
     Plus, Trash2, TrendingUp, TrendingDown, DollarSign, 
-    Edit2, Calendar, Sparkles, User, Wallet,
-    ChevronLeft, ChevronRight 
+    Edit2, Calendar, Sparkles, User
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
