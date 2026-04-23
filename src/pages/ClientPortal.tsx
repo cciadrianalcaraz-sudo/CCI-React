@@ -461,6 +461,7 @@ function PortalView({ user, onLogout }: { user: any, onLogout: () => void }) {
                             <button onClick={() => { setActiveTab('finance'); setIsCommandCenterOpen(false); }} className="w-full flex items-center justify-between p-4 hover:bg-neutral-50 rounded-2xl transition-all"><div className="flex items-center gap-4"><BarChart3 size={18}/><span className="font-bold text-sm">Finanzas</span></div><ArrowRight size={14}/></button>
                     </div>
                 </div>
+            </div>
             )}
 
             {/* Mobile Bottom Navigation */}
