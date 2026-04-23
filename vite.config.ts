@@ -16,6 +16,7 @@ export default defineConfig({
         theme_color: '#4A7C82',
         background_color: '#ffffff',
         display: 'standalone',
+        start_url: '/portal',
         icons: [
           {
             src: 'pwa-icon.png',
