@@ -170,7 +170,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 
                 {/* Main Performance Chart */}
-                <div className="lg:col-span-8 bg-[var(--bg-card)] dark:bg-white/5 rounded-[2.5rem] p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md relative overflow-hidden group">
+                <div className="lg:col-span-8 bg-[var(--bg-card)] dark:bg-white/5 rounded-[2.5rem] p-6 md:p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md relative overflow-hidden group">
                     <div className="flex justify-between items-center mb-8 relative z-10">
                         <div>
                             <h3 className="text-xl font-black flex items-center gap-3">
@@ -228,7 +228,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
 
                 {/* Vertical KPI Cards Bundle */}
                 <div className="lg:col-span-4 space-y-6">
-                    <div className="bg-gradient-to-br from-primary-dark to-[#2c4a4e] rounded-[2.5rem] p-8 text-white shadow-xl relative overflow-hidden group">
+                    <div className="bg-gradient-to-br from-primary-dark to-[#2c4a4e] rounded-[2.5rem] p-6 md:p-8 text-white shadow-xl relative overflow-hidden group">
                         <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">Capacidad de Ahorro</p>
                         <div className="flex items-end gap-3">
                             <h4 className="text-4xl font-black tracking-tight">{stats.savingsRate.toFixed(1)}%</h4>
@@ -244,7 +244,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                     </div>
 
                     {/* Fuga Principal (Importada de Resumen) */}
-                    <div className="bg-[var(--bg-card)] dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm relative group overflow-hidden">
+                    <div className="bg-[var(--bg-card)] dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] p-6 md:p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm relative group overflow-hidden">
                         <div className="absolute bottom-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-[50px] group-hover:bg-red-500/10 transition-all duration-500"></div>
                         <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 flex items-center gap-2 mb-4">
                             <AlertTriangle size={14} className="text-red-500" /> Mayor Gasto (Periodo)
@@ -278,7 +278,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                         )}
                     </div>
 
-                    <div className="bg-[var(--bg-card)] dark:bg-white/5 rounded-[2.5rem] p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md relative group">
+                    <div className="bg-[var(--bg-card)] dark:bg-white/5 rounded-[2.5rem] p-6 md:p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md relative group">
                         <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">Balance del Periodo</p>
                         <h4 className={`text-3xl font-black tracking-tight ${stats.balance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
                             ${stats.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
@@ -287,7 +287,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
 
                 {/* Gastos por Tipo (BARRAS) */}
-                <div className="lg:col-span-5 bg-[var(--bg-card)] dark:bg-white/5 rounded-[2.5rem] p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md relative">
+                <div className="lg:col-span-5 bg-[var(--bg-card)] dark:bg-white/5 rounded-[2.5rem] p-6 md:p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md relative">
                     <h3 className="text-lg font-black mb-6 flex items-center gap-3">
                         <PieChart size={20} className="text-purple-500" />
                         Distribución de Gastos
@@ -318,7 +318,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
 
                 {/* Entradas de Capital (PIE) - Importado de Resumen */}
-                <div className="lg:col-span-3 bg-[var(--bg-card)] dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm flex flex-col">
+                <div className="lg:col-span-3 bg-[var(--bg-card)] dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] p-6 md:p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm flex flex-col">
                     <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 flex items-center gap-2 mb-4">
                         <TrendingUp size={14} className="text-green-500" /> Entradas de Capital
                     </h4>
@@ -354,7 +354,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
 
                 {/* Goals Preview */}
-                <div className="lg:col-span-4 bg-[var(--bg-card)] dark:bg-white/5 rounded-[2.5rem] p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md overflow-hidden relative group">
+                <div className="lg:col-span-4 bg-[var(--bg-card)] dark:bg-white/5 rounded-[2.5rem] p-6 md:p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md overflow-hidden relative group">
                     <div className="flex justify-between items-center mb-8">
                         <div>
                             <h3 className="text-lg font-black flex items-center gap-3">

@@ -370,12 +370,12 @@ function PortalView({ user, onLogout }: { user: any, onLogout: () => void }) {
     }
 
     return (
-        <div className="min-h-screen bg-[var(--bg-main)] pt-32 md:pt-44 pb-20 px-[6vw] md:px-[8vw] transition-colors duration-500">
+        <div className="min-h-screen bg-[var(--bg-main)] pt-24 md:pt-44 pb-32 md:pb-20 px-[5vw] md:px-[8vw] transition-colors duration-500">
             <div className="max-w-[1400px] mx-auto">
-                <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6 animate-fade-in">
+                <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 md:mb-12 gap-4 md:gap-6 animate-fade-in">
                     <div>
-                        <h1 className="text-3xl font-bold mb-2">Resumen Financiero Digital</h1>
-                        <div className="flex items-center gap-6 mt-1 flex-wrap">
+                        <h1 className="text-2xl md:text-3xl font-bold mb-1 md:mb-2">Resumen Financiero Digital</h1>
+                        <div className="flex items-center gap-4 md:gap-6 mt-1 flex-wrap">
                             <span className="flex items-center gap-1.5 text-xs text-green-600/70 font-medium">
                                 <ShieldCheck size={12} className="text-green-500" />
                                 Sesión Segura
@@ -406,7 +406,7 @@ function PortalView({ user, onLogout }: { user: any, onLogout: () => void }) {
 
                 {isMaster ? <AdminDashboard user={user} /> : (
                     <>
-                        <div className="flex flex-wrap gap-4 mb-8 border-b border-[var(--border-color)] pb-4 animate-fade-in">
+                        <div className="hidden md:flex flex-wrap gap-4 mb-8 border-b border-[var(--border-color)] pb-4 animate-fade-in">
                             {[
                                 { id: 'dashboard', label: 'Panel Principal', icon: LayoutDashboard },
                                 { id: 'finance', label: 'Finanzas Personales', icon: BarChart3 },
@@ -462,6 +462,38 @@ function PortalView({ user, onLogout }: { user: any, onLogout: () => void }) {
                         </div>
                     </div>
                 </div>
+
+            {/* Mobile Bottom Navigation */}
+            <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-[400px] bg-white/80 dark:bg-black/40 backdrop-blur-2xl border border-white/20 dark:border-white/10 rounded-[2rem] p-2 shadow-2xl z-[100] flex items-center justify-around overflow-hidden animate-slide-up">
+                {[
+                    { id: 'dashboard', label: 'Inicio', icon: LayoutDashboard },
+                    { id: 'finance', label: 'Finanzas', icon: BarChart3 },
+                    { id: 'tickets', label: 'Tickets', icon: FileText }
+                ].map(item => {
+                    const isActive = activeTab === item.id;
+                    return (
+                        <button
+                            key={item.id}
+                            onClick={() => setActiveTab(item.id as any)}
+                            className={`flex flex-col items-center gap-1.5 py-2 px-4 rounded-2xl transition-all duration-300 relative ${isActive ? 'text-accent' : 'text-neutral-400'}`}
+                        >
+                            {isActive && (
+                                <div className="absolute inset-0 bg-accent/10 rounded-2xl animate-scale-in"></div>
+                            )}
+                            <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} />
+                            <span className="text-[10px] font-black uppercase tracking-widest">{item.label}</span>
+                        </button>
+                    );
+                })}
+                <div className="w-[1px] h-8 bg-neutral-200 dark:bg-white/10 mx-1"></div>
+                <button 
+                    onClick={() => setIsCommandCenterOpen(true)}
+                    className="flex flex-col items-center gap-1.5 py-2 px-4 text-neutral-400 hover:text-accent transition-colors"
+                >
+                    <Search size={22} />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Buscar</span>
+                </button>
+            </div>
             )}
         </div>
     );

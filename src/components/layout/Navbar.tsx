@@ -67,7 +67,7 @@ export default function Navbar() {
             <div className="flex items-center justify-between max-w-[1400px] mx-auto">
                 <Link to="/#top" className="flex flex-col gap-0 font-semibold group z-50">
                     <img
-                        className={`transition-all group-hover:scale-[1.02] object-contain ${isPortal ? 'w-[120px] md:w-[160px]' : 'w-[160px] md:w-[220px]'}`}
+                        className={`transition-all group-hover:scale-[1.02] object-contain ${isPortal ? 'w-[100px] md:w-[160px]' : 'w-[160px] md:w-[220px]'}`}
                         src={logo}
                         alt="CCI Consultoría Contable Integral" />
                     {!isPortal && <span className="text-[0.5rem] md:text-[0.6rem] text-muted uppercase tracking-[0.1rem]">Consultoría Contable Integral</span>}
