@@ -42,28 +42,50 @@ const FinanceHeader: React.FC<FinanceHeaderProps> = ({
                     <h2 className="text-xl font-bold">Registro de Finanzas Personales</h2>
                     <p className="text-sm opacity-40 mt-1">Control de ingresos, gastos y saldo al día.</p>
                 </div>
-                <div className="flex flex-wrap gap-3">
-                    <Button outline className="text-[10px] font-black uppercase tracking-widest py-2.5 px-5 flex items-center gap-2 border-[var(--border-color)] hover:border-accent transition-all" onClick={onImportExcel} disabled={isUploading}>
-                        <Upload size={14} className="opacity-70" /> {isUploading ? 'Importando...' : 'Importar Excel'}
+                <div className="flex flex-wrap items-center gap-2 md:gap-3">
+                    <button 
+                        onClick={onImportExcel} 
+                        disabled={isUploading}
+                        title="Importar Excel"
+                        className="p-3 md:px-5 md:py-2.5 rounded-2xl bg-white dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 text-accent hover:bg-accent hover:text-white transition-all shadow-sm flex items-center gap-2 group"
+                    >
+                        <Upload size={18} className="md:w-[14px] md:h-[14px]" />
+                        <span className="hidden md:inline text-[10px] font-black uppercase tracking-widest">
+                            {isUploading ? 'Importando...' : 'Importar'}
+                        </span>
+                    </button>
+
+                    <button 
+                        onClick={onExportExcel} 
+                        title="Exportar Excel"
+                        className="p-3 md:px-5 md:py-2.5 rounded-2xl bg-white dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 text-accent hover:bg-accent hover:text-white transition-all shadow-sm flex items-center gap-2 group"
+                    >
+                        <Download size={18} className="md:w-[14px] md:h-[14px]" />
+                        <span className="hidden md:inline text-[10px] font-black uppercase tracking-widest">Exportar</span>
+                    </button>
+
+                    <button 
+                        onClick={onRefresh} 
+                        title="Actualizar Datos"
+                        className="p-3 md:px-5 md:py-2.5 rounded-2xl bg-white dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 text-accent hover:bg-accent hover:text-white transition-all shadow-sm flex items-center gap-2 group"
+                    >
+                        <Calendar size={18} className="md:w-[14px] md:h-[14px]" />
+                        <span className="hidden md:inline text-[10px] font-black uppercase tracking-widest">Actualizar</span>
+                    </button>
+
+                    <button 
+                        onClick={onExportPDF} 
+                        title="Reporte PDF"
+                        className="p-3 md:px-5 md:py-2.5 rounded-2xl bg-white dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 text-accent hover:bg-accent hover:text-white transition-all shadow-sm flex items-center gap-2 group"
+                    >
+                        <Printer size={18} className="md:w-[14px] md:h-[14px]" />
+                        <span className="hidden md:inline text-[10px] font-black uppercase tracking-widest">Reporte</span>
+                    </button>
+
+                    <Button primary className="text-[10px] font-black uppercase tracking-widest py-3 px-6 md:py-2.5 md:px-6 flex items-center gap-2 shadow-lg shadow-accent/20 hover:scale-[1.02] transition-all" onClick={onToggleForm}>
+                        <Plus size={16} /> <span className={isFormOpen ? '' : 'hidden md:inline'}>{isFormOpen ? 'Cerrar' : 'Nuevo'}</span>
+                        {!isFormOpen && <span className="md:hidden">Nuevo</span>}
                     </Button>
-                    <Button outline className="text-[10px] font-black uppercase tracking-widest py-2.5 px-5 flex items-center gap-2 border-[var(--border-color)] hover:border-accent transition-all" onClick={onExportExcel}>
-                        <Download size={14} className="opacity-70" /> Exportar
-                    </Button>
-                    <Button outline className="text-[10px] font-black uppercase tracking-widest py-2.5 px-5 flex items-center gap-2 border-[var(--border-color)] hover:border-accent transition-all" onClick={onRefresh}>
-                        <Calendar size={14} className="opacity-70" /> Actualizar
-                    </Button>
-                    <div className="flex items-center gap-3">
-                        <Button 
-                            outline 
-                            className="text-[10px] font-black uppercase tracking-widest py-2.5 px-6 flex items-center gap-2"
-                            onClick={onExportPDF}
-                        >
-                            <Printer size={14} /> Reporte PDF
-                        </Button>
-                        <Button primary className="text-[10px] font-black uppercase tracking-widest py-2.5 px-6 flex items-center gap-2 shadow-lg hover:scale-[1.02] transition-all" onClick={onToggleForm}>
-                            <Plus size={14} /> {isFormOpen ? 'Cerrar Panel' : 'Nuevo Registro'}
-                        </Button>
-                    </div>
                 </div>
             </div>
 
