@@ -79,7 +79,13 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             const income = monthRecords.reduce((acc, r) => acc + (Number(r.income) || 0), 0);
             const expense = monthRecords.reduce((acc, r) => acc + (Number(r.expense) || 0), 0);
 
-            last6Months.push({ name: label, ingresos: income, gastos: expense });
+            last6Months.push({ 
+                name: label, 
+                fullMonthName: d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }),
+                monthKey: monthStr,
+                ingresos: income, 
+                gastos: expense 
+            });
         }
         return last6Months;
     }, [records]);
@@ -148,16 +154,29 @@ const DashboardView: React.FC<DashboardViewProps> = ({
     const topExpenseAmount = topExpenseData?.expense > 0 ? topExpenseData.expense : 0;
     const topExpensePercentage = totalExpenses > 0 ? (topExpenseAmount / totalExpenses) * 100 : 0;
 
+    const [selectedPoint, setSelectedPoint] = React.useState<any>(null);
+
     const CustomTooltip = ({ active, payload }: any) => {
         if (active && payload && payload.length) {
             return (
                 <div className="bg-[#1a1a1a]/90 backdrop-blur-xl border border-white/10 p-4 rounded-2xl shadow-2xl">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-1">{payload[0].name}</p>
-                    <p className="text-lg font-black text-white">${Number(payload[0].value).toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-1">{payload[0].payload.fullMonthName}</p>
+                    <div className="space-y-1">
+                        <p className="text-sm font-black text-green-400">↑ ${Number(payload[0].value).toLocaleString()}</p>
+                        <p className="text-sm font-black text-red-400">↓ ${Number(payload[1].value).toLocaleString()}</p>
+                    </div>
+                    <p className="text-[8px] font-bold text-white/40 mt-2 uppercase tracking-tighter">Click para ver detalle</p>
                 </div>
             );
         }
         return null;
+    };
+
+    const handleChartClick = (data: any) => {
+        if (data && data.activePayload && data.activePayload.length) {
+            const pointData = data.activePayload[0].payload;
+            setSelectedPoint(pointData);
+        }
     };
 
     return (
@@ -193,7 +212,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                     
                     <div className="h-[300px] w-full relative z-10">
                         <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={chartData}>
+                            <AreaChart data={chartData} onClick={handleChartClick} style={{ cursor: 'pointer' }}>
                                 <defs>
                                     <linearGradient id="colorIngresos" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="5%" stopColor="#4A7C82" stopOpacity={0.3}/>
@@ -207,19 +226,9 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" opacity={0.05} />
                                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 700, opacity: 0.5}} />
                                 <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 700, opacity: 0.5}} />
-                                <Tooltip 
-                                    contentStyle={{ 
-                                        borderRadius: '1.5rem', 
-                                        border: 'none', 
-                                        boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
-                                        backgroundColor: 'rgba(255,255,255,0.9)',
-                                        backdropFilter: 'blur(10px)',
-                                        padding: '1rem'
-                                    }}
-                                    itemStyle={{ fontSize: '12px', fontWeight: 900, textTransform: 'uppercase' }}
-                                />
-                                <Area type="monotone" dataKey="ingresos" stroke="#4A7C82" strokeWidth={3} fillOpacity={1} fill="url(#colorIngresos)" />
-                                <Area type="monotone" dataKey="gastos" stroke="#f87171" strokeWidth={3} fillOpacity={1} fill="url(#colorGastos)" />
+                                <Tooltip content={<CustomTooltip />} />
+                                <Area type="monotone" dataKey="ingresos" stroke="#4A7C82" strokeWidth={3} fillOpacity={1} fill="url(#colorIngresos)" activeDot={{ r: 8, strokeWidth: 0, fill: '#4A7C82' }} />
+                                <Area type="monotone" dataKey="gastos" stroke="#f87171" strokeWidth={3} fillOpacity={1} fill="url(#colorGastos)" activeDot={{ r: 8, strokeWidth: 0, fill: '#f87171' }} />
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>
@@ -498,6 +507,69 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                     </table>
                 </div>
             </div>
+            {/* CHART DETAIL MODAL */}
+            {selectedPoint && (
+                <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 animate-fade-in">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedPoint(null)}></div>
+                    <div className="relative z-10 w-full max-w-lg bg-white dark:bg-[#161c26] rounded-[2.5rem] p-8 shadow-2xl overflow-hidden border border-neutral-200 dark:border-white/10 animate-scale-in">
+                        <div className="flex justify-between items-start mb-8">
+                            <div>
+                                <h4 className="text-2xl font-black text-primary-dark dark:text-white capitalize">{selectedPoint.fullMonthName}</h4>
+                                <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-[0.2em] mt-1">Análisis detallado del periodo</p>
+                            </div>
+                            <button onClick={() => setSelectedPoint(null)} className="p-2 hover:bg-neutral-100 dark:hover:bg-white/5 rounded-full transition-colors text-neutral-400">
+                                <Plus size={24} className="rotate-45" />
+                            </button>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 mb-8">
+                            <div className="bg-green-500/5 p-4 rounded-3xl border border-green-500/10">
+                                <p className="text-[8px] font-black text-green-600/60 uppercase tracking-widest mb-1">Total Ingresos</p>
+                                <p className="text-xl font-black text-green-600">${selectedPoint.ingresos.toLocaleString()}</p>
+                            </div>
+                            <div className="bg-red-500/5 p-4 rounded-3xl border border-red-500/10">
+                                <p className="text-[8px] font-black text-red-500/60 uppercase tracking-widest mb-1">Total Gastos</p>
+                                <p className="text-xl font-black text-red-500">${selectedPoint.gastos.toLocaleString()}</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-6">
+                            <div>
+                                <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 mb-4 flex items-center gap-2">
+                                    <ArrowUpRight size={14} className="text-green-500" /> Movimientos Relevantes
+                                </h5>
+                                <div className="space-y-3">
+                                    {records
+                                        .filter(r => {
+                                            const rMonth = r.date.includes('/') ? r.date.split('/').reverse().join('-').substring(0, 7) : r.date.substring(0, 7);
+                                            return rMonth === selectedPoint.monthKey && (r.concept || '').toUpperCase().trim() !== 'SALDO INICIAL';
+                                        })
+                                        .sort((a, b) => (Number(b.income) + Number(b.expense)) - (Number(a.income) + Number(a.expense)))
+                                        .slice(0, 5)
+                                        .map((r, i) => (
+                                            <div key={i} className="flex items-center justify-between p-3 rounded-2xl bg-neutral-50 dark:bg-white/5 border border-neutral-100 dark:border-white/5">
+                                                <div className="flex flex-col">
+                                                    <span className="text-xs font-black uppercase tracking-tight truncate max-w-[150px]">{r.concept}</span>
+                                                    <span className="text-[9px] font-bold text-neutral-400">{r.provider || 'S/P'}</span>
+                                                </div>
+                                                <span className={`text-xs font-black ${Number(r.income) > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                                    {Number(r.income) > 0 ? `+` : `-`} ${Math.max(Number(r.income), Number(r.expense)).toLocaleString()}
+                                                </span>
+                                            </div>
+                                        ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <button 
+                            onClick={() => setSelectedPoint(null)}
+                            className="w-full mt-8 py-4 bg-accent text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-accent/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                        >
+                            Entendido
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
