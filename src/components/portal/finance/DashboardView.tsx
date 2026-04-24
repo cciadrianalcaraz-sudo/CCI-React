@@ -3,7 +3,7 @@ import {
     Target, 
     ArrowUpRight, Wallet, PieChart, 
     Activity, AlertTriangle, TrendingUp,
-    ChevronLeft, ChevronRight
+    ChevronLeft, ChevronRight, Plus
 } from 'lucide-react';
 import { 
     AreaChart, Area, XAxis, YAxis, CartesianGrid, 
