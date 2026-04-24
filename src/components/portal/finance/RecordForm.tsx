@@ -99,12 +99,12 @@ const RecordForm: React.FC<RecordFormProps> = ({
                 </div>
             )}
 
-            <div className="fixed inset-0 z-[10000] flex items-end md:items-center justify-center p-0 md:p-4 animate-fade-in">
+            <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 animate-fade-in">
                 {/* Backdrop */}
                 <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose}></div>
                 
                 {/* Modal Container */}
-                <div className="relative z-10 w-full max-w-5xl bg-white dark:bg-[#161c26] rounded-t-[2.5rem] md:rounded-[2.5rem] p-6 md:p-10 shadow-2xl overflow-y-auto max-h-[90vh] animate-slide-up border border-neutral-200 dark:border-white/10">
+                <div className="relative z-10 w-full max-w-5xl bg-white dark:bg-[#161c26] rounded-[2.5rem] p-6 md:p-10 shadow-2xl overflow-y-auto max-h-[90vh] animate-scale-in border border-neutral-200 dark:border-white/10">
                     <div className="absolute top-6 right-6 hidden md:block">
                         <button onClick={onClose} className="p-2 hover:bg-neutral-100 dark:hover:bg-white/5 rounded-full transition-colors text-neutral-400">
                             <Plus size={24} className="rotate-45" />
