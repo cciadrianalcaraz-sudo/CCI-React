@@ -1,7 +1,7 @@
 import React from 'react';
 import { 
     Plus, Upload, Download, Calendar, Search, X, Printer, 
-    TrendingUp, TrendingDown, DollarSign 
+    TrendingUp, TrendingDown, DollarSign, Camera
 } from 'lucide-react';
 import Button from '../../ui/Button';
 
@@ -18,6 +18,7 @@ interface FinanceHeaderProps {
     onExportExcel: () => void;
     onRefresh: () => void;
     onExportPDF: () => void;
+    onShowSnapshot: () => void;
     onToggleForm: () => void;
     isFormOpen: boolean;
     kpis: {
@@ -32,6 +33,7 @@ const FinanceHeader: React.FC<FinanceHeaderProps> = ({
     selectedMonth, setSelectedMonth, uniqueMonths,
     searchTerm, setSearchTerm,
     isUploading, onImportExcel, onExportExcel, onRefresh, onExportPDF,
+    onShowSnapshot,
     onToggleForm, isFormOpen,
     kpis
 }) => {
@@ -43,6 +45,14 @@ const FinanceHeader: React.FC<FinanceHeaderProps> = ({
                     <p className="text-sm opacity-40 mt-1">Control de ingresos, gastos y saldo al día.</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 md:gap-3">
+                    <button 
+                        onClick={onShowSnapshot}
+                        title="Snapshot para WhatsApp"
+                        className="p-3 md:px-5 md:py-2.5 rounded-2xl bg-accent/10 border border-accent/20 text-accent hover:bg-accent hover:text-white transition-all shadow-sm flex items-center gap-2 group animate-pulse"
+                    >
+                        <Camera size={18} className="md:w-[14px] md:h-[14px]" />
+                        <span className="hidden md:inline text-[10px] font-black uppercase tracking-widest">Snapshot</span>
+                    </button>
                     <button 
                         onClick={onImportExcel} 
                         disabled={isUploading}
