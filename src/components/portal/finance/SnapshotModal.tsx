@@ -1,5 +1,5 @@
-import React, { useRef, useState } from 'react';
-import { Sparkles, Plus, Camera, Download } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { Sparkles, Plus, Download } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { toast } from '../../../lib/toast';
 
