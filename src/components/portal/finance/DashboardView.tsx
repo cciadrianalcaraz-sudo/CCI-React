@@ -61,6 +61,55 @@ const DashboardView: React.FC<DashboardViewProps> = ({
         return { income, expense, balance, savingsRate, totalDebt };
     }, [records, selectedMonth, credits]);
 
+    // 1.5 Cálculos Analizador 50/30/20 y Salud
+    const healthAndBudget = useMemo(() => {
+        const currentMonth = selectedMonth === 'all' ? '' : selectedMonth;
+        const filtered = records.filter(r => {
+            const rMonth = r.date.includes('/') ? r.date.split('/').reverse().join('-').substring(0, 7) : r.date.substring(0, 7);
+            const c = (r.concept || '').toUpperCase().trim();
+            const isInternal = c === 'SALDO INICIAL' || c.includes('TRASPASO');
+            return (selectedMonth === 'all' || rMonth.startsWith(currentMonth)) && !isInternal;
+        });
+
+        const totalIncome = filtered.reduce((acc, r) => acc + (Number(r.income) || 0), 0);
+        const totalExpense = filtered.reduce((acc, r) => acc + (Number(r.expense) || 0), 0);
+
+        let healthStatus: 'healthy' | 'warning' | 'danger' = 'healthy';
+        const expenseRatio = totalIncome > 0 ? (totalExpense / totalIncome) * 100 : 0;
+        
+        if (totalExpense > 0 && totalIncome === 0) {
+            healthStatus = 'danger';
+        } else if (expenseRatio >= 90) {
+            healthStatus = 'danger';
+        } else if (expenseRatio >= 75) {
+            healthStatus = 'warning';
+        }
+
+        let needs = 0; // Fijo
+        let wants = 0; // Variable
+        let savingsDebt = 0; // Ahorro, Deuda
+
+        filtered.filter(r => Number(r.expense) > 0).forEach(r => {
+            const type = r.expense_type;
+            const amount = Number(r.expense) || 0;
+            if (type === 'Fijo') needs += amount;
+            else if (type === 'Ahorro' || type === 'Deuda') savingsDebt += amount;
+            else wants += amount; // Variable, default
+        });
+
+        const needsRatio = totalIncome > 0 ? (needs / totalIncome) * 100 : 0;
+        const wantsRatio = totalIncome > 0 ? (wants / totalIncome) * 100 : 0;
+        const savingsDebtRatio = totalIncome > 0 ? (savingsDebt / totalIncome) * 100 : 0;
+
+        return {
+            healthStatus,
+            expenseRatio,
+            needs, needsRatio,
+            wants, wantsRatio,
+            savingsDebt, savingsDebtRatio
+        };
+    }, [records, selectedMonth]);
+
     // 2. Datos para la Gráfica de Rendimiento (Últimos 6 meses)
     const chartData = useMemo(() => {
         const last6Months = [];
@@ -287,11 +336,29 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                         )}
                     </div>
 
-                    <div className="bg-[var(--bg-card)] dark:bg-white/5 rounded-[2.5rem] p-6 md:p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md relative group">
-                        <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">Balance del Periodo</p>
-                        <h4 className={`text-3xl font-black tracking-tight ${stats.balance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                            ${stats.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    {/* Semáforo de Salud Financiera */}
+                    <div className={`rounded-[2.5rem] p-6 md:p-8 border shadow-sm backdrop-blur-md relative group overflow-hidden transition-colors ${
+                        healthAndBudget.healthStatus === 'danger' 
+                            ? 'bg-red-500/10 border-red-500/20 text-red-500' 
+                            : healthAndBudget.healthStatus === 'warning'
+                            ? 'bg-amber-500/10 border-amber-500/20 text-amber-500'
+                            : 'bg-green-500/10 border-green-500/20 text-green-500'
+                    }`}>
+                        <div className="flex justify-between items-start mb-2">
+                            <p className="text-[10px] font-black uppercase tracking-widest opacity-60 text-[var(--text-primary)]">Salud Financiera</p>
+                            <div className={`w-3 h-3 rounded-full animate-pulse shadow-lg ${
+                                healthAndBudget.healthStatus === 'danger' ? 'bg-red-500 shadow-red-500/50' : 
+                                healthAndBudget.healthStatus === 'warning' ? 'bg-amber-500 shadow-amber-500/50' : 'bg-green-500 shadow-green-500/50'
+                            }`}></div>
+                        </div>
+                        <h4 className="text-3xl font-black tracking-tight mb-1">
+                            {healthAndBudget.healthStatus === 'danger' ? 'Peligro' : healthAndBudget.healthStatus === 'warning' ? 'Precaución' : 'Saludable'}
                         </h4>
+                        <p className="text-[10px] font-bold opacity-60 text-[var(--text-primary)]">
+                            {healthAndBudget.expenseRatio > 0 
+                                ? `Has gastado el ${healthAndBudget.expenseRatio.toFixed(0)}% de tus ingresos.`
+                                : 'Aún no hay gastos registrados frente a tus ingresos.'}
+                        </p>
                     </div>
                 </div>
 
@@ -398,6 +465,65 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                             })
                         )}
                     </div>
+                </div>
+
+                {/* Analizador 50/30/20 */}
+                <div className="lg:col-span-12 bg-[var(--bg-card)] dark:bg-white/5 rounded-[2.5rem] p-6 md:p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md relative overflow-hidden group">
+                    <div className="flex items-center gap-3 mb-6 relative z-10">
+                        <Target size={20} className="text-blue-500" />
+                        <div>
+                            <h3 className="text-lg font-black">Analizador 50/30/20</h3>
+                            <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest mt-1">Regla de Presupuesto Ideal vs Realidad</p>
+                        </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-6 relative z-10">
+                        {/* Necesidades 50% */}
+                        <div className="space-y-2">
+                            <div className="flex justify-between items-end">
+                                <span className="text-sm font-black uppercase tracking-wider">Necesidades (Fijos)</span>
+                                <span className={`text-[10px] font-black ${healthAndBudget.needsRatio > 50 ? 'text-red-500' : 'text-neutral-400'}`}>
+                                    {healthAndBudget.needsRatio.toFixed(1)}% / 50%
+                                </span>
+                            </div>
+                            <div className="h-2.5 w-full bg-neutral-100 dark:bg-white/5 rounded-full overflow-hidden relative">
+                                <div className="absolute top-0 bottom-0 border-r-2 border-neutral-300 dark:border-neutral-500 z-10" style={{ left: '50%' }}></div>
+                                <div className={`h-full rounded-full transition-all duration-1000 ${healthAndBudget.needsRatio > 50 ? 'bg-red-500' : 'bg-blue-500'}`} style={{ width: `${Math.min(100, healthAndBudget.needsRatio)}%` }}></div>
+                            </div>
+                            <p className="text-[10px] font-bold text-neutral-400 mt-1">${healthAndBudget.needs.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                        </div>
+
+                        {/* Deseos 30% */}
+                        <div className="space-y-2">
+                            <div className="flex justify-between items-end">
+                                <span className="text-sm font-black uppercase tracking-wider">Deseos (Variables)</span>
+                                <span className={`text-[10px] font-black ${healthAndBudget.wantsRatio > 30 ? 'text-amber-500' : 'text-neutral-400'}`}>
+                                    {healthAndBudget.wantsRatio.toFixed(1)}% / 30%
+                                </span>
+                            </div>
+                            <div className="h-2.5 w-full bg-neutral-100 dark:bg-white/5 rounded-full overflow-hidden relative">
+                                <div className="absolute top-0 bottom-0 border-r-2 border-neutral-300 dark:border-neutral-500 z-10" style={{ left: '30%' }}></div>
+                                <div className={`h-full rounded-full transition-all duration-1000 ${healthAndBudget.wantsRatio > 30 ? 'bg-amber-500' : 'bg-purple-500'}`} style={{ width: `${Math.min(100, healthAndBudget.wantsRatio)}%` }}></div>
+                            </div>
+                            <p className="text-[10px] font-bold text-neutral-400 mt-1">${healthAndBudget.wants.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                        </div>
+
+                        {/* Ahorro/Deuda 20% */}
+                        <div className="space-y-2">
+                            <div className="flex justify-between items-end">
+                                <span className="text-sm font-black uppercase tracking-wider">Ahorro / Deudas</span>
+                                <span className={`text-[10px] font-black ${healthAndBudget.savingsDebtRatio < 20 ? 'text-amber-500' : 'text-green-500'}`}>
+                                    {healthAndBudget.savingsDebtRatio.toFixed(1)}% / 20%
+                                </span>
+                            </div>
+                            <div className="h-2.5 w-full bg-neutral-100 dark:bg-white/5 rounded-full overflow-hidden relative">
+                                <div className="absolute top-0 bottom-0 border-r-2 border-neutral-300 dark:border-neutral-500 z-10" style={{ left: '20%' }}></div>
+                                <div className={`h-full rounded-full transition-all duration-1000 ${healthAndBudget.savingsDebtRatio < 20 ? 'bg-amber-500' : 'bg-green-500'}`} style={{ width: `${Math.min(100, healthAndBudget.savingsDebtRatio)}%` }}></div>
+                            </div>
+                            <p className="text-[10px] font-bold text-neutral-400 mt-1">${healthAndBudget.savingsDebt.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                        </div>
+                    </div>
+                    <div className="absolute bottom-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-[80px] -mr-32 -mb-32"></div>
                 </div>
 
                 {/* Liquidity List */}
