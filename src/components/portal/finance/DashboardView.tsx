@@ -234,8 +234,158 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             {/* AI Strategic Widget - Executive Priority (OCULTO POR SOLICITUD) */}
             {/* <AIBriefingWidget records={records} goals={goals} credits={credits} /> */}
 
+            {/* 1. Liquidity List (Top priority for decision making) */}
+            <div className="w-full bg-white/30 dark:bg-white/5 rounded-[2.5rem] p-6 border border-white/20 dark:border-white/10 shadow-sm backdrop-blur-xl group">
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-4">
+                        <Wallet size={18} className="text-accent" />
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Liquidez por Cuenta</h4>
+                    </div>
+                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => scroll('left')} className="w-8 h-8 rounded-full bg-white dark:bg-white/10 flex items-center justify-center hover:bg-accent hover:text-white transition-all shadow-sm">
+                            <ChevronLeft size={16} />
+                        </button>
+                        <button onClick={() => scroll('right')} className="w-8 h-8 rounded-full bg-white dark:bg-white/10 flex items-center justify-center hover:bg-accent hover:text-white transition-all shadow-sm">
+                            <ChevronRight size={16} />
+                        </button>
+                    </div>
+                </div>
+                <div 
+                    ref={scrollRef}
+                    className="flex gap-4 overflow-x-auto no-scrollbar pb-2 scroll-smooth"
+                >
+                    {accountBalances.length > 0 ? (
+                        accountBalances.map((acc, i) => (
+                            <div key={i} className="min-w-[180px] bg-[var(--bg-card)] dark:bg-white/10 p-5 rounded-3xl border border-[var(--border-color)] dark:border-white/10 shadow-sm group/card hover:-translate-y-1 transition-all">
+                                <p className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-1 group-hover/card:text-accent transition-colors">{acc.name}</p>
+                                <p className="text-lg font-black tracking-tighter">${acc.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="p-4 text-xs font-bold opacity-30 uppercase tracking-widest">No hay cuentas registradas con movimientos</div>
+                    )}
+                </div>
+            </div>
+
             {/* Bento Grid Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6">
+                
+                {/* --- ROW 1: KPI Cards (4 items x 3 cols = 12 cols) --- */}
+                
+                {/* Card 1: Semáforo de Salud Financiera */}
+                <div className={`lg:col-span-3 rounded-[2.5rem] p-6 border shadow-sm backdrop-blur-md relative group overflow-hidden transition-colors flex flex-col justify-between ${
+                    healthAndBudget.healthStatus === 'danger' 
+                        ? 'bg-red-500/10 border-red-500/20 text-red-500' 
+                        : healthAndBudget.healthStatus === 'warning'
+                        ? 'bg-amber-500/10 border-amber-500/20 text-amber-500'
+                        : 'bg-green-500/10 border-green-500/20 text-green-500'
+                }`}>
+                    <div>
+                        <div className="flex justify-between items-start mb-4">
+                            <p className="text-[10px] font-black uppercase tracking-widest opacity-60 text-[var(--text-primary)]">Salud Financiera</p>
+                            <div className={`w-3 h-3 rounded-full animate-pulse shadow-lg ${
+                                healthAndBudget.healthStatus === 'danger' ? 'bg-red-500 shadow-red-500/50' : 
+                                healthAndBudget.healthStatus === 'warning' ? 'bg-amber-500 shadow-amber-500/50' : 'bg-green-500 shadow-green-500/50'
+                            }`}></div>
+                        </div>
+                        <h4 className="text-3xl font-black tracking-tight mb-2">
+                            {healthAndBudget.healthStatus === 'danger' ? 'Peligro' : healthAndBudget.healthStatus === 'warning' ? 'Precaución' : 'Saludable'}
+                        </h4>
+                    </div>
+                    <p className="text-[10px] font-bold opacity-60 text-[var(--text-primary)]">
+                        {healthAndBudget.expenseRatio > 0 
+                            ? `Gasto del ${healthAndBudget.expenseRatio.toFixed(0)}% de ingresos`
+                            : 'Aún sin gastos registrados'}
+                    </p>
+                </div>
+
+                {/* Card 2: Capacidad de Ahorro */}
+                <div className="lg:col-span-3 bg-gradient-to-br from-primary-dark to-[#2c4a4e] rounded-[2.5rem] p-6 text-white shadow-xl relative overflow-hidden group flex flex-col justify-between">
+                    <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">Capacidad de Ahorro</p>
+                    <div className="flex items-end gap-3 mt-auto">
+                        <h4 className="text-4xl font-black tracking-tight">{stats.savingsRate.toFixed(1)}%</h4>
+                        <div className={`flex items-center gap-1 mb-1 text-[10px] font-bold ${stats.savingsRate > 20 ? 'text-green-400' : 'text-amber-400'}`}>
+                            {stats.savingsRate > 20 ? <ArrowUpRight size={14} /> : <Activity size={14} />}
+                            {stats.savingsRate > 20 ? 'Excelente' : 'Ajustado'}
+                        </div>
+                    </div>
+                    <div className="mt-4 h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                        <div className="h-full bg-accent rounded-full" style={{ width: `${Math.min(100, stats.savingsRate)}%` }}></div>
+                    </div>
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-[40px] -mr-16 -mt-16"></div>
+                </div>
+
+                {/* Card 3: Entradas de Capital */}
+                <div className="lg:col-span-3 bg-[var(--bg-card)] dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] p-6 border border-[var(--border-color)] dark:border-white/10 shadow-sm flex flex-col">
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 flex items-center gap-2 mb-2">
+                        <TrendingUp size={14} className="text-green-500" /> Ingresos
+                    </h4>
+                    <p className="text-xl font-heading font-black text-[var(--text-primary)] mb-2">
+                        ${totalIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </p>
+                    <div className="flex-1 h-[80px] w-full relative">
+                        {summaryData.filter(d => d.income > 0).length > 0 ? (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <RePieChart>
+                                    <Pie 
+                                        data={summaryData.filter(d => d.income > 0).sort((a,b) => b.income - a.income)} 
+                                        dataKey="income" 
+                                        nameKey="concept" 
+                                        cx="50%" cy="50%" 
+                                        innerRadius={25} 
+                                        outerRadius={40} 
+                                        paddingAngle={5}
+                                        stroke="none"
+                                    >
+                                        {summaryData.filter(d => d.income > 0).map((_, index) => (
+                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip content={<CustomTooltip />} />
+                                </RePieChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div className="absolute inset-0 flex items-center justify-center text-neutral-300 text-[10px] font-black uppercase tracking-widest">Sin ingresos</div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Card 4: Mayor Gasto */}
+                <div className="lg:col-span-3 bg-[var(--bg-card)] dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] p-6 border border-[var(--border-color)] dark:border-white/10 shadow-sm relative group overflow-hidden flex flex-col">
+                    <div className="absolute bottom-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-[50px] group-hover:bg-red-500/10 transition-all duration-500"></div>
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 flex items-center gap-2 mb-2">
+                        <AlertTriangle size={14} className="text-red-500" /> Mayor Gasto
+                    </h4>
+                    
+                    {topExpenseConcept ? (
+                        <div className="flex flex-col justify-between flex-1">
+                            <div>
+                                <p className="text-xl font-black font-heading text-[var(--text-primary)] leading-tight mb-1 capitalize truncate" title={topExpenseConcept}>
+                                    {topExpenseConcept.toLowerCase()}
+                                </p>
+                                <p className="text-sm font-bold text-red-500">
+                                    ${topExpenseAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                </p>
+                            </div>
+                            
+                            <div className="mt-auto pt-4 flex items-center gap-3">
+                                <div className="flex-1">
+                                    <div className="w-full h-1.5 bg-red-500/20 rounded-full overflow-hidden">
+                                        <div className="h-full bg-red-500 rounded-full" style={{ width: `${topExpensePercentage}%` }}></div>
+                                    </div>
+                                </div>
+                                <span className="text-[10px] font-black text-red-500">{topExpensePercentage.toFixed(0)}%</span>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center opacity-30 py-4 flex-1">
+                            <Target size={24} />
+                            <p className="text-[10px] uppercase tracking-widest font-bold mt-2">Sin gastos</p>
+                        </div>
+                    )}
+                </div>
+
+                {/* --- ROW 2: Charts (8 + 4) --- */}
                 
                 {/* Main Performance Chart */}
                 <div className="lg:col-span-8 bg-[var(--bg-card)] dark:bg-white/5 rounded-[2.5rem] p-6 md:p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md relative overflow-hidden group">
@@ -259,7 +409,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                         </div>
                     </div>
                     
-                    <div className="h-[300px] w-full relative z-10">
+                    <div className="h-[280px] w-full relative z-10">
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={chartData} onClick={handleChartClick} style={{ cursor: 'pointer' }}>
                                 <defs>
@@ -284,86 +434,69 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                     <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 rounded-full blur-[100px] -mr-32 -mt-32"></div>
                 </div>
 
-                {/* Vertical KPI Cards Bundle */}
-                <div className="lg:col-span-4 space-y-6">
-                    <div className="bg-gradient-to-br from-primary-dark to-[#2c4a4e] rounded-[2.5rem] p-6 md:p-8 text-white shadow-xl relative overflow-hidden group">
-                        <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">Capacidad de Ahorro</p>
-                        <div className="flex items-end gap-3">
-                            <h4 className="text-4xl font-black tracking-tight">{stats.savingsRate.toFixed(1)}%</h4>
-                            <div className={`flex items-center gap-1 mb-1 text-[10px] font-bold ${stats.savingsRate > 20 ? 'text-green-400' : 'text-amber-400'}`}>
-                                {stats.savingsRate > 20 ? <ArrowUpRight size={14} /> : <Activity size={14} />}
-                                {stats.savingsRate > 20 ? 'Excelente' : 'Ajustado'}
-                            </div>
+                {/* Analizador 50/30/20 Vertical */}
+                <div className="lg:col-span-4 bg-[var(--bg-card)] dark:bg-white/5 rounded-[2.5rem] p-6 md:p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md relative overflow-hidden group flex flex-col">
+                    <div className="flex items-center gap-3 mb-8 relative z-10">
+                        <Target size={20} className="text-blue-500" />
+                        <div>
+                            <h3 className="text-lg font-black">Regla 50/30/20</h3>
+                            <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest mt-1">Distribución Ideal vs Realidad</p>
                         </div>
-                        <div className="mt-6 h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                            <div className="h-full bg-accent rounded-full" style={{ width: `${Math.min(100, stats.savingsRate)}%` }}></div>
-                        </div>
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-[40px] -mr-16 -mt-16"></div>
                     </div>
+                    
+                    <div className="space-y-6 relative z-10 flex-1 flex flex-col justify-center">
+                        {/* Necesidades 50% */}
+                        <div className="space-y-2">
+                            <div className="flex justify-between items-end">
+                                <span className="text-xs font-black uppercase tracking-wider">Necesidades</span>
+                                <span className={`text-[10px] font-black ${healthAndBudget.needsRatio > 50 ? 'text-red-500' : 'text-neutral-400'}`}>
+                                    {healthAndBudget.needsRatio.toFixed(1)}% / 50%
+                                </span>
+                            </div>
+                            <div className="h-2.5 w-full bg-neutral-100 dark:bg-white/5 rounded-full overflow-hidden relative">
+                                <div className="absolute top-0 bottom-0 border-r-2 border-neutral-300 dark:border-neutral-500 z-10" style={{ left: '50%' }}></div>
+                                <div className={`h-full rounded-full transition-all duration-1000 ${healthAndBudget.needsRatio > 50 ? 'bg-red-500' : 'bg-blue-500'}`} style={{ width: `${Math.min(100, healthAndBudget.needsRatio)}%` }}></div>
+                            </div>
+                            <p className="text-[10px] font-bold text-neutral-400">${healthAndBudget.needs.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                        </div>
 
-                    {/* Fuga Principal (Importada de Resumen) */}
-                    <div className="bg-[var(--bg-card)] dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] p-6 md:p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm relative group overflow-hidden">
-                        <div className="absolute bottom-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-[50px] group-hover:bg-red-500/10 transition-all duration-500"></div>
-                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 flex items-center gap-2 mb-4">
-                            <AlertTriangle size={14} className="text-red-500" /> Mayor Gasto (Periodo)
-                        </h4>
-                        
-                        {topExpenseConcept ? (
-                            <div className="flex flex-col justify-between flex-1">
-                                <div>
-                                    <p className="text-xl font-black font-heading text-[var(--text-primary)] leading-tight mb-1 capitalize truncate" title={topExpenseConcept}>
-                                        {topExpenseConcept.toLowerCase()}
-                                    </p>
-                                    <p className="text-sm font-bold text-red-500">
-                                        ${topExpenseAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                                    </p>
-                                </div>
-                                
-                                <div className="mt-4 flex items-center gap-3 bg-red-500/5 dark:bg-red-500/10 p-3 rounded-2xl border border-red-500/10">
-                                    <div className="flex-1">
-                                        <div className="w-full h-1.5 bg-red-500/20 rounded-full overflow-hidden">
-                                            <div className="h-full bg-red-500 rounded-full" style={{ width: `${topExpensePercentage}%` }}></div>
-                                        </div>
-                                    </div>
-                                    <span className="text-sm font-black text-red-500">{topExpensePercentage.toFixed(0)}%</span>
-                                </div>
+                        {/* Deseos 30% */}
+                        <div className="space-y-2">
+                            <div className="flex justify-between items-end">
+                                <span className="text-xs font-black uppercase tracking-wider">Deseos</span>
+                                <span className={`text-[10px] font-black ${healthAndBudget.wantsRatio > 30 ? 'text-amber-500' : 'text-neutral-400'}`}>
+                                    {healthAndBudget.wantsRatio.toFixed(1)}% / 30%
+                                </span>
                             </div>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center opacity-30 py-4">
-                                <Target size={24} />
-                                <p className="text-[10px] uppercase tracking-widest font-bold mt-2">Sin gastos</p>
+                            <div className="h-2.5 w-full bg-neutral-100 dark:bg-white/5 rounded-full overflow-hidden relative">
+                                <div className="absolute top-0 bottom-0 border-r-2 border-neutral-300 dark:border-neutral-500 z-10" style={{ left: '30%' }}></div>
+                                <div className={`h-full rounded-full transition-all duration-1000 ${healthAndBudget.wantsRatio > 30 ? 'bg-amber-500' : 'bg-purple-500'}`} style={{ width: `${Math.min(100, healthAndBudget.wantsRatio)}%` }}></div>
                             </div>
-                        )}
-                    </div>
-
-                    {/* Semáforo de Salud Financiera */}
-                    <div className={`rounded-[2.5rem] p-6 md:p-8 border shadow-sm backdrop-blur-md relative group overflow-hidden transition-colors ${
-                        healthAndBudget.healthStatus === 'danger' 
-                            ? 'bg-red-500/10 border-red-500/20 text-red-500' 
-                            : healthAndBudget.healthStatus === 'warning'
-                            ? 'bg-amber-500/10 border-amber-500/20 text-amber-500'
-                            : 'bg-green-500/10 border-green-500/20 text-green-500'
-                    }`}>
-                        <div className="flex justify-between items-start mb-2">
-                            <p className="text-[10px] font-black uppercase tracking-widest opacity-60 text-[var(--text-primary)]">Salud Financiera</p>
-                            <div className={`w-3 h-3 rounded-full animate-pulse shadow-lg ${
-                                healthAndBudget.healthStatus === 'danger' ? 'bg-red-500 shadow-red-500/50' : 
-                                healthAndBudget.healthStatus === 'warning' ? 'bg-amber-500 shadow-amber-500/50' : 'bg-green-500 shadow-green-500/50'
-                            }`}></div>
+                            <p className="text-[10px] font-bold text-neutral-400">${healthAndBudget.wants.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
                         </div>
-                        <h4 className="text-3xl font-black tracking-tight mb-1">
-                            {healthAndBudget.healthStatus === 'danger' ? 'Peligro' : healthAndBudget.healthStatus === 'warning' ? 'Precaución' : 'Saludable'}
-                        </h4>
-                        <p className="text-[10px] font-bold opacity-60 text-[var(--text-primary)]">
-                            {healthAndBudget.expenseRatio > 0 
-                                ? `Has gastado el ${healthAndBudget.expenseRatio.toFixed(0)}% de tus ingresos.`
-                                : 'Aún no hay gastos registrados frente a tus ingresos.'}
-                        </p>
+
+                        {/* Ahorro/Deuda 20% */}
+                        <div className="space-y-2">
+                            <div className="flex justify-between items-end">
+                                <span className="text-xs font-black uppercase tracking-wider">Ahorro / Deudas</span>
+                                <span className={`text-[10px] font-black ${healthAndBudget.savingsDebtRatio < 20 ? 'text-amber-500' : 'text-green-500'}`}>
+                                    {healthAndBudget.savingsDebtRatio.toFixed(1)}% / 20%
+                                </span>
+                            </div>
+                            <div className="h-2.5 w-full bg-neutral-100 dark:bg-white/5 rounded-full overflow-hidden relative">
+                                <div className="absolute top-0 bottom-0 border-r-2 border-neutral-300 dark:border-neutral-500 z-10" style={{ left: '20%' }}></div>
+                                <div className={`h-full rounded-full transition-all duration-1000 ${healthAndBudget.savingsDebtRatio < 20 ? 'bg-amber-500' : 'bg-green-500'}`} style={{ width: `${Math.min(100, healthAndBudget.savingsDebtRatio)}%` }}></div>
+                            </div>
+                            <p className="text-[10px] font-bold text-neutral-400">${healthAndBudget.savingsDebt.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                        </div>
                     </div>
+                    <div className="absolute bottom-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-[80px] -mr-32 -mb-32"></div>
                 </div>
 
+                {/* --- ROW 3: Details (6 + 6) --- */}
+
                 {/* Gastos por Tipo (BARRAS) */}
-                <div className="lg:col-span-5 bg-[var(--bg-card)] dark:bg-white/5 rounded-[2.5rem] p-6 md:p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md relative">
+                <div className="lg:col-span-6 bg-[var(--bg-card)] dark:bg-white/5 rounded-[2.5rem] p-6 md:p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md relative">
                     <h3 className="text-lg font-black mb-6 flex items-center gap-3">
                         <PieChart size={20} className="text-purple-500" />
                         Distribución de Gastos
@@ -393,54 +526,18 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                     </div>
                 </div>
 
-                {/* Entradas de Capital (PIE) - Importado de Resumen */}
-                <div className="lg:col-span-3 bg-[var(--bg-card)] dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] p-6 md:p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm flex flex-col">
-                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 flex items-center gap-2 mb-4">
-                        <TrendingUp size={14} className="text-green-500" /> Entradas de Capital
-                    </h4>
-                    <p className="text-xl font-heading font-black text-[var(--text-primary)] mb-6">
-                        ${totalIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                    </p>
-                    
-                    <div className="flex-1 h-[140px] w-full relative">
-                        {summaryData.filter(d => d.income > 0).length > 0 ? (
-                            <ResponsiveContainer width="100%" height="100%">
-                                <RePieChart>
-                                    <Pie 
-                                        data={summaryData.filter(d => d.income > 0).sort((a,b) => b.income - a.income)} 
-                                        dataKey="income" 
-                                        nameKey="concept" 
-                                        cx="50%" cy="50%" 
-                                        innerRadius={45} 
-                                        outerRadius={65} 
-                                        paddingAngle={5}
-                                        stroke="none"
-                                    >
-                                        {summaryData.filter(d => d.income > 0).map((_, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip content={<CustomTooltip />} />
-                                </RePieChart>
-                            </ResponsiveContainer>
-                        ) : (
-                            <div className="absolute inset-0 flex items-center justify-center text-neutral-300 text-[10px] font-black uppercase tracking-widest">Sin ingresos</div>
-                        )}
-                    </div>
-                </div>
-
                 {/* Goals Preview */}
-                <div className="lg:col-span-4 bg-[var(--bg-card)] dark:bg-white/5 rounded-[2.5rem] p-6 md:p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md overflow-hidden relative group">
+                <div className="lg:col-span-6 bg-[var(--bg-card)] dark:bg-white/5 rounded-[2.5rem] p-6 md:p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md overflow-hidden relative group">
                     <div className="flex justify-between items-center mb-8">
                         <div>
                             <h3 className="text-lg font-black flex items-center gap-3">
                                 <Target size={20} className="text-amber-500" />
-                                Metas
+                                Avance de Metas
                             </h3>
                         </div>
                     </div>
                     
-                    <div className="space-y-5">
+                    <div className="space-y-6">
                         {goals.length === 0 ? (
                             <div className="py-12 text-center opacity-30 italic text-sm font-bold uppercase tracking-widest">Sin metas</div>
                         ) : (
@@ -454,7 +551,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                                             </div>
                                             <span className="text-[10px] font-black text-accent">{Math.round(progress)}%</span>
                                         </div>
-                                        <div className="h-1.5 w-full bg-neutral-100 dark:bg-white/10 rounded-full overflow-hidden">
+                                        <div className="h-2 w-full bg-neutral-100 dark:bg-white/10 rounded-full overflow-hidden">
                                             <div 
                                                 className="h-full rounded-full transition-all duration-1000" 
                                                 style={{ width: `${progress}%`, backgroundColor: goal.color }}
@@ -463,98 +560,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                                     </div>
                                 );
                             })
-                        )}
-                    </div>
-                </div>
-
-                {/* Analizador 50/30/20 */}
-                <div className="lg:col-span-12 bg-[var(--bg-card)] dark:bg-white/5 rounded-[2.5rem] p-6 md:p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md relative overflow-hidden group">
-                    <div className="flex items-center gap-3 mb-6 relative z-10">
-                        <Target size={20} className="text-blue-500" />
-                        <div>
-                            <h3 className="text-lg font-black">Analizador 50/30/20</h3>
-                            <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest mt-1">Regla de Presupuesto Ideal vs Realidad</p>
-                        </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-6 relative z-10">
-                        {/* Necesidades 50% */}
-                        <div className="space-y-2">
-                            <div className="flex justify-between items-end">
-                                <span className="text-sm font-black uppercase tracking-wider">Necesidades (Fijos)</span>
-                                <span className={`text-[10px] font-black ${healthAndBudget.needsRatio > 50 ? 'text-red-500' : 'text-neutral-400'}`}>
-                                    {healthAndBudget.needsRatio.toFixed(1)}% / 50%
-                                </span>
-                            </div>
-                            <div className="h-2.5 w-full bg-neutral-100 dark:bg-white/5 rounded-full overflow-hidden relative">
-                                <div className="absolute top-0 bottom-0 border-r-2 border-neutral-300 dark:border-neutral-500 z-10" style={{ left: '50%' }}></div>
-                                <div className={`h-full rounded-full transition-all duration-1000 ${healthAndBudget.needsRatio > 50 ? 'bg-red-500' : 'bg-blue-500'}`} style={{ width: `${Math.min(100, healthAndBudget.needsRatio)}%` }}></div>
-                            </div>
-                            <p className="text-[10px] font-bold text-neutral-400 mt-1">${healthAndBudget.needs.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
-                        </div>
-
-                        {/* Deseos 30% */}
-                        <div className="space-y-2">
-                            <div className="flex justify-between items-end">
-                                <span className="text-sm font-black uppercase tracking-wider">Deseos (Variables)</span>
-                                <span className={`text-[10px] font-black ${healthAndBudget.wantsRatio > 30 ? 'text-amber-500' : 'text-neutral-400'}`}>
-                                    {healthAndBudget.wantsRatio.toFixed(1)}% / 30%
-                                </span>
-                            </div>
-                            <div className="h-2.5 w-full bg-neutral-100 dark:bg-white/5 rounded-full overflow-hidden relative">
-                                <div className="absolute top-0 bottom-0 border-r-2 border-neutral-300 dark:border-neutral-500 z-10" style={{ left: '30%' }}></div>
-                                <div className={`h-full rounded-full transition-all duration-1000 ${healthAndBudget.wantsRatio > 30 ? 'bg-amber-500' : 'bg-purple-500'}`} style={{ width: `${Math.min(100, healthAndBudget.wantsRatio)}%` }}></div>
-                            </div>
-                            <p className="text-[10px] font-bold text-neutral-400 mt-1">${healthAndBudget.wants.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
-                        </div>
-
-                        {/* Ahorro/Deuda 20% */}
-                        <div className="space-y-2">
-                            <div className="flex justify-between items-end">
-                                <span className="text-sm font-black uppercase tracking-wider">Ahorro / Deudas</span>
-                                <span className={`text-[10px] font-black ${healthAndBudget.savingsDebtRatio < 20 ? 'text-amber-500' : 'text-green-500'}`}>
-                                    {healthAndBudget.savingsDebtRatio.toFixed(1)}% / 20%
-                                </span>
-                            </div>
-                            <div className="h-2.5 w-full bg-neutral-100 dark:bg-white/5 rounded-full overflow-hidden relative">
-                                <div className="absolute top-0 bottom-0 border-r-2 border-neutral-300 dark:border-neutral-500 z-10" style={{ left: '20%' }}></div>
-                                <div className={`h-full rounded-full transition-all duration-1000 ${healthAndBudget.savingsDebtRatio < 20 ? 'bg-amber-500' : 'bg-green-500'}`} style={{ width: `${Math.min(100, healthAndBudget.savingsDebtRatio)}%` }}></div>
-                            </div>
-                            <p className="text-[10px] font-bold text-neutral-400 mt-1">${healthAndBudget.savingsDebt.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
-                        </div>
-                    </div>
-                    <div className="absolute bottom-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-[80px] -mr-32 -mb-32"></div>
-                </div>
-
-                {/* Liquidity List */}
-                <div className="lg:col-span-12 bg-white/30 dark:bg-white/5 rounded-[2.5rem] p-6 border border-white/20 dark:border-white/10 shadow-sm backdrop-blur-xl group">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-4">
-                            <Wallet size={18} className="text-accent" />
-                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Liquidez por Cuenta</h4>
-                        </div>
-                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => scroll('left')} className="w-8 h-8 rounded-full bg-white dark:bg-white/10 flex items-center justify-center hover:bg-accent hover:text-white transition-all shadow-sm">
-                                <ChevronLeft size={16} />
-                            </button>
-                            <button onClick={() => scroll('right')} className="w-8 h-8 rounded-full bg-white dark:bg-white/10 flex items-center justify-center hover:bg-accent hover:text-white transition-all shadow-sm">
-                                <ChevronRight size={16} />
-                            </button>
-                        </div>
-                    </div>
-                    <div 
-                        ref={scrollRef}
-                        className="flex gap-4 overflow-x-auto no-scrollbar pb-2 scroll-smooth"
-                    >
-                        {accountBalances.length > 0 ? (
-                            accountBalances.map((acc, i) => (
-                                <div key={i} className="min-w-[180px] bg-[var(--bg-card)] dark:bg-white/10 p-5 rounded-3xl border border-[var(--border-color)] dark:border-white/10 shadow-sm group/card hover:-translate-y-1 transition-all">
-                                    <p className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-1 group-hover/card:text-accent transition-colors">{acc.name}</p>
-                                    <p className="text-lg font-black tracking-tighter">${acc.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
-                                </div>
-                            ))
-                        ) : (
-                            <div className="p-4 text-xs font-bold opacity-30 uppercase tracking-widest">No hay cuentas registradas con movimientos</div>
                         )}
                     </div>
                 </div>
