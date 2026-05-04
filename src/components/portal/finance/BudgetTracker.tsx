@@ -15,103 +15,21 @@ interface BudgetData {
 
 interface BudgetTrackerProps {
     userId: string;
-    records: FinanceRecord[];
     selectedMonth: string;
+    budgetData: BudgetData[];
+    onBudgetUpdated: () => void;
 }
 
 const BudgetTracker: React.FC<BudgetTrackerProps> = ({
     userId,
-    records,
-    selectedMonth
+    selectedMonth,
+    budgetData,
+    onBudgetUpdated
 }) => {
     const { confirm, ConfirmModal } = useConfirm();
-    const [budgetData, setBudgetData] = useState<BudgetData[]>([]);
-    const [manualBudgets, setManualBudgets] = useState<Record<string, number>>({});
     const [isEditingBudget, setIsEditingBudget] = useState(false);
 
-    useEffect(() => {
-        if (selectedMonth) {
-            loadBudgets(selectedMonth);
-        }
-    }, [selectedMonth, userId]);
 
-    const loadBudgets = async (month: string) => {
-        try {
-            const { data, error } = await supabase
-                .from('finance_budgets')
-                .select('concept, amount')
-                .eq('month', month)
-                .eq('user_id', userId);
-            
-            if (error) {
-                console.error("Error loading budgets for " + month + ":", error);
-                return;
-            }
-            
-            const budgetMap: Record<string, number> = {};
-            if (data) {
-                data.forEach((b: any) => {
-                    budgetMap[b.concept] = Number(b.amount);
-                });
-            }
-            setManualBudgets(budgetMap);
-        } catch (error) {
-            console.error("Exception loading budgets:", error);
-        }
-    };
-
-    useEffect(() => {
-        const historicalMonthsCount = Math.max(1, new Set(records.map(r => r.date.substring(0, 7))).size);
-        
-        const historicalExpenses = records
-            .filter(r => (r.concept || '').toUpperCase().trim() !== 'SALDO INICIAL' && !r.concept?.toUpperCase().includes('TRASPASO'))
-            .reduce((acc: Record<string, number>, curr: FinanceRecord) => {
-                const c = curr.concept || 'SIN CONCEPTO';
-                if (!acc[c]) acc[c] = 0;
-                acc[c] += Number(curr.expense);
-                return acc;
-            }, {});
-
-        const grouped = records
-            .filter(r => {
-                const rMonth = r.date.includes('/') ? r.date.split('/').reverse().join('-').substring(0, 7) : r.date.substring(0, 7);
-                const isSelectedMonth = selectedMonth === 'all' || rMonth === selectedMonth;
-                return isSelectedMonth && (r.concept || '').toUpperCase().trim() !== 'SALDO INICIAL' && !r.concept?.toUpperCase().includes('TRASPASO');
-            })
-            .reduce((acc: Record<string, number>, curr: FinanceRecord) => {
-                const c = curr.concept || 'SIN CONCEPTO';
-                if (!acc[c]) acc[c] = 0;
-                acc[c] += Number(curr.expense);
-                return acc;
-            }, {});
-            
-        const allEverConcepts = Array.from(new Set(records.map(r => (r.concept || '').toUpperCase().trim())))
-            .filter(c => c !== '' && c !== 'SALDO INICIAL' && !c.includes('TRASPASO'));
-
-        const allConcepts = new Set([
-            ...allEverConcepts,
-            ...Object.keys(manualBudgets)
-        ]);
-        
-        const budgetArr = Array.from(allConcepts)
-            .filter(c => c && c.trim() !== '')
-            .map(concept => {
-                const totalHistorical = historicalExpenses[concept] || 0;
-                const histAvg = totalHistorical / historicalMonthsCount;
-                const currentExp = grouped[concept] || 0;
-                const definedBudget = manualBudgets[concept] !== undefined ? manualBudgets[concept] : histAvg;
-                
-                return {
-                    concept,
-                    avgBudget: definedBudget,
-                    currentExpense: currentExp,
-                    difference: definedBudget - currentExp
-                };
-            })
-            .sort((a,b) => b.avgBudget - a.avgBudget);
-          
-        setBudgetData(budgetArr);
-    }, [records, selectedMonth, manualBudgets]);
 
     const handleSaveBudget = async (concept: string, amount: number) => {
         try {
@@ -127,10 +45,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
 
             if (error) throw error;
             
-            setManualBudgets(prev => ({
-                ...prev,
-                [concept]: amount
-            }));
+            onBudgetUpdated();
         } catch (error) {
             console.error('Error saving budget:', error);
             toast.error('No se pudo guardar el presupuesto.');
@@ -154,9 +69,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
 
             if (error) throw error;
 
-            const newBudgets = { ...manualBudgets };
-            delete newBudgets[concept];
-            setManualBudgets(newBudgets);
+            onBudgetUpdated();
             toast.success(`Presupuesto de "${concept}" reiniciado.`);
         } catch (error) {
             console.error('Error deleting budget:', error);

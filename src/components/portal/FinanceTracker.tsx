@@ -45,7 +45,8 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
         uniqueConcepts,
         paymentBalancesData,
         budgetData,
-        getDisplayRecords
+        getDisplayRecords,
+        loadManualBudgets
     } = useFinanceCalculations(records, companyIds);
 
     const [isFormOpen, setIsFormOpen] = useState(false);
@@ -319,8 +320,9 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                 ) : viewMode === 'budget' ? (
                     <BudgetTracker 
                         userId={user.id}
-                        records={records}
                         selectedMonth={selectedMonth}
+                        budgetData={budgetData}
+                        onBudgetUpdated={() => loadManualBudgets(selectedMonth)}
                     />
                 ) : viewMode === 'balances' ? (
                     <BalancesManager 

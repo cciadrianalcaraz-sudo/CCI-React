@@ -158,6 +158,7 @@ export const useFinanceCalculations = (
                     difference: definedBudget - currentExp
                 };
             })
+            .filter(row => row.avgBudget > 0 || row.currentExpense > 0)
             .sort((a,b) => b.avgBudget - a.avgBudget);
           
         setBudgetData(budgetArr);
@@ -263,6 +264,7 @@ export const useFinanceCalculations = (
         paymentBalancesData,
         budgetData,
         manualBudgets,
-        getDisplayRecords
+        getDisplayRecords,
+        loadManualBudgets
     };
 };
