@@ -108,7 +108,6 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
     const renderGroup = (type: string, items: BudgetData[]) => {
         const totalBudget = items.reduce((acc, curr) => acc + curr.avgBudget, 0);
         const totalSpent = items.reduce((acc, curr) => acc + curr.currentExpense, 0);
-        const groupPercent = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
 
         return (
             <div key={type} className="mb-10 animate-fade-in">
