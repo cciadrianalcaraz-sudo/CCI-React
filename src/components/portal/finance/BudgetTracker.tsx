@@ -1,22 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { TrendingUp, Trash2 } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { TrendingUp, Trash2, ChevronDown, ChevronRight, AlertCircle, Flame } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { toast } from '../../../lib/toast';
 import { useConfirm } from '../../../hooks/useConfirm';
 import Button from '../../ui/Button';
-import type { FinanceRecord } from '../../../types/finance';
-
-interface BudgetData {
-    concept: string;
-    avgBudget: number;
-    currentExpense: number;
-    difference: number;
-}
+import type { FinanceRecord, BudgetData } from '../../../types/finance';
 
 interface BudgetTrackerProps {
     userId: string;
     selectedMonth: string;
     budgetData: BudgetData[];
+    records: FinanceRecord[];
     onBudgetUpdated: () => void;
 }
 
@@ -24,12 +18,35 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
     userId,
     selectedMonth,
     budgetData,
+    records,
     onBudgetUpdated
 }) => {
     const { confirm, ConfirmModal } = useConfirm();
     const [isEditingBudget, setIsEditingBudget] = useState(false);
+    const [expandedConcept, setExpandedConcept] = useState<string | null>(null);
 
+    // Calculate Month Pacing
+    const pacing = useMemo(() => {
+        const now = new Date();
+        const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        
+        if (selectedMonth !== currentMonthStr) return 1; // 100% if not current month
 
+        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        const currentDay = now.getDate();
+        return currentDay / daysInMonth;
+    }, [selectedMonth]);
+
+    // Group Data by Type
+    const groupedData = useMemo(() => {
+        const groups: Record<string, BudgetData[]> = {};
+        budgetData.forEach(item => {
+            const type = item.type || 'Variable';
+            if (!groups[type]) groups[type] = [];
+            groups[type].push(item);
+        });
+        return groups;
+    }, [budgetData]);
 
     const handleSaveBudget = async (concept: string, amount: number) => {
         try {
@@ -77,6 +94,183 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
         }
     };
 
+    const toggleDrillDown = (concept: string) => {
+        setExpandedConcept(expandedConcept === concept ? null : concept);
+    };
+
+    const getConceptRecords = (concept: string) => {
+        return records.filter(r => {
+            const rMonth = r.date.includes('/') ? r.date.split('/').reverse().join('-').substring(0, 7) : r.date.substring(0, 7);
+            return rMonth === selectedMonth && (r.concept || '').toUpperCase().trim() === concept.toUpperCase().trim();
+        }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    };
+
+    const renderGroup = (type: string, items: BudgetData[]) => {
+        const totalBudget = items.reduce((acc, curr) => acc + curr.avgBudget, 0);
+        const totalSpent = items.reduce((acc, curr) => acc + curr.currentExpense, 0);
+        const groupPercent = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
+
+        return (
+            <div key={type} className="mb-10 animate-fade-in">
+                <div className="flex items-center justify-between mb-4 px-2">
+                    <div className="flex items-center gap-3">
+                        <div className={`w-3 h-3 rounded-full ${
+                            type === 'Fijo' ? 'bg-blue-500' : 
+                            type === 'Variable' ? 'bg-purple-500' : 
+                            type === 'Ahorro' ? 'bg-green-500' : 'bg-red-500'
+                        }`} />
+                        <h4 className="text-lg font-black uppercase tracking-tighter text-primary-dark">{type}</h4>
+                        <span className="text-[10px] font-black opacity-30 uppercase tracking-widest">{items.length} Conceptos</span>
+                    </div>
+                    <div className="text-right">
+                        <p className="text-[10px] font-black opacity-40 uppercase tracking-widest">Subtotal Gastado</p>
+                        <p className="text-sm font-black text-primary-dark">
+                            ${totalSpent.toLocaleString('en-US', { minimumFractionDigits: 2 })} 
+                            <span className="opacity-20 mx-2">/</span>
+                            <span className="opacity-40">${totalBudget.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                        </p>
+                    </div>
+                </div>
+
+                <div className="bg-[var(--bg-card)]/50 dark:bg-white/5 backdrop-blur-md overflow-hidden rounded-[24px] border border-[var(--border-color)] dark:border-white/10 shadow-sm">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-accent/5 text-[var(--text-primary)] text-[9px] font-black uppercase tracking-[0.2em] border-b border-[var(--border-color)] dark:border-white/10">
+                                <th className="p-4 border-r border-[var(--border-color)] dark:border-white/10">Concepto</th>
+                                <th className="p-4 border-r border-[var(--border-color)] dark:border-white/10 text-right w-40">Presupuesto</th>
+                                <th className="p-4 border-r border-[var(--border-color)] dark:border-white/10 text-right w-56">Gasto Real</th>
+                                <th className="p-4 text-right w-36">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-neutral-100/50">
+                            {items.map((row) => {
+                                const percentSpent = row.avgBudget > 0 ? (row.currentExpense / row.avgBudget) * 100 : 0;
+                                const isOverBudget = percentSpent > 100;
+                                const isPacingWarning = selectedMonth !== 'all' && (percentSpent / 100) > (pacing + 0.1) && !isOverBudget;
+                                
+                                const progressColor = percentSpent > 100 ? 'bg-red-500' : percentSpent > 85 ? 'bg-amber-500' : 'bg-green-500';
+                                const isExpanded = expandedConcept === row.concept;
+                                
+                                return (
+                                    <React.Fragment key={row.concept}>
+                                        <tr 
+                                            className={`hover:bg-white/50 transition-colors group cursor-pointer ${isExpanded ? 'bg-accent/5' : ''}`}
+                                            onClick={() => toggleDrillDown(row.concept)}
+                                        >
+                                            <td className="p-4">
+                                                <div className="flex items-center gap-2">
+                                                    {isExpanded ? <ChevronDown size={14} className="text-accent" /> : <ChevronRight size={14} className="opacity-20" />}
+                                                    <span className="font-black text-xs text-primary-dark uppercase tracking-wider">{row.concept}</span>
+                                                    {isPacingWarning && (
+                                                        <div className="flex items-center gap-1 text-[8px] font-black text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100 animate-pulse">
+                                                            <Flame size={10} /> RITMO ACELERADO
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="p-4 border-l border-neutral-100/50 bg-neutral-50/20 text-right" onClick={(e) => e.stopPropagation()}>
+                                                {isEditingBudget ? (
+                                                    <div className="flex items-center gap-2 bg-white border border-neutral-200 rounded-xl pl-3 pr-1 py-1 shadow-sm focus-within:border-accent transition-all group-hover:border-accent/40">
+                                                        <span className="text-accent font-black text-xs">$</span>
+                                                        <input 
+                                                            type="number" 
+                                                            className="w-20 bg-transparent outline-none text-right font-black text-xs text-primary-dark"
+                                                            defaultValue={row.avgBudget}
+                                                            onBlur={(e) => handleSaveBudget(row.concept, parseFloat(e.target.value) || 0)}
+                                                        />
+                                                        <button 
+                                                            onClick={() => handleDeleteBudget(row.concept)}
+                                                            className="p-1 hover:bg-red-50 text-red-400 rounded-lg transition-colors"
+                                                        >
+                                                            <Trash2 size={12} />
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <span className="font-black text-xs text-primary-dark">
+                                                        ${row.avgBudget.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td className="p-4 border-l border-neutral-100/50">
+                                                <div className="space-y-1.5">
+                                                    <div className="flex justify-between items-center px-1">
+                                                        <span className="text-[9px] font-black text-neutral-400">{percentSpent.toFixed(0)}%</span>
+                                                        <span className="text-xs font-black text-primary-dark">${row.currentExpense.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                                                    </div>
+                                                    <div className="w-full h-1.5 bg-neutral-100 rounded-full overflow-hidden relative">
+                                                        <div 
+                                                            className={`h-full transition-all duration-700 ease-out rounded-full ${progressColor}`}
+                                                            style={{ width: `${Math.min(percentSpent, 100)}%` }}
+                                                        ></div>
+                                                        {selectedMonth !== 'all' && pacing < 1 && (
+                                                            <div 
+                                                                className="absolute top-0 w-0.5 h-full bg-primary-dark/20 z-10"
+                                                                style={{ left: `${pacing * 100}%` }}
+                                                                title="Hoy"
+                                                            />
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="p-4 text-right font-bold">
+                                                <span className={`px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest ${isOverBudget ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-green-50 text-green-600 border border-green-100'}`}>
+                                                    {isOverBudget ? 'Excedido' : 'En Control'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        {isExpanded && (
+                                            <tr className="bg-neutral-50/50 border-l-2 border-accent">
+                                                <td colSpan={4} className="p-0">
+                                                    <div className="p-4 animate-slide-in">
+                                                        <div className="bg-white rounded-xl border border-neutral-200 overflow-hidden shadow-inner">
+                                                            <table className="w-full text-[10px]">
+                                                                <thead className="bg-neutral-50 text-neutral-400 font-black uppercase tracking-widest border-b">
+                                                                    <tr>
+                                                                        <th className="p-2 text-left">Fecha</th>
+                                                                        <th className="p-2 text-left">Proveedor</th>
+                                                                        <th className="p-2 text-right">Monto</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody className="divide-y">
+                                                                    {getConceptRecords(row.concept).length > 0 ? (
+                                                                        getConceptRecords(row.concept).map(rec => (
+                                                                            <tr key={rec.id} className="hover:bg-neutral-50 transition-colors">
+                                                                                <td className="p-2 text-neutral-500">{new Date(rec.date).toLocaleDateString('es-ES')}</td>
+                                                                                <td className="p-2 font-bold text-primary-dark uppercase">{rec.provider || 'Sin proveedor'}</td>
+                                                                                <td className="p-2 text-right font-black text-primary-dark">${rec.expense.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                                                                            </tr>
+                                                                        ))
+                                                                    ) : (
+                                                                        <tr>
+                                                                            <td colSpan={3} className="p-4 text-center italic text-neutral-400">No hay movimientos registrados para este concepto en {selectedMonth}.</td>
+                                                                        </tr>
+                                                                    )}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </React.Fragment>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        );
+    };
+
+    const groupOrder = ['Fijo', 'Variable', 'Ahorro', 'Deuda'];
+    const sortedGroups = Object.keys(groupedData).sort((a, b) => {
+        const indexA = groupOrder.indexOf(a);
+        const indexB = groupOrder.indexOf(b);
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        return indexA - indexB;
+    });
+
     return (
         <div className="p-8 max-w-7xl mx-auto animate-fade-in delay-100 text-[var(--text-primary)]">
             <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-10">
@@ -84,7 +278,15 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
                     <h3 className="text-3xl font-black font-heading uppercase tracking-tighter">
                         Control de Presupuesto
                     </h3>
-                    <p className="opacity-40 text-xs mt-1 font-medium tracking-wide">Planeación vs Gasto Real del periodo seleccionado.</p>
+                    <div className="flex items-center gap-2 mt-1">
+                        <p className="opacity-40 text-xs font-medium tracking-wide">Planeación vs Gasto Real.</p>
+                        {selectedMonth !== 'all' && (
+                            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-primary-dark/5 rounded-full border border-primary-dark/10">
+                                <div className="w-1.5 h-1.5 rounded-full bg-primary-dark animate-pulse" />
+                                <span className="text-[9px] font-black uppercase tracking-widest opacity-60">Día {new Date().getDate()} del mes ({(pacing * 100).toFixed(0)}%)</span>
+                            </div>
+                        )}
+                    </div>
                 </div>
                 <Button 
                     outline={!isEditingBudget}
@@ -97,94 +299,27 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
             </div>
 
             {isEditingBudget && (
-                <div className="mb-8 p-6 bg-primary-dark rounded-[24px] text-white shadow-xl flex gap-4 items-start animate-slide-in relative overflow-hidden">
+                <div className="mb-12 p-6 bg-primary-dark rounded-[24px] text-white shadow-xl flex gap-4 items-start animate-slide-in relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-accent/20 rounded-full -mr-16 -mt-16 blur-3xl"></div>
                     <div className="bg-white/10 p-2 rounded-xl">
                         <TrendingUp className="text-accent" size={20} />
                     </div>
                     <div className="relative z-10">
                         <p className="font-black text-[10px] uppercase tracking-widest mb-1 opacity-60">Modo Edición Activo</p>
-                        <p className="text-sm font-medium leading-relaxed">Modifica los montos en la columna <strong className="text-accent">Presupuesto Objetivo</strong>. Los valores se sincronizarán al cambiar de campo.</p>
+                        <p className="text-sm font-medium leading-relaxed">Modifica los montos en la columna <strong className="text-accent">Presupuesto</strong>. Haz clic fuera para guardar.</p>
                     </div>
                 </div>
             )}
 
-            <div className="bg-[var(--bg-card)]/50 dark:bg-white/5 backdrop-blur-md overflow-hidden rounded-[32px] border border-[var(--border-color)] dark:border-white/10 shadow-sm">
-                <table className="w-full text-left border-collapse">
-                    <thead>
-                        <tr className="bg-accent/5 text-[var(--text-primary)] text-[10px] font-black uppercase tracking-[0.2em] border-b border-[var(--border-color)] dark:border-white/10">
-                            <th className="p-5 border-r border-[var(--border-color)] dark:border-white/10">Concepto</th>
-                            <th className="p-5 border-r border-[var(--border-color)] dark:border-white/10 text-right w-48">Presupuesto</th>
-                            <th className="p-5 border-r border-[var(--border-color)] dark:border-white/10 text-right w-64">Gasto Real</th>
-                            <th className="p-5 text-right w-40">Estado</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-neutral-100/50">
-                        {budgetData.length > 0 ? (
-                            budgetData.map((row) => {
-                                const percentSpent = row.avgBudget > 0 ? (row.currentExpense / row.avgBudget) * 100 : 0;
-                                const isOverBudget = percentSpent > 100;
-                                const progressColor = percentSpent > 100 ? 'bg-red-500' : percentSpent > 85 ? 'bg-amber-500' : 'bg-green-500';
-                                
-                                return (
-                                    <tr key={row.concept} className="hover:bg-white transition-colors group">
-                                        <td className="p-5 font-black text-xs text-primary-dark uppercase tracking-wider">{row.concept}</td>
-                                        <td className="p-5 border-l border-neutral-100/50 bg-neutral-50/20 text-right">
-                                            {isEditingBudget ? (
-                                                <div className="flex items-center gap-2 bg-white border border-neutral-200 rounded-xl pl-4 pr-1.5 py-1.5 shadow-sm focus-within:border-accent transition-all group-hover:border-accent/40">
-                                                    <span className="text-accent font-black">$</span>
-                                                    <input 
-                                                        type="number" 
-                                                        className="w-8/12 bg-transparent outline-none text-right font-black text-sm text-primary-dark"
-                                                        defaultValue={row.avgBudget}
-                                                        onBlur={(e) => handleSaveBudget(row.concept, parseFloat(e.target.value) || 0)}
-                                                    />
-                                                    <button 
-                                                        onClick={() => handleDeleteBudget(row.concept)}
-                                                        className="p-1.5 hover:bg-red-50 text-red-400 rounded-lg transition-colors ml-auto"
-                                                        title="Reiniciar a promedio histórico"
-                                                    >
-                                                        <Trash2 size={12} />
-                                                    </button>
-                                                </div>
-                                            ) : (
-                                                <span className="font-black text-sm text-primary-dark">
-                                                    ${row.avgBudget.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="p-5 border-l border-neutral-100/50">
-                                            <div className="space-y-2">
-                                                <div className="flex justify-between items-center px-1">
-                                                    <span className="text-[10px] font-black text-neutral-400">{percentSpent.toFixed(0)}% Utilizado</span>
-                                                    <span className="text-sm font-black text-primary-dark">${row.currentExpense.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
-                                                </div>
-                                                <div className="w-full h-2 bg-neutral-100 rounded-full overflow-hidden">
-                                                    <div 
-                                                        className={`h-full transition-all duration-700 ease-out rounded-full ${progressColor}`}
-                                                        style={{ width: `${Math.min(percentSpent, 100)}%` }}
-                                                    ></div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="p-5 text-right font-bold">
-                                            <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${isOverBudget ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-green-50 text-green-600 border border-green-100'}`}>
-                                                {isOverBudget ? 'Excedido' : 'En Control'}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                );
-                            })
-                        ) : (
-                            <tr>
-                                <td colSpan={4} className="p-16 text-center text-neutral-400 italic text-sm">
-                                    No hay suficientes datos para mostrar el presupuesto en este periodo.
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
+            {sortedGroups.length > 0 ? (
+                sortedGroups.map(group => renderGroup(group, groupedData[group]))
+            ) : (
+                <div className="bg-white/50 backdrop-blur-md p-16 text-center rounded-[32px] border border-dashed border-neutral-200">
+                    <AlertCircle className="mx-auto text-neutral-300 mb-4" size={40} />
+                    <p className="text-neutral-400 italic text-sm">No hay suficientes datos para mostrar el presupuesto en este periodo.</p>
+                </div>
+            )}
+
             {ConfirmModal}
         </div>
     );

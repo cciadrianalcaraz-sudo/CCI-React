@@ -45,4 +45,5 @@ export interface BudgetData {
     avgBudget: number;
     currentExpense: number;
     difference: number;
+    type: string;
 }

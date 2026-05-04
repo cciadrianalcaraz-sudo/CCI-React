@@ -143,6 +143,13 @@ export const useFinanceCalculations = (
             ...Object.keys(manualBudgets)
         ]);
         
+        const conceptTypeMap: Record<string, string> = {};
+        records.forEach(r => {
+            if (r.concept && r.expense_type) {
+                conceptTypeMap[r.concept.toUpperCase().trim()] = r.expense_type;
+            }
+        });
+        
         const budgetArr = Array.from(allConcepts)
             .filter(c => c && c.trim() !== '')
             .map(concept => {
@@ -155,7 +162,8 @@ export const useFinanceCalculations = (
                     concept,
                     avgBudget: definedBudget,
                     currentExpense: currentExp,
-                    difference: definedBudget - currentExp
+                    difference: definedBudget - currentExp,
+                    type: conceptTypeMap[concept] || 'Variable'
                 };
             })
             .filter(row => row.avgBudget > 0 || row.currentExpense > 0)

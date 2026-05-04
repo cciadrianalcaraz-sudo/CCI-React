@@ -322,6 +322,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                         userId={user.id}
                         selectedMonth={selectedMonth}
                         budgetData={budgetData}
+                        records={records}
                         onBudgetUpdated={() => loadManualBudgets(selectedMonth)}
                     />
                 ) : viewMode === 'balances' ? (
