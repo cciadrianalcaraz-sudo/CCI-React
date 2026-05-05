@@ -47,4 +47,5 @@ export interface BudgetData {
     difference: number;
     type: string; // 'Fijo', 'Variable', etc.
     category: 'income' | 'expense';
+    expense_type?: string;
 }

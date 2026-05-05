@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS finance_budgets (
   month TEXT NOT NULL, -- Formato YYYY-MM
   amount NUMERIC DEFAULT 0 NOT NULL,
   budget_category TEXT DEFAULT 'expense' CHECK (budget_category IN ('income', 'expense')),
+  expense_type TEXT, -- Fijo, Variable, Ahorro, Deuda
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
   UNIQUE(user_id, concept, month, budget_category)

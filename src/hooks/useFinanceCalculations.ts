@@ -14,25 +14,26 @@ export const useFinanceCalculations = (
     const [paymentBalancesData, setPaymentBalancesData] = useState<{method: string, initialBalance: number, income: number, expense: number, finalBalance: number}[]>([]);
     
     const [budgetData, setBudgetData] = useState<any[]>([]);
-    const [manualBudgets, setManualBudgets] = useState<Record<string, {amount: number, category: string}>>({});
+    const [manualBudgets, setManualBudgets] = useState<Record<string, {amount: number, category: string, type?: string}>>({});
 
     const loadManualBudgets = useCallback(async (month: string) => {
         if (!month || month === 'all' || companyIds.length === 0) return;
         try {
             const { data, error } = await supabase
                 .from('finance_budgets')
-                .select('concept, amount, budget_category')
+                .select('concept, amount, budget_category, expense_type')
                 .eq('month', month)
                 .in('user_id', companyIds);
             
             if (error) throw error;
             
-            const budgetMap: Record<string, {amount: number, category: string}> = {};
+            const budgetMap: Record<string, {amount: number, category: string, type?: string}> = {};
             if (data) {
                 data.forEach((b: any) => {
                     budgetMap[b.concept] = { 
                         amount: Number(b.amount), 
-                        category: b.budget_category || 'expense' 
+                        category: b.budget_category || 'expense',
+                        type: b.expense_type
                     };
                 });
             }
@@ -236,8 +237,9 @@ export const useFinanceCalculations = (
                     avgBudget: definedBudget,
                     currentAmount: currentAmount,
                     difference: category === 'income' ? currentAmount - definedBudget : definedBudget - currentAmount,
-                    type: conceptTypeMap[concept] || (category === 'income' ? 'Ingreso' : 'Variable'),
-                    category
+                    type: manual?.type || conceptTypeMap[concept] || (category === 'income' ? 'Ingreso' : 'Variable'),
+                    category,
+                    expense_type: manual?.type
                 };
             })
             .filter(row => row.avgBudget > 0 || row.currentAmount > 0 || row.category === 'income')

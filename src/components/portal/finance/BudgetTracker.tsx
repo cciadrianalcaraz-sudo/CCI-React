@@ -55,7 +55,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
         return groups;
     }, [filteredBudgetData]);
 
-    const handleSaveBudget = async (concept: string, amount: number, category: string = 'expense') => {
+    const handleSaveBudget = async (concept: string, amount: number, category: string = 'expense', type?: string) => {
         try {
             const { error } = await supabase
                 .from('finance_budgets')
@@ -65,6 +65,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
                     month: selectedMonth,
                     amount,
                     budget_category: category,
+                    expense_type: type,
                     updated_at: new Date().toISOString()
                 }, { onConflict: 'user_id,concept,month,budget_category' });
 
@@ -206,7 +207,21 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
                                             <td className="p-4">
                                                 <div className="flex items-center gap-2">
                                                     {isExpanded ? <ChevronDown size={14} className="text-accent" /> : <ChevronRight size={14} className="opacity-20" />}
-                                                    <span className="font-black text-xs text-primary-dark uppercase tracking-wider">{row.concept}</span>
+                                                    <div className="flex flex-col">
+                                                        <span className="font-black text-xs text-primary-dark uppercase tracking-wider">{row.concept}</span>
+                                                        {isEditingBudget && !isIncome && (
+                                                            <select 
+                                                                className="mt-1 text-[8px] font-black uppercase tracking-widest bg-neutral-100 border-none rounded px-1 py-0.5 outline-none focus:ring-1 focus:ring-accent"
+                                                                defaultValue={row.type}
+                                                                onChange={(e) => handleSaveBudget(row.concept, row.avgBudget, row.category, e.target.value)}
+                                                            >
+                                                                <option value="Fijo">Fijo</option>
+                                                                <option value="Variable">Variable</option>
+                                                                <option value="Ahorro">Ahorro</option>
+                                                                <option value="Deuda">Deuda</option>
+                                                            </select>
+                                                        )}
+                                                    </div>
                                                     {isPacingWarning && (
                                                         <div className="flex items-center gap-1 text-[8px] font-black text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100 animate-pulse">
                                                             <Flame size={10} /> RITMO ACELERADO
@@ -222,7 +237,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
                                                             type="number" 
                                                             className="w-20 bg-transparent outline-none text-right font-black text-xs text-primary-dark"
                                                             defaultValue={row.avgBudget}
-                                                            onBlur={(e) => handleSaveBudget(row.concept, parseFloat(e.target.value) || 0, row.category)}
+                                                            onBlur={(e) => handleSaveBudget(row.concept, parseFloat(e.target.value) || 0, row.category, row.type)}
                                                         />
                                                         <button 
                                                             onClick={() => handleDeleteBudget(row.concept)}
