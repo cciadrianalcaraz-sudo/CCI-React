@@ -25,6 +25,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
     const [isEditingBudget, setIsEditingBudget] = useState(false);
     const [expandedConcept, setExpandedConcept] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'income' | 'expense'>('expense');
+    const [expenseSubFilter, setExpenseSubFilter] = useState<'all' | 'Fijo' | 'Variable' | 'AhorroDeuda'>('all');
 
     // Calculate Month Pacing
     const pacing = useMemo(() => {
@@ -322,7 +323,12 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
         return indexA - indexB;
     });
 
-    const filteredGroups = sortedGroups; // Groups are already filtered by tab
+    const filteredGroups = sortedGroups.filter(group => {
+        if (activeTab === 'income') return true; // Already filtered at groupedData level
+        if (expenseSubFilter === 'all') return true;
+        if (expenseSubFilter === 'AhorroDeuda') return group === 'Ahorro' || group === 'Deuda';
+        return group === expenseSubFilter;
+    });
 
     return (
         <div className="p-8 max-w-7xl mx-auto animate-fade-in delay-100 text-[var(--text-primary)]">
@@ -365,19 +371,44 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
             )}
 
             {/* Sub-tabs Navigation */}
-            <div className="flex gap-4 mb-8 border-b border-[var(--border-color)] dark:border-white/10 pb-4">
-                <button 
-                    onClick={() => setActiveTab('expense')}
-                    className={`text-sm font-black uppercase tracking-widest px-6 py-2 rounded-xl transition-all ${activeTab === 'expense' ? 'bg-primary-dark text-white shadow-lg' : 'opacity-40 hover:opacity-100'}`}
-                >
-                    Presupuesto de Gastos
-                </button>
-                <button 
-                    onClick={() => setActiveTab('income')}
-                    className={`text-sm font-black uppercase tracking-widest px-6 py-2 rounded-xl transition-all ${activeTab === 'income' ? 'bg-green-600 text-white shadow-lg' : 'opacity-40 hover:opacity-100'}`}
-                >
-                    Presupuesto de Ingresos
-                </button>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 border-b border-[var(--border-color)] dark:border-white/10 pb-4">
+                <div className="flex gap-4">
+                    <button 
+                        onClick={() => setActiveTab('expense')}
+                        className={`text-sm font-black uppercase tracking-widest px-6 py-2 rounded-xl transition-all ${activeTab === 'expense' ? 'bg-primary-dark text-white shadow-lg' : 'opacity-40 hover:opacity-100'}`}
+                    >
+                        Gastos
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab('income')}
+                        className={`text-sm font-black uppercase tracking-widest px-6 py-2 rounded-xl transition-all ${activeTab === 'income' ? 'bg-green-600 text-white shadow-lg' : 'opacity-40 hover:opacity-100'}`}
+                    >
+                        Ingresos
+                    </button>
+                </div>
+
+                {activeTab === 'expense' && (
+                    <div className="flex bg-neutral-100 dark:bg-white/5 p-1 rounded-2xl self-start">
+                        {[
+                            { id: 'all', label: 'Todos' },
+                            { id: 'Fijo', label: 'Fijos' },
+                            { id: 'Variable', label: 'Variables' },
+                            { id: 'AhorroDeuda', label: 'Ahorro / Deuda' }
+                        ].map((filter) => (
+                            <button
+                                key={filter.id}
+                                onClick={() => setExpenseSubFilter(filter.id as any)}
+                                className={`px-4 py-2 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all ${
+                                    expenseSubFilter === filter.id 
+                                        ? 'bg-white dark:bg-white/10 shadow-sm text-primary-dark dark:text-white' 
+                                        : 'opacity-40 hover:opacity-60'
+                                }`}
+                            >
+                                {filter.label}
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {activeTab === 'expense' && budgetAnalysis && (
