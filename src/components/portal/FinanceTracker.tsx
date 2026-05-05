@@ -384,8 +384,6 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                 const totalExpenseTarget = expenseData.reduce((acc, row) => acc + row.avgBudget, 0);
                 const totalExpenseReal = expenseData.reduce((acc, row) => acc + row.currentAmount, 0);
 
-                const incomeDiff = totalIncomeReal - totalIncomeTarget;
-                const expenseDiff = totalExpenseTarget - totalExpenseReal;
                 
                 return (
                     <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] w-[90vw] max-w-4xl animate-slide-up">
