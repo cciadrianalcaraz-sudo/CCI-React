@@ -158,11 +158,50 @@ export const useFinanceCalculations = (
             ...Object.keys(manualBudgets)
         ]);
         
+        // Smart Categorization Logic based on keywords
+        const SMART_KEYWORDS: Record<string, string[]> = {
+            'Fijo': ['CFE', 'RENTA', 'INTERNET', 'TELCEL', 'IZZI', 'TOTALPLAY', 'AGUA', 'GAS', 'HIPOTECA', 'SEGURO', 'PPR', 'MANTENIMIENTO', 'COLEGIO', 'ESCUELA', 'GIMNASIO', 'GYM'],
+            'Variable': ['AMAZON', 'UBER', 'DIDI', 'NETFLIX', 'SPOTIFY', 'RESTAURANTE', 'CINE', 'STARBUCKS', 'RAPPI', 'MERCADO LIBRE', 'APPLE', 'VAPE', 'TIENDA', 'OXXO', 'SUPER', 'DESPENSA', 'SALUD', 'FARMACIA'],
+            'Ingreso': ['SUELDO', 'HONORARIOS', 'PAGO', 'VENTA', 'DIVIDENDO', 'CASHBACK', 'NOMINA', 'TRANSFERENCIA RECIBIDA', 'INGRESO'],
+            'Ahorro': ['CETES', 'GBM', 'INVERSION', 'AHORRO', 'NU', 'BONOS', 'DINERO CRECIENTE'],
+            'Deuda': ['TARJETA', 'PRESTAMO', 'CREDITO', 'PAGO A DEUDA', 'SANTANDER', 'BBVA', 'AMEX', 'HSBC', 'BANAMEX']
+        };
+
         const conceptTypeMap: Record<string, string> = {};
+        const conceptFrequencies: Record<string, Record<string, number>> = {};
+
+        // 1. Analyze historical frequencies
         records.forEach(r => {
             if (r.concept && r.expense_type) {
-                conceptTypeMap[r.concept.toUpperCase().trim()] = r.expense_type;
+                const c = r.concept.toUpperCase().trim();
+                if (!conceptFrequencies[c]) conceptFrequencies[c] = {};
+                conceptFrequencies[c][r.expense_type] = (conceptFrequencies[c][r.expense_type] || 0) + 1;
             }
+        });
+
+        // 2. Build map based on highest frequency or keywords
+        allConcepts.forEach(concept => {
+            const c = concept.toUpperCase().trim();
+            
+            // Priority 1: Most frequent type in history
+            if (conceptFrequencies[c]) {
+                const types = Object.entries(conceptFrequencies[c]);
+                types.sort((a, b) => b[1] - a[1]);
+                conceptTypeMap[c] = types[0][0];
+            } 
+            
+            // Priority 2: Keyword matching if no history or generic
+            if (!conceptTypeMap[c] || conceptTypeMap[c] === 'Variable') {
+                for (const [type, keywords] of Object.entries(SMART_KEYWORDS)) {
+                    if (keywords.some(kw => c.includes(kw))) {
+                        conceptTypeMap[c] = type;
+                        break;
+                    }
+                }
+            }
+
+            // Default
+            if (!conceptTypeMap[c]) conceptTypeMap[c] = 'Variable';
         });
         
         // Identify all concepts that have ever had an income amount
