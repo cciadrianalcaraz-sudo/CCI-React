@@ -2,45 +2,50 @@
 @config "../tailwind.config.js";
 
 :root {
-  --bg-main: #faf7f2;
+  --bg-main: #f8fafc;
   --bg-card: #ffffff;
-  --text-primary: #1a1a1a;
-  --text-secondary: #525252;
-  --border-color: rgba(0, 0, 0, 0.05);
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.4);
-  --accent-color: #b28a45;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --border-color: rgba(15, 23, 42, 0.06);
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.5);
+  --accent-color: #0ea5e9;
+  --accent-gradient: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+  --success-color: #10b981;
+  --error-color: #ef4444;
+  --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --card-shadow-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
 }
 
 .dark {
-  --bg-main: #0b0e14;
-  --bg-card: #161c26;
+  --bg-main: #020617;
+  --bg-card: #0f172a;
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
-  --border-color: rgba(255, 255, 255, 0.08);
-  --glass-bg: rgba(11, 14, 20, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --accent-color: #d4a75e; /* Slightly brighter for dark mode */
+  --border-color: rgba(255, 255, 255, 0.05);
+  --glass-bg: rgba(15, 23, 42, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --accent-color: #38bdf8;
+  --accent-gradient: linear-gradient(135deg, #38bdf8 0%, #3b82f6 100%);
+  --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  --card-shadow-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
 }
 
 @layer base {
   html {
     scroll-behavior: smooth;
-    transition: background-color 0.3s ease;
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
-    @apply font-sans antialiased;
+    @apply font-sans antialiased selection:bg-accent/20 selection:text-accent;
     background-color: var(--bg-main);
     color: var(--text-primary);
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition: background-color 0.5s cubic-bezier(0.4, 0, 0.2, 1), color 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  h1,
-  h2,
-  h3,
-  h4 {
-    @apply font-heading font-bold leading-tight;
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold tracking-tight;
     color: var(--text-primary);
   }
 }

@@ -271,48 +271,62 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6">
                 
                 {/* --- ROW 1: KPI Cards (4 items x 3 cols = 12 cols) --- */}
-                
-                {/* Card 1: Semáforo de Salud Financiera */}
-                <div className={`lg:col-span-3 rounded-[2.5rem] p-6 border shadow-sm backdrop-blur-md relative group overflow-hidden transition-colors flex flex-col justify-between ${
+                   {/* Card 1: Semáforo de Salud Financiera */}
+                <div className={`lg:col-span-3 rounded-[2.5rem] p-7 border shadow-sm backdrop-blur-xl relative group overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 flex flex-col justify-between ${
                     healthAndBudget.healthStatus === 'danger' 
-                        ? 'bg-red-500/10 border-red-500/20 text-red-500' 
+                        ? 'bg-red-500/5 border-red-500/20' 
                         : healthAndBudget.healthStatus === 'warning'
-                        ? 'bg-amber-500/10 border-amber-500/20 text-amber-500'
-                        : 'bg-green-500/10 border-green-500/20 text-green-500'
+                        ? 'bg-amber-500/5 border-amber-500/20'
+                        : 'bg-emerald-500/5 border-emerald-500/20'
                 }`}>
-                    <div>
-                        <div className="flex justify-between items-start mb-4">
-                            <p className="text-[10px] font-black uppercase tracking-widest opacity-60 text-[var(--text-primary)]">Salud Financiera</p>
-                            <div className={`w-3 h-3 rounded-full animate-pulse shadow-lg ${
-                                healthAndBudget.healthStatus === 'danger' ? 'bg-red-500 shadow-red-500/50' : 
-                                healthAndBudget.healthStatus === 'warning' ? 'bg-amber-500 shadow-amber-500/50' : 'bg-green-500 shadow-green-500/50'
+                    <div className="relative z-10">
+                        <div className="flex justify-between items-start mb-6">
+                            <span className="text-[10px] font-black uppercase tracking-[0.15em] opacity-40 text-[var(--text-primary)]">Salud Financiera</span>
+                            <div className={`w-3 h-3 rounded-full animate-pulse shadow-[0_0_15px_rgba(0,0,0,0.2)] ${
+                                healthAndBudget.healthStatus === 'danger' ? 'bg-red-500' : 
+                                healthAndBudget.healthStatus === 'warning' ? 'bg-amber-500' : 'bg-emerald-500'
                             }`}></div>
                         </div>
-                        <h4 className="text-3xl font-black tracking-tight mb-2">
-                            {healthAndBudget.healthStatus === 'danger' ? 'Peligro' : healthAndBudget.healthStatus === 'warning' ? 'Precaución' : 'Saludable'}
+                        <h4 className={`text-4xl font-black tracking-tighter mb-2 ${
+                            healthAndBudget.healthStatus === 'danger' ? 'text-red-600' : 
+                            healthAndBudget.healthStatus === 'warning' ? 'text-amber-600' : 'text-emerald-600'
+                        }`}>
+                            {healthAndBudget.healthStatus === 'danger' ? 'Crítica' : healthAndBudget.healthStatus === 'warning' ? 'Alerta' : 'Óptima'}
                         </h4>
+                        <p className="text-xs font-bold opacity-40 text-[var(--text-primary)]">
+                            {healthAndBudget.expenseRatio > 0 
+                                ? `Utilización: ${healthAndBudget.expenseRatio.toFixed(1)}%`
+                                : 'Sin actividad'}
+                        </p>
                     </div>
-                    <p className="text-[10px] font-bold opacity-60 text-[var(--text-primary)]">
-                        {healthAndBudget.expenseRatio > 0 
-                            ? `Gasto del ${healthAndBudget.expenseRatio.toFixed(0)}% de ingresos`
-                            : 'Aún sin gastos registrados'}
-                    </p>
+                    <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity">
+                        <Activity size={120} />
+                    </div>
                 </div>
 
                 {/* Card 2: Capacidad de Ahorro */}
-                <div className="lg:col-span-3 bg-gradient-to-br from-primary-dark to-[#2c4a4e] rounded-[2.5rem] p-6 text-white shadow-xl relative overflow-hidden group flex flex-col justify-between">
-                    <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">Capacidad de Ahorro</p>
-                    <div className="flex items-end gap-3 mt-auto">
-                        <h4 className="text-4xl font-black tracking-tight">{stats.savingsRate.toFixed(1)}%</h4>
-                        <div className={`flex items-center gap-1 mb-1 text-[10px] font-bold ${stats.savingsRate > 20 ? 'text-green-400' : 'text-amber-400'}`}>
-                            {stats.savingsRate > 20 ? <ArrowUpRight size={14} /> : <Activity size={14} />}
-                            {stats.savingsRate > 20 ? 'Excelente' : 'Ajustado'}
+                <div className="lg:col-span-3 bg-[#0f172a] dark:bg-white/[0.03] rounded-[2.5rem] p-7 text-white shadow-2xl relative overflow-hidden group flex flex-col justify-between hover:shadow-blue-500/10 transition-all duration-500 border border-white/5">
+                    <div className="relative z-10">
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 mb-1">Capacidad de Ahorro</p>
+                        <div className="flex items-baseline gap-2">
+                            <h4 className="text-5xl font-black tracking-tighter">{stats.savingsRate.toFixed(0)}%</h4>
+                            <span className="text-xs font-bold opacity-40">de margen</span>
                         </div>
                     </div>
-                    <div className="mt-4 h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                        <div className="h-full bg-accent rounded-full" style={{ width: `${Math.min(100, stats.savingsRate)}%` }}></div>
+                    <div className="relative z-10 mt-6">
+                        <div className="flex justify-between text-[8px] font-black uppercase tracking-widest mb-2 opacity-40">
+                            <span>Eficiencia</span>
+                            <span>{stats.savingsRate > 20 ? 'Excelente' : 'Mejorable'}</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden backdrop-blur-sm">
+                            <div 
+                                className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(59,130,246,0.5)]" 
+                                style={{ width: `${Math.min(100, stats.savingsRate)}%` }}
+                            ></div>
+                        </div>
                     </div>
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-[40px] -mr-16 -mt-16"></div>
+                    {/* Abstract background element */}
+                    <div className="absolute -top-12 -right-12 w-40 h-40 bg-blue-600/20 rounded-full blur-[60px] group-hover:bg-blue-600/30 transition-colors duration-700"></div>
                 </div>
 
                 {/* Card 3: Entradas de Capital */}
@@ -388,50 +402,78 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                 {/* --- ROW 2: Charts (8 + 4) --- */}
                 
                 {/* Main Performance Chart */}
-                <div className="lg:col-span-8 bg-[var(--bg-card)] dark:bg-white/5 rounded-[2.5rem] p-6 md:p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md relative overflow-hidden group">
-                    <div className="flex justify-between items-center mb-8 relative z-10">
+                <div className="lg:col-span-8 bg-white dark:bg-white/5 rounded-[3rem] p-8 md:p-10 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-xl relative overflow-hidden group">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10 relative z-10">
                         <div>
-                            <h3 className="text-xl font-black flex items-center gap-3">
-                                <Activity size={20} className="text-accent" />
-                                Tendencia de Rendimiento
-                            </h3>
-                            <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest mt-1">Comparativa semestral de flujo de efectivo</p>
-                        </div>
-                        <div className="flex gap-4">
-                            <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-accent"></div>
-                                <span className="text-[10px] font-bold opacity-60">Ingresos</span>
+                            <div className="flex items-center gap-3 mb-1">
+                                <div className="w-8 h-8 rounded-2xl bg-sky-500/10 flex items-center justify-center text-sky-500">
+                                    <Activity size={18} />
+                                </div>
+                                <h3 className="text-2xl font-black tracking-tighter">Tendencia Mensual</h3>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                                <span className="text-[10px] font-bold opacity-60">Gastos</span>
+                            <p className="text-xs font-bold opacity-30 uppercase tracking-[0.1em] ml-11">Comparativa semestral de flujo de caja</p>
+                        </div>
+                        <div className="flex bg-neutral-100 dark:bg-white/5 p-1.5 rounded-2xl gap-2">
+                            <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-white/10 shadow-sm">
+                                <div className="w-2.5 h-2.5 rounded-full bg-sky-500"></div>
+                                <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Ingresos</span>
+                            </div>
+                            <div className="flex items-center gap-2 px-4 py-2">
+                                <div className="w-2.5 h-2.5 rounded-full bg-rose-400"></div>
+                                <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Gastos</span>
                             </div>
                         </div>
                     </div>
                     
-                    <div className="h-[280px] w-full relative z-10">
+                    <div className="h-[320px] w-full relative z-10 ml-[-20px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={chartData} onClick={handleChartClick} style={{ cursor: 'pointer' }}>
                                 <defs>
                                     <linearGradient id="colorIngresos" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#4A7C82" stopOpacity={0.3}/>
-                                        <stop offset="95%" stopColor="#4A7C82" stopOpacity={0}/>
+                                        <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.2}/>
+                                        <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
                                     </linearGradient>
                                     <linearGradient id="colorGastos" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#f87171" stopOpacity={0.1}/>
-                                        <stop offset="95%" stopColor="#f87171" stopOpacity={0}/>
+                                        <stop offset="5%" stopColor="#fb7185" stopOpacity={0.1}/>
+                                        <stop offset="95%" stopColor="#fb7185" stopOpacity={0}/>
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" opacity={0.05} />
-                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 700, opacity: 0.5}} />
-                                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 700, opacity: 0.5}} />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" opacity={0.03} />
+                                <XAxis 
+                                    dataKey="name" 
+                                    axisLine={false} 
+                                    tickLine={false} 
+                                    tick={{fontSize: 10, fontWeight: 900, opacity: 0.3, textTransform: 'uppercase'}} 
+                                    dy={10}
+                                />
+                                <YAxis 
+                                    axisLine={false} 
+                                    tickLine={false} 
+                                    tick={{fontSize: 10, fontWeight: 900, opacity: 0.3}}
+                                    tickFormatter={(val) => `$${val/1000}k`}
+                                />
                                 <Tooltip content={<CustomTooltip />} />
-                                <Area type="monotone" dataKey="ingresos" stroke="#4A7C82" strokeWidth={3} fillOpacity={1} fill="url(#colorIngresos)" activeDot={{ r: 8, strokeWidth: 0, fill: '#4A7C82' }} />
-                                <Area type="monotone" dataKey="gastos" stroke="#f87171" strokeWidth={3} fillOpacity={1} fill="url(#colorGastos)" activeDot={{ r: 8, strokeWidth: 0, fill: '#f87171' }} />
+                                <Area 
+                                    type="monotone" 
+                                    dataKey="ingresos" 
+                                    stroke="#0ea5e9" 
+                                    strokeWidth={4} 
+                                    fillOpacity={1} 
+                                    fill="url(#colorIngresos)" 
+                                    activeDot={{ r: 6, strokeWidth: 0, fill: '#0ea5e9' }} 
+                                />
+                                <Area 
+                                    type="monotone" 
+                                    dataKey="gastos" 
+                                    stroke="#fb7185" 
+                                    strokeWidth={4} 
+                                    fillOpacity={1} 
+                                    fill="url(#colorGastos)" 
+                                    activeDot={{ r: 6, strokeWidth: 0, fill: '#fb7185' }} 
+                                />
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 rounded-full blur-[100px] -mr-32 -mt-32"></div>
                 </div>
 
                 {/* Analizador 50/30/20 Vertical */}
