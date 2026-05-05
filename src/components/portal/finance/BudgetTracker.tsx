@@ -98,6 +98,32 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
         setExpandedConcept(expandedConcept === concept ? null : concept);
     };
 
+    // 50/30/20 Calculation
+    const budgetAnalysis = useMemo(() => {
+        const totals = {
+            fijo: 0,
+            variable: 0,
+            ahorroDeuda: 0,
+            total: 0
+        };
+
+        budgetData.forEach(item => {
+            const amount = item.currentExpense;
+            totals.total += amount;
+            if (item.type === 'Fijo') totals.fijo += amount;
+            else if (item.type === 'Variable') totals.variable += amount;
+            else if (item.type === 'Ahorro' || item.type === 'Deuda') totals.ahorroDeuda += amount;
+        });
+
+        if (totals.total === 0) return null;
+
+        return {
+            needs: { label: 'Necesidades (50%)', current: (totals.fijo / totals.total) * 100, target: 50, color: 'bg-blue-500' },
+            wants: { label: 'Deseos (30%)', current: (totals.variable / totals.total) * 100, target: 30, color: 'bg-purple-500' },
+            savings: { label: 'Ahorro/Deuda (20%)', current: (totals.ahorroDeuda / totals.total) * 100, target: 20, color: 'bg-green-500' }
+        };
+    }, [budgetData]);
+
     const getConceptRecords = (concept: string) => {
         return records.filter(r => {
             const rMonth = r.date.includes('/') ? r.date.split('/').reverse().join('-').substring(0, 7) : r.date.substring(0, 7);
@@ -307,6 +333,33 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
                         <p className="font-black text-[10px] uppercase tracking-widest mb-1 opacity-60">Modo Edición Activo</p>
                         <p className="text-sm font-medium leading-relaxed">Modifica los montos en la columna <strong className="text-accent">Presupuesto</strong>. Haz clic fuera para guardar.</p>
                     </div>
+                </div>
+            )}
+
+            {budgetAnalysis && (
+                <div className="mb-12 grid grid-cols-1 md:grid-cols-3 gap-6 animate-slide-up">
+                    {Object.entries(budgetAnalysis).map(([key, data]) => (
+                        <div key={key} className="bg-white dark:bg-white/5 p-6 rounded-[24px] border border-[var(--border-color)] dark:border-white/10 shadow-sm">
+                            <div className="flex justify-between items-center mb-4">
+                                <span className="text-[10px] font-black uppercase tracking-widest opacity-40">{data.label}</span>
+                                <span className={`text-[10px] font-black px-2 py-1 rounded-full ${
+                                    data.current > data.target ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'
+                                }`}>
+                                    Ideal: {data.target}%
+                                </span>
+                            </div>
+                            <div className="flex items-end gap-2 mb-2">
+                                <span className="text-2xl font-black text-primary-dark">{data.current.toFixed(1)}%</span>
+                                <span className="text-[10px] font-bold opacity-30 mb-1">del total gastado</span>
+                            </div>
+                            <div className="w-full h-2 bg-neutral-100 dark:bg-white/10 rounded-full overflow-hidden">
+                                <div 
+                                    className={`h-full transition-all duration-1000 ${data.color}`}
+                                    style={{ width: `${Math.min(data.current, 100)}%` }}
+                                />
+                            </div>
+                        </div>
+                    ))}
                 </div>
             )}
 
