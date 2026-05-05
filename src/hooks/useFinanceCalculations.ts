@@ -169,7 +169,11 @@ export const useFinanceCalculations = (
             .filter(c => c && c.trim() !== '')
             .map(concept => {
                 const manual = manualBudgets[concept];
-                const category = manual?.category || (grouped[concept]?.income > grouped[concept]?.expense ? 'income' : 'expense');
+                // Auto-detect category based on historical data if not manually defined
+                const hasHistIncome = (historicalIncomes[concept] || 0) > (historicalExpenses[concept] || 0);
+                const hasCurrentIncome = (grouped[concept]?.income || 0) > (grouped[concept]?.expense || 0);
+                const isIngresoType = conceptTypeMap[concept] === 'Ingreso';
+                const category = manual?.category || ((hasHistIncome || hasCurrentIncome || isIngresoType) ? 'income' : 'expense');
                 
                 let histAvg = 0;
                 let currentAmount = 0;
@@ -193,7 +197,7 @@ export const useFinanceCalculations = (
                     category
                 };
             })
-            .filter(row => row.avgBudget > 0 || row.currentAmount > 0)
+            .filter(row => row.avgBudget > 0 || row.currentAmount > 0 || row.category === 'income')
             .sort((a,b) => b.avgBudget - a.avgBudget);
           
         setBudgetData(budgetArr);
