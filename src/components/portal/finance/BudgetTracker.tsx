@@ -24,6 +24,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
     const { confirm, ConfirmModal } = useConfirm();
     const [isEditingBudget, setIsEditingBudget] = useState(false);
     const [expandedConcept, setExpandedConcept] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState<'income' | 'expense'>('expense');
 
     // Calculate Month Pacing
     const pacing = useMemo(() => {
@@ -316,6 +317,11 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
         return indexA - indexB;
     });
 
+    const filteredGroups = sortedGroups.filter(group => {
+        const isIncomeGroup = group === 'Ingreso';
+        return activeTab === 'income' ? isIncomeGroup : !isIncomeGroup;
+    });
+
     return (
         <div className="p-8 max-w-7xl mx-auto animate-fade-in delay-100 text-[var(--text-primary)]">
             <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-10">
@@ -356,7 +362,23 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
                 </div>
             )}
 
-            {budgetAnalysis && (
+            {/* Sub-tabs Navigation */}
+            <div className="flex gap-4 mb-8 border-b border-[var(--border-color)] dark:border-white/10 pb-4">
+                <button 
+                    onClick={() => setActiveTab('expense')}
+                    className={`text-sm font-black uppercase tracking-widest px-6 py-2 rounded-xl transition-all ${activeTab === 'expense' ? 'bg-primary-dark text-white shadow-lg' : 'opacity-40 hover:opacity-100'}`}
+                >
+                    Presupuesto de Gastos
+                </button>
+                <button 
+                    onClick={() => setActiveTab('income')}
+                    className={`text-sm font-black uppercase tracking-widest px-6 py-2 rounded-xl transition-all ${activeTab === 'income' ? 'bg-green-600 text-white shadow-lg' : 'opacity-40 hover:opacity-100'}`}
+                >
+                    Presupuesto de Ingresos
+                </button>
+            </div>
+
+            {activeTab === 'expense' && budgetAnalysis && (
                 <div className="mb-12 grid grid-cols-1 md:grid-cols-3 gap-6 animate-slide-up">
                     {Object.entries(budgetAnalysis).map(([key, data]) => (
                         <div key={key} className="bg-white dark:bg-white/5 p-6 rounded-[24px] border border-[var(--border-color)] dark:border-white/10 shadow-sm">
@@ -383,12 +405,16 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
                 </div>
             )}
 
-            {sortedGroups.length > 0 ? (
-                sortedGroups.map(group => renderGroup(group, groupedData[group]))
+            {filteredGroups.length > 0 ? (
+                filteredGroups.map(group => renderGroup(group, groupedData[group]))
             ) : (
                 <div className="bg-white/50 backdrop-blur-md p-16 text-center rounded-[32px] border border-dashed border-neutral-200">
                     <AlertCircle className="mx-auto text-neutral-300 mb-4" size={40} />
-                    <p className="text-neutral-400 italic text-sm">No hay suficientes datos para mostrar el presupuesto en este periodo.</p>
+                    <p className="text-neutral-400 italic text-sm">
+                        {activeTab === 'income' 
+                            ? 'No hay metas de ingresos definidas para este periodo.' 
+                            : 'No hay límites de gastos definidos para este periodo.'}
+                    </p>
                 </div>
             )}
 
