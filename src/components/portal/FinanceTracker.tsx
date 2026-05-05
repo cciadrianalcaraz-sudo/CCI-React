@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Plus } from 'lucide-react';
+import { Search } from 'lucide-react';
 
 import { toast } from '../../lib/toast';
 import { Toaster } from '../ui/Toaster';

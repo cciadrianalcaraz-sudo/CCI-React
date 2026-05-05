@@ -443,7 +443,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                                     dataKey="name" 
                                     axisLine={false} 
                                     tickLine={false} 
-                                    tick={{fontSize: 10, fontWeight: 900, opacity: 0.3, textTransform: 'uppercase'}} 
+                                    tick={{fontSize: 10, fontWeight: 900, opacity: 0.3}} 
                                     dy={10}
                                 />
                                 <YAxis 

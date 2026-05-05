@@ -1,9 +1,8 @@
 import React from 'react';
 import { 
     Plus, Upload, Download, Calendar, Search, X, Printer, 
-    TrendingUp, TrendingDown, DollarSign, Camera
+    TrendingUp, TrendingDown, Camera, Wallet
 } from 'lucide-react';
-import Button from '../../ui/Button';
 
 interface FinanceHeaderProps {
     viewMode: 'detailed' | 'balances' | 'budget' | 'credits';
