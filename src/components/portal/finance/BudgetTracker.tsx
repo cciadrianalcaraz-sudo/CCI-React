@@ -10,6 +10,13 @@ interface BudgetTrackerProps {
     userId: string;
     selectedMonth: string;
     budgetData: BudgetData[];
+    planningAnalysis?: {
+        fixedPct: number;
+        variablePct: number;
+        savingsPct: number;
+        totalBudgetedExpense: number;
+        margin: number;
+    };
     records: FinanceRecord[];
     onBudgetUpdated: () => void;
 }
@@ -18,6 +25,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
     userId,
     selectedMonth,
     budgetData,
+    planningAnalysis,
     records,
     onBudgetUpdated
 }) => {
@@ -425,6 +433,84 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
                     </div>
                 )}
             </div>
+
+            {/* Planning Analysis Bar */}
+            {planningAnalysis && (
+                <div className="mb-12 bg-white dark:bg-white/5 p-8 rounded-[32px] border border-[var(--border-color)] dark:border-white/10 shadow-sm animate-slide-up">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                        <div>
+                            <h4 className="text-xl font-black uppercase tracking-tighter text-primary-dark">Análisis de Planificación</h4>
+                            <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest mt-1">Cómo se distribuye tu meta de ingresos según la regla 50/30/20.</p>
+                        </div>
+                        <div className="text-right">
+                            <span className="text-[10px] font-black uppercase tracking-widest opacity-40 block">Margen Libre en Plan</span>
+                            <span className={`text-xl font-black ${planningAnalysis.margin >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                ${planningAnalysis.margin.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="space-y-6">
+                        <div className="w-full h-8 bg-neutral-100 dark:bg-white/10 rounded-2xl overflow-hidden flex shadow-inner">
+                            <div 
+                                className="h-full bg-blue-500 transition-all duration-1000 relative group"
+                                style={{ width: `${Math.min(planningAnalysis.fixedPct, 100)}%` }}
+                            >
+                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/20 transition-opacity">
+                                    <span className="text-[8px] font-black text-white">FIJO: {planningAnalysis.fixedPct.toFixed(1)}%</span>
+                                </div>
+                            </div>
+                            <div 
+                                className="h-full bg-purple-500 transition-all duration-1000 relative group"
+                                style={{ width: `${Math.min(planningAnalysis.variablePct, 100)}%` }}
+                            >
+                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/20 transition-opacity">
+                                    <span className="text-[8px] font-black text-white">VAR: {planningAnalysis.variablePct.toFixed(1)}%</span>
+                                </div>
+                            </div>
+                            <div 
+                                className="h-full bg-emerald-500 transition-all duration-1000 relative group"
+                                style={{ width: `${Math.min(planningAnalysis.savingsPct, 100)}%` }}
+                            >
+                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/20 transition-opacity">
+                                    <span className="text-[8px] font-black text-white">AHORRO: {planningAnalysis.savingsPct.toFixed(1)}%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-blue-500" />
+                                <div className="flex flex-col">
+                                    <span className="text-[8px] font-black opacity-40 uppercase">Necesidades</span>
+                                    <span className="text-xs font-black">{planningAnalysis.fixedPct.toFixed(1)}% <span className="text-[8px] opacity-30">vs 50%</span></span>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-purple-500" />
+                                <div className="flex flex-col">
+                                    <span className="text-[8px] font-black opacity-40 uppercase">Deseos</span>
+                                    <span className="text-xs font-black">{planningAnalysis.variablePct.toFixed(1)}% <span className="text-[8px] opacity-30">vs 30%</span></span>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                                <div className="flex flex-col">
+                                    <span className="text-[8px] font-black opacity-40 uppercase">Ahorro/Deuda</span>
+                                    <span className="text-xs font-black">{planningAnalysis.savingsPct.toFixed(1)}% <span className="text-[8px] opacity-30">vs 20%</span></span>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-neutral-300" />
+                                <div className="flex flex-col">
+                                    <span className="text-[8px] font-black opacity-40 uppercase">Total Gastos</span>
+                                    <span className="text-xs font-black">{((planningAnalysis.totalBudgetedExpense / (planningAnalysis.totalBudgetedExpense + Math.max(0, planningAnalysis.margin))) * 100 || 0).toFixed(1)}%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {activeTab === 'expense' && budgetAnalysis && (
                 <div className="mb-12 grid grid-cols-1 md:grid-cols-3 gap-6 animate-slide-up">

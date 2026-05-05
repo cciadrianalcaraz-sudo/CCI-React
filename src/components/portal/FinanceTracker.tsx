@@ -45,6 +45,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
         uniqueConcepts,
         paymentBalancesData,
         budgetData,
+        planningAnalysis,
         getDisplayRecords,
         loadManualBudgets
     } = useFinanceCalculations(records, companyIds);
@@ -322,6 +323,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                         userId={user.id}
                         selectedMonth={selectedMonth}
                         budgetData={budgetData}
+                        planningAnalysis={planningAnalysis}
                         records={records}
                         onBudgetUpdated={() => loadManualBudgets(selectedMonth)}
                     />

@@ -15,6 +15,7 @@ export const useFinanceCalculations = (
     
     const [budgetData, setBudgetData] = useState<any[]>([]);
     const [manualBudgets, setManualBudgets] = useState<Record<string, {amount: number, category: string, type?: string}>>({});
+    const [planningAnalysis, setPlanningAnalysis] = useState<any>(null);
 
     const loadManualBudgets = useCallback(async (month: string) => {
         if (!month || month === 'all' || companyIds.length === 0) return;
@@ -245,8 +246,24 @@ export const useFinanceCalculations = (
             .filter(row => row.avgBudget > 0 || row.currentAmount > 0 || row.category === 'income')
             .sort((a,b) => b.avgBudget - a.avgBudget);
           
+        const budgetAnalysis = {
+            totalIncome: budgetArr.filter(b => b.category === 'income').reduce((acc, b) => acc + b.avgBudget, 0),
+            fixed: budgetArr.filter(b => b.category === 'expense' && b.type === 'Fijo').reduce((acc, b) => acc + b.avgBudget, 0),
+            variable: budgetArr.filter(b => b.category === 'expense' && b.type === 'Variable').reduce((acc, b) => acc + b.avgBudget, 0),
+            savings: budgetArr.filter(b => b.category === 'expense' && (b.type === 'Ahorro' || b.type === 'Deuda')).reduce((acc, b) => acc + b.avgBudget, 0)
+        };
+
+        const planningAnalysis = {
+            fixedPct: budgetAnalysis.totalIncome > 0 ? (budgetAnalysis.fixed / budgetAnalysis.totalIncome) * 100 : 0,
+            variablePct: budgetAnalysis.totalIncome > 0 ? (budgetAnalysis.variable / budgetAnalysis.totalIncome) * 100 : 0,
+            savingsPct: budgetAnalysis.totalIncome > 0 ? (budgetAnalysis.savings / budgetAnalysis.totalIncome) * 100 : 0,
+            totalBudgetedExpense: budgetAnalysis.fixed + budgetAnalysis.variable + budgetAnalysis.savings,
+            margin: budgetAnalysis.totalIncome - (budgetAnalysis.fixed + budgetAnalysis.variable + budgetAnalysis.savings)
+        };
+
         setBudgetData(budgetArr);
         setUniqueConcepts(allEverConcepts);
+        setPlanningAnalysis(planningAnalysis);
 
         const paymentMap: Record<string, { initial: number, income: number, expense: number, finalBalance: number }> = {};
         const cutoffMonth = selectedMonth === 'all' ? '9999-12' : selectedMonth;
@@ -348,6 +365,7 @@ export const useFinanceCalculations = (
         paymentBalancesData,
         budgetData,
         manualBudgets,
+        planningAnalysis,
         getDisplayRecords,
         loadManualBudgets
     };
