@@ -1,23 +1,21 @@
 -- TABLA DE PRESUPUESTOS
--- NOTA: Si ya habías creado la tabla anterior, ejecútalo para actualizar a presupuestos mensuales:
-DROP TABLE IF EXISTS finance_budgets;
-
+-- NOTA: Si ya tenías la tabla, usa la migración para no perder datos.
 CREATE TABLE IF NOT EXISTS finance_budgets (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES auth.users ON DELETE CASCADE NOT NULL,
   concept TEXT NOT NULL,
   month TEXT NOT NULL, -- Formato YYYY-MM
   amount NUMERIC DEFAULT 0 NOT NULL,
+  budget_category TEXT DEFAULT 'expense' CHECK (budget_category IN ('income', 'expense')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
-  UNIQUE(user_id, concept, month)
+  UNIQUE(user_id, concept, month, budget_category)
 );
 
 -- HABILITAR SEGURIDAD (RLS)
 ALTER TABLE finance_budgets ENABLE ROW LEVEL SECURITY;
 
 -- POLÍTICAS DE ACCESO PARA LOS PRESUPUESTOS
--- Aseguramos que el usuario solo pueda ver, insertar, actualizar y borrar sus propios presupuestos
 DO $$ 
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'finance_budgets' AND policyname = 'Users can view own budgets') THEN

@@ -14,23 +14,26 @@ export const useFinanceCalculations = (
     const [paymentBalancesData, setPaymentBalancesData] = useState<{method: string, initialBalance: number, income: number, expense: number, finalBalance: number}[]>([]);
     
     const [budgetData, setBudgetData] = useState<any[]>([]);
-    const [manualBudgets, setManualBudgets] = useState<Record<string, number>>({});
+    const [manualBudgets, setManualBudgets] = useState<Record<string, {amount: number, category: string}>>({});
 
     const loadManualBudgets = useCallback(async (month: string) => {
         if (!month || month === 'all' || companyIds.length === 0) return;
         try {
             const { data, error } = await supabase
                 .from('finance_budgets')
-                .select('concept, amount')
+                .select('concept, amount, budget_category')
                 .eq('month', month)
                 .in('user_id', companyIds);
             
             if (error) throw error;
             
-            const budgetMap: Record<string, number> = {};
+            const budgetMap: Record<string, {amount: number, category: string}> = {};
             if (data) {
                 data.forEach((b: any) => {
-                    budgetMap[b.concept] = Number(b.amount);
+                    budgetMap[b.concept] = { 
+                        amount: Number(b.amount), 
+                        category: b.budget_category || 'expense' 
+                    };
                 });
             }
             setManualBudgets(budgetMap);
@@ -134,6 +137,18 @@ export const useFinanceCalculations = (
                 acc[c] += Number(curr.expense);
                 return acc;
             }, {});
+
+        const historicalIncomes = historicalRecords
+            .filter(r => {
+                const c = (r.concept || '').toUpperCase().trim();
+                return c !== 'SALDO INICIAL' && !c.includes('TRASPASO') && Number(r.income) > 0;
+            })
+            .reduce((acc: Record<string, number>, curr: FinanceRecord) => {
+                const c = curr.concept || 'SIN CONCEPTO';
+                if (!acc[c]) acc[c] = 0;
+                acc[c] += Number(curr.income);
+                return acc;
+            }, {});
             
         const allEverConcepts = Array.from(new Set(records.map(r => (r.concept || '').toUpperCase().trim())))
             .filter(c => c !== '' && c !== 'SALDO INICIAL' && !c.includes('TRASPASO'));
@@ -153,20 +168,32 @@ export const useFinanceCalculations = (
         const budgetArr = Array.from(allConcepts)
             .filter(c => c && c.trim() !== '')
             .map(concept => {
-                const totalHistorical = historicalExpenses[concept] || 0;
-                const histAvg = totalHistorical / historicalMonthsCount;
-                const currentExp = grouped[concept]?.expense || 0;
-                const definedBudget = manualBudgets[concept] !== undefined ? manualBudgets[concept] : histAvg;
+                const manual = manualBudgets[concept];
+                const category = manual?.category || (grouped[concept]?.income > grouped[concept]?.expense ? 'income' : 'expense');
+                
+                let histAvg = 0;
+                let currentAmount = 0;
+                
+                if (category === 'income') {
+                    histAvg = (historicalIncomes[concept] || 0) / historicalMonthsCount;
+                    currentAmount = grouped[concept]?.income || 0;
+                } else {
+                    histAvg = (historicalExpenses[concept] || 0) / historicalMonthsCount;
+                    currentAmount = grouped[concept]?.expense || 0;
+                }
+
+                const definedBudget = manual !== undefined ? manual.amount : histAvg;
                 
                 return {
                     concept,
                     avgBudget: definedBudget,
-                    currentExpense: currentExp,
-                    difference: definedBudget - currentExp,
-                    type: conceptTypeMap[concept] || 'Variable'
+                    currentAmount: currentAmount,
+                    difference: category === 'income' ? currentAmount - definedBudget : definedBudget - currentAmount,
+                    type: conceptTypeMap[concept] || (category === 'income' ? 'Ingreso' : 'Variable'),
+                    category
                 };
             })
-            .filter(row => row.avgBudget > 0 || row.currentExpense > 0)
+            .filter(row => row.avgBudget > 0 || row.currentAmount > 0)
             .sort((a,b) => b.avgBudget - a.avgBudget);
           
         setBudgetData(budgetArr);

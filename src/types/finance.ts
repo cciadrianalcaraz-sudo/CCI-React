@@ -43,7 +43,8 @@ export interface FinanceGoal {
 export interface BudgetData {
     concept: string;
     avgBudget: number;
-    currentExpense: number;
+    currentAmount: number;
     difference: number;
-    type: string;
+    type: string; // 'Fijo', 'Variable', etc.
+    category: 'income' | 'expense';
 }

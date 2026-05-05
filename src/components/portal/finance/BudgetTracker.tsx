@@ -48,7 +48,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
         return groups;
     }, [budgetData]);
 
-    const handleSaveBudget = async (concept: string, amount: number) => {
+    const handleSaveBudget = async (concept: string, amount: number, category: string = 'expense') => {
         try {
             const { error } = await supabase
                 .from('finance_budgets')
@@ -57,6 +57,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
                     concept, 
                     month: selectedMonth,
                     amount,
+                    budget_category: category,
                     updated_at: new Date().toISOString()
                 }, { onConflict: 'user_id,concept,month' });
 
@@ -108,7 +109,8 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
         };
 
         budgetData.forEach(item => {
-            const amount = item.currentExpense;
+            if (item.category === 'income') return; // Only expenses for 50/30/20
+            const amount = item.currentAmount;
             totals.total += amount;
             if (item.type === 'Fijo') totals.fijo += amount;
             else if (item.type === 'Variable') totals.variable += amount;
@@ -124,33 +126,38 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
         };
     }, [budgetData]);
 
-    const getConceptRecords = (concept: string) => {
+    const getConceptRecords = (concept: string, category: 'income' | 'expense') => {
         return records.filter(r => {
             const rMonth = r.date.includes('/') ? r.date.split('/').reverse().join('-').substring(0, 7) : r.date.substring(0, 7);
-            return rMonth === selectedMonth && (r.concept || '').toUpperCase().trim() === concept.toUpperCase().trim();
+            const matchesConcept = (r.concept || '').toUpperCase().trim() === concept.toUpperCase().trim();
+            const hasAmount = category === 'income' ? (Number(r.income) > 0) : (Number(r.expense) > 0);
+            return rMonth === selectedMonth && matchesConcept && hasAmount;
         }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     };
 
     const renderGroup = (type: string, items: BudgetData[]) => {
         const totalBudget = items.reduce((acc, curr) => acc + curr.avgBudget, 0);
-        const totalSpent = items.reduce((acc, curr) => acc + curr.currentExpense, 0);
+        const totalReal = items.reduce((acc, curr) => acc + curr.currentAmount, 0);
+        const category = items[0]?.category;
+        const isIncome = category === 'income';
 
         return (
             <div key={type} className="mb-10 animate-fade-in">
                 <div className="flex items-center justify-between mb-4 px-2">
                     <div className="flex items-center gap-3">
                         <div className={`w-3 h-3 rounded-full ${
+                            isIncome ? 'bg-green-500' :
                             type === 'Fijo' ? 'bg-blue-500' : 
                             type === 'Variable' ? 'bg-purple-500' : 
-                            type === 'Ahorro' ? 'bg-green-500' : 'bg-red-500'
+                            type === 'Ahorro' ? 'bg-emerald-500' : 'bg-red-500'
                         }`} />
-                        <h4 className="text-lg font-black uppercase tracking-tighter text-primary-dark">{type}</h4>
+                        <h4 className="text-lg font-black uppercase tracking-tighter text-primary-dark">{isIncome ? `Meta de ${type}` : type}</h4>
                         <span className="text-[10px] font-black opacity-30 uppercase tracking-widest">{items.length} Conceptos</span>
                     </div>
                     <div className="text-right">
-                        <p className="text-[10px] font-black opacity-40 uppercase tracking-widest">Subtotal Gastado</p>
+                        <p className="text-[10px] font-black opacity-40 uppercase tracking-widest">{isIncome ? 'Subtotal Recibido' : 'Subtotal Gastado'}</p>
                         <p className="text-sm font-black text-primary-dark">
-                            ${totalSpent.toLocaleString('en-US', { minimumFractionDigits: 2 })} 
+                            ${totalReal.toLocaleString('en-US', { minimumFractionDigits: 2 })} 
                             <span className="opacity-20 mx-2">/</span>
                             <span className="opacity-40">${totalBudget.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                         </p>
@@ -163,17 +170,24 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
                             <tr className="bg-accent/5 text-[var(--text-primary)] text-[9px] font-black uppercase tracking-[0.2em] border-b border-[var(--border-color)] dark:border-white/10">
                                 <th className="p-4 border-r border-[var(--border-color)] dark:border-white/10">Concepto</th>
                                 <th className="p-4 border-r border-[var(--border-color)] dark:border-white/10 text-right w-40">Presupuesto</th>
-                                <th className="p-4 border-r border-[var(--border-color)] dark:border-white/10 text-right w-56">Gasto Real</th>
+                                <th className="p-4 border-r border-[var(--border-color)] dark:border-white/10 text-right w-56">{isIncome ? 'Ingreso Real' : 'Gasto Real'}</th>
                                 <th className="p-4 text-right w-36">Estado</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-neutral-100/50">
                             {items.map((row) => {
-                                const percentSpent = row.avgBudget > 0 ? (row.currentExpense / row.avgBudget) * 100 : 0;
-                                const isOverBudget = percentSpent > 100;
-                                const isPacingWarning = selectedMonth !== 'all' && (percentSpent / 100) > (pacing + 0.1) && !isOverBudget;
+                                const percent = row.avgBudget > 0 ? (row.currentAmount / row.avgBudget) * 100 : 0;
+                                const isOverBudget = !isIncome && percent > 100;
+                                const isGoalMet = isIncome && percent >= 100;
+                                const isPacingWarning = !isIncome && selectedMonth !== 'all' && (percent / 100) > (pacing + 0.1) && !isOverBudget;
                                 
-                                const progressColor = percentSpent > 100 ? 'bg-red-500' : percentSpent > 85 ? 'bg-amber-500' : 'bg-green-500';
+                                let progressColor = 'bg-green-500';
+                                if (isIncome) {
+                                    progressColor = isGoalMet ? 'bg-green-500' : percent > 50 ? 'bg-emerald-400' : 'bg-amber-400';
+                                } else {
+                                    progressColor = percent > 100 ? 'bg-red-500' : percent > 85 ? 'bg-amber-500' : 'bg-green-500';
+                                }
+
                                 const isExpanded = expandedConcept === row.concept;
                                 
                                 return (
@@ -201,7 +215,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
                                                             type="number" 
                                                             className="w-20 bg-transparent outline-none text-right font-black text-xs text-primary-dark"
                                                             defaultValue={row.avgBudget}
-                                                            onBlur={(e) => handleSaveBudget(row.concept, parseFloat(e.target.value) || 0)}
+                                                            onBlur={(e) => handleSaveBudget(row.concept, parseFloat(e.target.value) || 0, row.category)}
                                                         />
                                                         <button 
                                                             onClick={() => handleDeleteBudget(row.concept)}
@@ -219,13 +233,13 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
                                             <td className="p-4 border-l border-neutral-100/50">
                                                 <div className="space-y-1.5">
                                                     <div className="flex justify-between items-center px-1">
-                                                        <span className="text-[9px] font-black text-neutral-400">{percentSpent.toFixed(0)}%</span>
-                                                        <span className="text-xs font-black text-primary-dark">${row.currentExpense.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                                                        <span className="text-[9px] font-black text-neutral-400">{percent.toFixed(0)}%</span>
+                                                        <span className="text-xs font-black text-primary-dark">${row.currentAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                                                     </div>
                                                     <div className="w-full h-1.5 bg-neutral-100 rounded-full overflow-hidden relative">
                                                         <div 
                                                             className={`h-full transition-all duration-700 ease-out rounded-full ${progressColor}`}
-                                                            style={{ width: `${Math.min(percentSpent, 100)}%` }}
+                                                            style={{ width: `${Math.min(percent, 100)}%` }}
                                                         ></div>
                                                         {selectedMonth !== 'all' && pacing < 1 && (
                                                             <div 
@@ -238,9 +252,15 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
                                                 </div>
                                             </td>
                                             <td className="p-4 text-right font-bold">
-                                                <span className={`px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest ${isOverBudget ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-green-50 text-green-600 border border-green-100'}`}>
-                                                    {isOverBudget ? 'Excedido' : 'En Control'}
-                                                </span>
+                                                {isIncome ? (
+                                                    <span className={`px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest ${isGoalMet ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>
+                                                        {isGoalMet ? 'Logrado' : 'En Progreso'}
+                                                    </span>
+                                                ) : (
+                                                    <span className={`px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest ${isOverBudget ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-green-50 text-green-600 border border-green-100'}`}>
+                                                        {isOverBudget ? 'Excedido' : 'En Control'}
+                                                    </span>
+                                                )}
                                             </td>
                                         </tr>
                                         {isExpanded && (
@@ -252,17 +272,17 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
                                                                 <thead className="bg-neutral-50 text-neutral-400 font-black uppercase tracking-widest border-b">
                                                                     <tr>
                                                                         <th className="p-2 text-left">Fecha</th>
-                                                                        <th className="p-2 text-left">Proveedor</th>
+                                                                        <th className="p-2 text-left">{isIncome ? 'Fuente' : 'Proveedor'}</th>
                                                                         <th className="p-2 text-right">Monto</th>
                                                                     </tr>
                                                                 </thead>
                                                                 <tbody className="divide-y">
-                                                                    {getConceptRecords(row.concept).length > 0 ? (
-                                                                        getConceptRecords(row.concept).map(rec => (
+                                                                    {getConceptRecords(row.concept, row.category).length > 0 ? (
+                                                                        getConceptRecords(row.concept, row.category).map(rec => (
                                                                             <tr key={rec.id} className="hover:bg-neutral-50 transition-colors">
                                                                                 <td className="p-2 text-neutral-500">{new Date(rec.date).toLocaleDateString('es-ES')}</td>
-                                                                                <td className="p-2 font-bold text-primary-dark uppercase">{rec.provider || 'Sin proveedor'}</td>
-                                                                                <td className="p-2 text-right font-black text-primary-dark">${rec.expense.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                                                                                <td className="p-2 font-bold text-primary-dark uppercase">{rec.provider || (isIncome ? 'Sin fuente' : 'Sin proveedor')}</td>
+                                                                                <td className="p-2 text-right font-black text-primary-dark">${(isIncome ? rec.income : rec.expense).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
                                                                             </tr>
                                                                         ))
                                                                     ) : (
@@ -287,7 +307,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
         );
     };
 
-    const groupOrder = ['Fijo', 'Variable', 'Ahorro', 'Deuda'];
+    const groupOrder = ['Ingreso', 'Fijo', 'Variable', 'Ahorro', 'Deuda'];
     const sortedGroups = Object.keys(groupedData).sort((a, b) => {
         const indexA = groupOrder.indexOf(a);
         const indexB = groupOrder.indexOf(b);
@@ -301,10 +321,10 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
             <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-10">
                 <div>
                     <h3 className="text-3xl font-black font-heading uppercase tracking-tighter">
-                        Control de Presupuesto
+                        Control Presupuestal
                     </h3>
                     <div className="flex items-center gap-2 mt-1">
-                        <p className="opacity-40 text-xs font-medium tracking-wide">Planeación vs Gasto Real.</p>
+                        <p className="opacity-40 text-xs font-medium tracking-wide">Metas de Ingresos vs Límites de Gastos.</p>
                         {selectedMonth !== 'all' && (
                             <div className="flex items-center gap-1.5 px-2 py-0.5 bg-primary-dark/5 rounded-full border border-primary-dark/10">
                                 <div className="w-1.5 h-1.5 rounded-full bg-primary-dark animate-pulse" />

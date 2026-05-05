@@ -375,32 +375,42 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
 
             {/* FLOATING TOTALS BAR - Budget mode */}
             {viewMode === 'budget' && budgetData.length > 0 && (() => {
-                const totalBudget = budgetData.reduce((acc: number, row: {avgBudget: number}) => acc + row.avgBudget, 0);
-                const totalSpent = budgetData.reduce((acc: number, row: {currentExpense: number}) => acc + row.currentExpense, 0);
-                const diff = totalBudget - totalSpent;
-                const isOver = diff < 0;
+                const incomeData = budgetData.filter(b => b.category === 'income');
+                const expenseData = budgetData.filter(b => b.category === 'expense');
+
+                const totalIncomeTarget = incomeData.reduce((acc, row) => acc + row.avgBudget, 0);
+                const totalIncomeReal = incomeData.reduce((acc, row) => acc + row.currentAmount, 0);
+                
+                const totalExpenseTarget = expenseData.reduce((acc, row) => acc + row.avgBudget, 0);
+                const totalExpenseReal = expenseData.reduce((acc, row) => acc + row.currentAmount, 0);
+
+                const incomeDiff = totalIncomeReal - totalIncomeTarget;
+                const expenseDiff = totalExpenseTarget - totalExpenseReal;
+                
                 return (
-                    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] w-[90vw] max-w-3xl animate-slide-up">
+                    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] w-[90vw] max-w-4xl animate-slide-up">
                         <div className="bg-primary-dark/80 backdrop-blur-xl rounded-full border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-2 pr-6 flex items-center justify-between gap-4">
                             <div className="flex bg-white/10 rounded-full p-1">
+                                {/* Sección Ingresos */}
                                 <div className="px-5 py-2 rounded-full flex flex-col items-center">
-                                    <span className="text-[8px] font-black uppercase tracking-widest text-white/50">Presupuestado</span>
-                                    <span className="text-sm font-black text-white">
-                                        ${totalBudget.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                    <span className="text-[8px] font-black uppercase tracking-widest text-white/50">Ingresos vs Meta</span>
+                                    <span className="text-sm font-black text-green-400">
+                                        ${totalIncomeReal.toLocaleString()} <span className="text-[10px] opacity-40">/ ${totalIncomeTarget.toLocaleString()}</span>
                                     </span>
                                 </div>
                                 <div className="w-px h-6 bg-white/10 self-center"></div>
+                                {/* Sección Gastos */}
                                 <div className="px-5 py-2 rounded-full flex flex-col items-center">
-                                    <span className="text-[8px] font-black uppercase tracking-widest text-white/50">Gastado</span>
+                                    <span className="text-[8px] font-black uppercase tracking-widest text-white/50">Gastos vs Límite</span>
                                     <span className="text-sm font-black text-red-400">
-                                        ${totalSpent.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                        ${totalExpenseReal.toLocaleString()} <span className="text-[10px] opacity-40">/ ${totalExpenseTarget.toLocaleString()}</span>
                                     </span>
                                 </div>
                             </div>
                             <div className="flex flex-col items-end">
-                                <span className="text-[8px] font-black uppercase tracking-widest text-white/50">{isOver ? 'Exceso' : 'Margen'}</span>
-                                <span className={`text-lg font-heading font-black ${isOver ? 'text-red-400' : 'text-green-400'}`}>
-                                    {isOver ? '-' : '+'}${Math.abs(diff).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                <span className="text-[8px] font-black uppercase tracking-widest text-white/50">Disponible Real</span>
+                                <span className={`text-lg font-heading font-black ${(totalIncomeReal - totalExpenseReal) >= 0 ? 'text-white' : 'text-red-400'}`}>
+                                    ${(totalIncomeReal - totalExpenseReal).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                 </span>
                             </div>
                         </div>
