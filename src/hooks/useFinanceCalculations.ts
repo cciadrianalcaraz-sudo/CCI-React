@@ -165,6 +165,9 @@ export const useFinanceCalculations = (
             }
         });
         
+        // Identify all concepts that have ever had an income amount
+        const incomeConcepts = new Set(records.filter(r => Number(r.income) > 0).map(r => (r.concept || '').toUpperCase().trim()));
+
         const budgetArr = Array.from(allConcepts)
             .filter(c => c && c.trim() !== '')
             .map(concept => {
@@ -172,8 +175,9 @@ export const useFinanceCalculations = (
                 // Auto-detect category based on historical data if not manually defined
                 const hasHistIncome = (historicalIncomes[concept] || 0) > (historicalExpenses[concept] || 0);
                 const hasCurrentIncome = (grouped[concept]?.income || 0) > (grouped[concept]?.expense || 0);
+                
                 const isIngresoType = conceptTypeMap[concept] === 'Ingreso';
-                const category = manual?.category || ((hasHistIncome || hasCurrentIncome || isIngresoType) ? 'income' : 'expense');
+                const category = manual?.category || ((hasHistIncome || hasCurrentIncome || isIngresoType || incomeConcepts.has(concept)) ? 'income' : 'expense');
                 
                 let histAvg = 0;
                 let currentAmount = 0;
