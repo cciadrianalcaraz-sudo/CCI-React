@@ -38,16 +38,21 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
         return currentDay / daysInMonth;
     }, [selectedMonth]);
 
+    // Filter data based on active tab before grouping
+    const filteredBudgetData = useMemo(() => {
+        return budgetData.filter(item => item.category === activeTab);
+    }, [budgetData, activeTab]);
+
     // Group Data by Type
     const groupedData = useMemo(() => {
         const groups: Record<string, BudgetData[]> = {};
-        budgetData.forEach(item => {
+        filteredBudgetData.forEach(item => {
             const type = item.type || 'Variable';
             if (!groups[type]) groups[type] = [];
             groups[type].push(item);
         });
         return groups;
-    }, [budgetData]);
+    }, [filteredBudgetData]);
 
     const handleSaveBudget = async (concept: string, amount: number, category: string = 'expense') => {
         try {
@@ -60,7 +65,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
                     amount,
                     budget_category: category,
                     updated_at: new Date().toISOString()
-                }, { onConflict: 'user_id,concept,month' });
+                }, { onConflict: 'user_id,concept,month,budget_category' });
 
             if (error) throw error;
             
@@ -317,10 +322,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
         return indexA - indexB;
     });
 
-    const filteredGroups = sortedGroups.filter(group => {
-        const isIncomeGroup = group === 'Ingreso';
-        return activeTab === 'income' ? isIncomeGroup : !isIncomeGroup;
-    });
+    const filteredGroups = sortedGroups; // Groups are already filtered by tab
 
     return (
         <div className="p-8 max-w-7xl mx-auto animate-fade-in delay-100 text-[var(--text-primary)]">
