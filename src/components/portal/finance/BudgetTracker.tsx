@@ -11,6 +11,10 @@ interface BudgetTrackerProps {
     selectedMonth: string;
     budgetData: BudgetData[];
     planningAnalysis?: {
+        totalIncome: number;
+        fixedAmount: number;
+        variableAmount: number;
+        savingsAmount: number;
         fixedPct: number;
         variablePct: number;
         savingsPct: number;
@@ -457,7 +461,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
                                 style={{ width: `${Math.min(planningAnalysis.fixedPct, 100)}%` }}
                             >
                                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/20 transition-opacity">
-                                    <span className="text-[8px] font-black text-white">FIJO: {planningAnalysis.fixedPct.toFixed(1)}%</span>
+                                    <span className="text-[8px] font-black text-white">FIJO: ${planningAnalysis.fixedAmount.toLocaleString()}</span>
                                 </div>
                             </div>
                             <div 
@@ -465,7 +469,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
                                 style={{ width: `${Math.min(planningAnalysis.variablePct, 100)}%` }}
                             >
                                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/20 transition-opacity">
-                                    <span className="text-[8px] font-black text-white">VAR: {planningAnalysis.variablePct.toFixed(1)}%</span>
+                                    <span className="text-[8px] font-black text-white">VAR: ${planningAnalysis.variableAmount.toLocaleString()}</span>
                                 </div>
                             </div>
                             <div 
@@ -473,38 +477,42 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
                                 style={{ width: `${Math.min(planningAnalysis.savingsPct, 100)}%` }}
                             >
                                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/20 transition-opacity">
-                                    <span className="text-[8px] font-black text-white">AHORRO: {planningAnalysis.savingsPct.toFixed(1)}%</span>
+                                    <span className="text-[8px] font-black text-white">AHORRO: ${planningAnalysis.savingsAmount.toLocaleString()}</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-blue-500" />
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                            <div className="flex items-center gap-3">
+                                <div className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
                                 <div className="flex flex-col">
-                                    <span className="text-[8px] font-black opacity-40 uppercase">Necesidades</span>
-                                    <span className="text-xs font-black">{planningAnalysis.fixedPct.toFixed(1)}% <span className="text-[8px] opacity-30">vs 50%</span></span>
+                                    <span className="text-[9px] font-black opacity-40 uppercase tracking-widest">Fijos (50%)</span>
+                                    <span className="text-sm font-black text-primary-dark">${planningAnalysis.fixedAmount.toLocaleString()}</span>
+                                    <span className="text-[8px] font-bold text-neutral-400 mt-0.5">Sugerido: ${(planningAnalysis.totalIncome * 0.5).toLocaleString()}</span>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-purple-500" />
+                            <div className="flex items-center gap-3">
+                                <div className="w-2.5 h-2.5 rounded-full bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]" />
                                 <div className="flex flex-col">
-                                    <span className="text-[8px] font-black opacity-40 uppercase">Deseos</span>
-                                    <span className="text-xs font-black">{planningAnalysis.variablePct.toFixed(1)}% <span className="text-[8px] opacity-30">vs 30%</span></span>
+                                    <span className="text-[9px] font-black opacity-40 uppercase tracking-widest">Variables (30%)</span>
+                                    <span className="text-sm font-black text-primary-dark">${planningAnalysis.variableAmount.toLocaleString()}</span>
+                                    <span className="text-[8px] font-bold text-neutral-400 mt-0.5">Sugerido: ${(planningAnalysis.totalIncome * 0.3).toLocaleString()}</span>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                            <div className="flex items-center gap-3">
+                                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
                                 <div className="flex flex-col">
-                                    <span className="text-[8px] font-black opacity-40 uppercase">Ahorro/Deuda</span>
-                                    <span className="text-xs font-black">{planningAnalysis.savingsPct.toFixed(1)}% <span className="text-[8px] opacity-30">vs 20%</span></span>
+                                    <span className="text-[9px] font-black opacity-40 uppercase tracking-widest">Ahorro (20%)</span>
+                                    <span className="text-sm font-black text-primary-dark">${planningAnalysis.savingsAmount.toLocaleString()}</span>
+                                    <span className="text-[8px] font-bold text-neutral-400 mt-0.5">Sugerido: ${(planningAnalysis.totalIncome * 0.2).toLocaleString()}</span>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-neutral-300" />
+                            <div className="flex items-center gap-3">
+                                <div className="w-2.5 h-2.5 rounded-full bg-neutral-300 shadow-sm" />
                                 <div className="flex flex-col">
-                                    <span className="text-[8px] font-black opacity-40 uppercase">Total Gastos</span>
-                                    <span className="text-xs font-black">{((planningAnalysis.totalBudgetedExpense / (planningAnalysis.totalBudgetedExpense + Math.max(0, planningAnalysis.margin))) * 100 || 0).toFixed(1)}%</span>
+                                    <span className="text-[9px] font-black opacity-40 uppercase tracking-widest">Total Plan</span>
+                                    <span className="text-sm font-black text-primary-dark">${planningAnalysis.totalBudgetedExpense.toLocaleString()}</span>
+                                    <span className="text-[8px] font-bold text-neutral-400 mt-0.5">Ingreso: ${planningAnalysis.totalIncome.toLocaleString()}</span>
                                 </div>
                             </div>
                         </div>

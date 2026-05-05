@@ -254,6 +254,10 @@ export const useFinanceCalculations = (
         };
 
         const planningAnalysis = {
+            totalIncome: budgetAnalysis.totalIncome,
+            fixedAmount: budgetAnalysis.fixed,
+            variableAmount: budgetAnalysis.variable,
+            savingsAmount: budgetAnalysis.savings,
             fixedPct: budgetAnalysis.totalIncome > 0 ? (budgetAnalysis.fixed / budgetAnalysis.totalIncome) * 100 : 0,
             variablePct: budgetAnalysis.totalIncome > 0 ? (budgetAnalysis.variable / budgetAnalysis.totalIncome) * 100 : 0,
             savingsPct: budgetAnalysis.totalIncome > 0 ? (budgetAnalysis.savings / budgetAnalysis.totalIncome) * 100 : 0,
