@@ -313,11 +313,48 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                         onRefresh={loadRecords} 
                     />
                 ) : viewMode === 'detailed' ? (
-                    <MovementsDetailedView 
-                        records={displayRecords}
-                        onEdit={handleEditClick}
-                        onDelete={handleDelete}
-                    />
+                    <div className="space-y-4">
+                        {searchTerm && (
+                            <div className="flex flex-col md:flex-row gap-4 p-6 bg-accent/5 rounded-[2rem] border border-accent/20 animate-fade-in shadow-sm">
+                                <div className="flex-1 flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center text-accent">
+                                        <Plus size={20} className="rotate-45" />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-[10px] font-black uppercase tracking-widest opacity-40">Subtotales de Búsqueda</h4>
+                                        <p className="text-xs font-bold text-accent italic">"{searchTerm}" • {displayRecords.length} registros</p>
+                                    </div>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-6">
+                                    <div className="flex flex-col items-end">
+                                        <span className="text-[8px] font-black uppercase tracking-widest opacity-40">Ingresos</span>
+                                        <span className="text-sm font-black text-green-600">
+                                            ${displayRecords.reduce((acc, r) => acc + Number(r.income || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                        </span>
+                                    </div>
+                                    <div className="w-px h-6 bg-accent/10 hidden md:block"></div>
+                                    <div className="flex flex-col items-end">
+                                        <span className="text-[8px] font-black uppercase tracking-widest opacity-40">Gastos</span>
+                                        <span className="text-sm font-black text-red-600">
+                                            ${displayRecords.reduce((acc, r) => acc + Number(r.expense || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                        </span>
+                                    </div>
+                                    <div className="w-px h-6 bg-accent/10 hidden md:block"></div>
+                                    <div className="flex flex-col items-end">
+                                        <span className="text-[8px] font-black uppercase tracking-widest opacity-40">Balance Neto</span>
+                                        <span className={`text-sm font-black ${displayRecords.reduce((acc, r) => acc + Number(r.income || 0) - Number(r.expense || 0), 0) >= 0 ? 'text-primary-dark' : 'text-red-600'}`}>
+                                            ${displayRecords.reduce((acc, r) => acc + Number(r.income || 0) - Number(r.expense || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        <MovementsDetailedView 
+                            records={displayRecords}
+                            onEdit={handleEditClick}
+                            onDelete={handleDelete}
+                        />
+                    </div>
                 ) : viewMode === 'budget' ? (
                     <BudgetTracker 
                         userId={user.id}
