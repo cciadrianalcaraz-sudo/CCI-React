@@ -120,6 +120,69 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
     };
 
     // 50/30/20 Calculation
+    const budgetAnalysis = useMemo(() => {
+        const totals = {
+            fijo: 0,
+            variable: 0,
+            ahorroDeuda: 0,
+            totalSpent: 0,
+            fijoBudget: 0,
+            variableBudget: 0,
+            ahorroDeudaBudget: 0
+        };
+
+        budgetData.forEach(item => {
+            if (item.category === 'income') return;
+            const amount = item.currentAmount;
+            const budgeted = item.avgBudget;
+            
+            totals.totalSpent += amount;
+            
+            if (item.type === 'Fijo') {
+                totals.fijo += amount;
+                totals.fijoBudget += budgeted;
+            } else if (item.type === 'Variable') {
+                totals.variable += amount;
+                totals.variableBudget += budgeted;
+            } else if (item.type === 'Ahorro' || item.type === 'Deuda') {
+                totals.ahorroDeuda += amount;
+                totals.ahorroDeudaBudget += budgeted;
+            }
+        });
+
+        if (totals.totalSpent === 0 && (totals.fijoBudget + totals.variableBudget + totals.ahorroDeudaBudget === 0)) return null;
+
+        const totalForPct = totals.totalSpent || 1;
+
+        return {
+            needs: { 
+                label: 'Necesidades (50%)', 
+                current: (totals.fijo / totalForPct) * 100, 
+                target: 50, 
+                color: 'bg-blue-500', 
+                amount: totals.fijo,
+                budgeted: totals.fijoBudget,
+                remaining: totals.fijoBudget - totals.fijo
+            },
+            wants: { 
+                label: 'Deseos (30%)', 
+                current: (totals.variable / totalForPct) * 100, 
+                target: 30, 
+                color: 'bg-purple-500', 
+                amount: totals.variable,
+                budgeted: totals.variableBudget,
+                remaining: totals.variableBudget - totals.variable
+            },
+            savings: { 
+                label: 'Ahorro/Deuda (20%)', 
+                current: (totals.ahorroDeuda / totalForPct) * 100, 
+                target: 20, 
+                color: 'bg-green-500', 
+                amount: totals.ahorroDeuda,
+                budgeted: totals.ahorroDeudaBudget,
+                remaining: totals.ahorroDeudaBudget - totals.ahorroDeuda
+            }
+        };
     }, [budgetData]);
 
     const incomeAnalysis = useMemo(() => {
