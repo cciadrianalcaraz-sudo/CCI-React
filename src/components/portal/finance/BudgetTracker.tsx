@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { TrendingUp, Trash2, ChevronDown, ChevronRight, AlertCircle, Flame } from 'lucide-react';
+import { TrendingUp, Trash2, ChevronDown, ChevronRight, AlertCircle, Flame, Target, CheckCircle2, Info, AlertTriangle, Activity } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { toast } from '../../../lib/toast';
 import { useConfirm } from '../../../hooks/useConfirm';
@@ -438,82 +438,198 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
                 )}
             </div>
 
-            {/* Planning Analysis Bar */}
+            {/* Planning Analysis Section - Premium Bento Design */}
             {planningAnalysis && (
-                <div className="mb-12 bg-white dark:bg-white/5 p-8 rounded-[32px] border border-[var(--border-color)] dark:border-white/10 shadow-sm animate-slide-up">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                <div className="mb-16 space-y-8 animate-slide-up">
+                    <div className="flex items-center justify-between px-2">
                         <div>
-                            <h4 className="text-xl font-black uppercase tracking-tighter text-primary-dark">Análisis de Planificación</h4>
-                            <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest mt-1">Cómo se distribuye tu meta de ingresos según la regla 50/30/20.</p>
+                            <h4 className="text-2xl font-black uppercase tracking-tighter text-primary-dark">Análisis del Plan Maestro</h4>
+                            <p className="text-[11px] font-bold opacity-40 uppercase tracking-widest mt-1">Evaluación de tu estrategia mensual vs. Regla 50/30/20</p>
                         </div>
-                        <div className="text-right">
-                            <span className="text-[10px] font-black uppercase tracking-widest opacity-40 block">Margen Libre en Plan</span>
-                            <span className={`text-xl font-black ${planningAnalysis.margin >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                ${planningAnalysis.margin.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                            </span>
+                        <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-accent/5 rounded-2xl border border-accent/10">
+                            <Target size={16} className="text-accent" />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-accent">Objetivo: Balance Perfecto</span>
                         </div>
                     </div>
 
-                    <div className="space-y-6">
-                        <div className="w-full h-8 bg-neutral-100 dark:bg-white/10 rounded-2xl overflow-hidden flex shadow-inner">
-                            <div 
-                                className="h-full bg-blue-500 transition-all duration-1000 relative group"
-                                style={{ width: `${Math.min(planningAnalysis.fixedPct, 100)}%` }}
-                            >
-                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/20 transition-opacity">
-                                    <span className="text-[8px] font-black text-white">FIJO: ${planningAnalysis.fixedAmount.toLocaleString()}</span>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* Main Health Card */}
+                        <div className="lg:col-span-2 bg-white dark:bg-white/5 p-8 rounded-[32px] border border-[var(--border-color)] dark:border-white/10 shadow-sm relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 rounded-full -mr-32 -mt-32 blur-3xl transition-all group-hover:bg-accent/10"></div>
+                            
+                            <div className="relative z-10 space-y-8">
+                                <div className="flex justify-between items-end">
+                                    <div className="space-y-1">
+                                        <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Distribución de Gastos Planificados</span>
+                                        <div className="flex items-baseline gap-2">
+                                            <span className="text-3xl font-black text-primary-dark">${planningAnalysis.totalBudgetedExpense.toLocaleString()}</span>
+                                            <span className="text-sm font-bold opacity-30">presupuestados</span>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Eficiencia del Plan</span>
+                                        <div className="text-xl font-black text-accent">
+                                            {((planningAnalysis.totalBudgetedExpense / (planningAnalysis.totalIncome || 1)) * 100).toFixed(1)}% <span className="text-xs opacity-40">del ingreso</span>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div 
-                                className="h-full bg-purple-500 transition-all duration-1000 relative group"
-                                style={{ width: `${Math.min(planningAnalysis.variablePct, 100)}%` }}
-                            >
-                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/20 transition-opacity">
-                                    <span className="text-[8px] font-black text-white">VAR: ${planningAnalysis.variableAmount.toLocaleString()}</span>
+
+                                {/* Stacked Progress Bar */}
+                                <div className="space-y-3">
+                                    <div className="w-full h-10 bg-neutral-100 dark:bg-white/10 rounded-[20px] overflow-hidden flex shadow-inner p-1">
+                                        <div 
+                                            className="h-full bg-blue-500 rounded-l-[14px] transition-all duration-1000 relative group/bar"
+                                            style={{ width: `${Math.min(planningAnalysis.fixedPct, 100)}%` }}
+                                        >
+                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/bar:opacity-100 bg-black/20 transition-opacity">
+                                                <span className="text-[9px] font-black text-white">FIJO</span>
+                                            </div>
+                                        </div>
+                                        <div 
+                                            className="h-full bg-purple-500 transition-all duration-1000 relative group/bar"
+                                            style={{ width: `${Math.min(planningAnalysis.variablePct, 100)}%` }}
+                                        >
+                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/bar:opacity-100 bg-black/20 transition-opacity">
+                                                <span className="text-[9px] font-black text-white">VAR</span>
+                                            </div>
+                                        </div>
+                                        <div 
+                                            className="h-full bg-emerald-500 rounded-r-[14px] transition-all duration-1000 relative group/bar"
+                                            style={{ width: `${Math.min(planningAnalysis.savingsPct, 100)}%` }}
+                                        >
+                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/bar:opacity-100 bg-black/20 transition-opacity">
+                                                <span className="text-[9px] font-black text-white">AHORRO</span>
+                                            </div>
+                                        </div>
+                                        {planningAnalysis.margin < 0 && (
+                                            <div 
+                                                className="h-full bg-red-500/20 border-l-2 border-red-500 animate-pulse"
+                                                style={{ width: `${Math.min(Math.abs(planningAnalysis.margin) / (planningAnalysis.totalIncome || 1) * 100, 20)}%` }}
+                                            />
+                                        )}
+                                    </div>
+                                    <div className="flex justify-between px-1">
+                                        <div className="flex gap-4">
+                                            <div className="flex items-center gap-1.5">
+                                                <div className="w-2 h-2 rounded-full bg-blue-500" />
+                                                <span className="text-[9px] font-black uppercase opacity-40">Fijos</span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5">
+                                                <div className="w-2 h-2 rounded-full bg-purple-500" />
+                                                <span className="text-[9px] font-black uppercase opacity-40">Variables</span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5">
+                                                <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                                                <span className="text-[9px] font-black uppercase opacity-40">Ahorro</span>
+                                            </div>
+                                        </div>
+                                        {planningAnalysis.margin < 0 && (
+                                            <div className="flex items-center gap-1.5 text-red-500">
+                                                <AlertTriangle size={10} />
+                                                <span className="text-[9px] font-black uppercase">Déficit en Plan</span>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                            <div 
-                                className="h-full bg-emerald-500 transition-all duration-1000 relative group"
-                                style={{ width: `${Math.min(planningAnalysis.savingsPct, 100)}%` }}
-                            >
-                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/20 transition-opacity">
-                                    <span className="text-[8px] font-black text-white">AHORRO: ${planningAnalysis.savingsAmount.toLocaleString()}</span>
+
+                                <div className="grid grid-cols-3 gap-6 pt-4 border-t border-neutral-100 dark:border-white/5">
+                                    {[
+                                        { 
+                                            label: 'Fijos (50%)', 
+                                            amount: planningAnalysis.fixedAmount, 
+                                            pct: planningAnalysis.fixedPct, 
+                                            target: 50,
+                                            color: 'text-blue-600',
+                                            bg: 'bg-blue-50'
+                                        },
+                                        { 
+                                            label: 'Deseos (30%)', 
+                                            amount: planningAnalysis.variableAmount, 
+                                            pct: planningAnalysis.variablePct, 
+                                            target: 30,
+                                            color: 'text-purple-600',
+                                            bg: 'bg-purple-50'
+                                        },
+                                        { 
+                                            label: 'Ahorro (20%)', 
+                                            amount: planningAnalysis.savingsAmount, 
+                                            pct: planningAnalysis.savingsPct, 
+                                            target: 20,
+                                            color: 'text-emerald-600',
+                                            bg: 'bg-emerald-50'
+                                        }
+                                    ].map((cat, i) => {
+                                        const diff = cat.pct - cat.target;
+                                        const isOver = diff > 5;
+                                        const isUnder = diff < -10;
+                                        
+                                        return (
+                                            <div key={i} className="space-y-2">
+                                                <span className="text-[10px] font-black uppercase tracking-widest opacity-40 block">{cat.label}</span>
+                                                <div className="flex items-baseline gap-1">
+                                                    <span className="text-lg font-black text-primary-dark">${cat.amount.toLocaleString()}</span>
+                                                </div>
+                                                <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full ${isOver ? 'bg-red-50 text-red-600' : isUnder ? 'bg-blue-50 text-blue-600' : 'bg-green-50 text-green-600'}`}>
+                                                    {isOver ? <AlertTriangle size={10} /> : isUnder ? <Info size={10} /> : <CheckCircle2 size={10} />}
+                                                    <span className="text-[9px] font-black uppercase">{cat.pct.toFixed(0)}%</span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                            <div className="flex items-center gap-3">
-                                <div className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
-                                <div className="flex flex-col">
-                                    <span className="text-[9px] font-black opacity-40 uppercase tracking-widest">Fijos (50%)</span>
-                                    <span className="text-sm font-black text-primary-dark">${planningAnalysis.fixedAmount.toLocaleString()}</span>
-                                    <span className="text-[8px] font-bold text-neutral-400 mt-0.5">Sugerido: ${(planningAnalysis.totalIncome * 0.5).toLocaleString()}</span>
+                        {/* Margin & Action Card */}
+                        <div className={`p-8 rounded-[32px] border transition-all flex flex-col justify-between relative overflow-hidden ${
+                            planningAnalysis.margin >= 0 
+                                ? 'bg-primary-dark text-white border-primary-dark shadow-xl' 
+                                : 'bg-red-600 text-white border-red-600 shadow-xl animate-pulse'
+                        }`}>
+                            {planningAnalysis.margin >= 0 && (
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+                            )}
+
+                            <div>
+                                <div className="flex justify-between items-start mb-6">
+                                    <div className="p-3 bg-white/10 rounded-2xl">
+                                        {planningAnalysis.margin >= 0 ? <TrendingUp size={24} /> : <AlertCircle size={24} />}
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Margen del Plan</span>
+                                        <h3 className="text-3xl font-black tracking-tighter">
+                                            ${planningAnalysis.margin.toLocaleString()}
+                                        </h3>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <p className="text-sm font-medium leading-relaxed opacity-80">
+                                        {planningAnalysis.margin > 0 
+                                            ? `Tienes un remanente positivo. Este dinero puede destinarse a inversiones adicionales o como fondo de emergencia.`
+                                            : planningAnalysis.margin === 0
+                                            ? `Tu plan está perfectamente equilibrado con tus ingresos. Cada peso tiene un propósito.`
+                                            : `Tu presupuesto excede tus ingresos por $${Math.abs(planningAnalysis.margin).toLocaleString()}. Necesitas ajustar gastos o incrementar metas de ingreso.`
+                                        }
+                                    </p>
+                                    
+                                    <div className="bg-white/10 p-4 rounded-2xl border border-white/10">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-accent" />
+                                            <span className="text-[10px] font-black uppercase tracking-widest">Meta de Ingreso Mensual</span>
+                                        </div>
+                                        <p className="text-xl font-black">${planningAnalysis.totalIncome.toLocaleString()}</p>
+                                    </div>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-3">
-                                <div className="w-2.5 h-2.5 rounded-full bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]" />
-                                <div className="flex flex-col">
-                                    <span className="text-[9px] font-black opacity-40 uppercase tracking-widest">Variables (30%)</span>
-                                    <span className="text-sm font-black text-primary-dark">${planningAnalysis.variableAmount.toLocaleString()}</span>
-                                    <span className="text-[8px] font-bold text-neutral-400 mt-0.5">Sugerido: ${(planningAnalysis.totalIncome * 0.3).toLocaleString()}</span>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
-                                <div className="flex flex-col">
-                                    <span className="text-[9px] font-black opacity-40 uppercase tracking-widest">Ahorro (20%)</span>
-                                    <span className="text-sm font-black text-primary-dark">${planningAnalysis.savingsAmount.toLocaleString()}</span>
-                                    <span className="text-[8px] font-bold text-neutral-400 mt-0.5">Sugerido: ${(planningAnalysis.totalIncome * 0.2).toLocaleString()}</span>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <div className="w-2.5 h-2.5 rounded-full bg-neutral-300 shadow-sm" />
-                                <div className="flex flex-col">
-                                    <span className="text-[9px] font-black opacity-40 uppercase tracking-widest">Total Plan</span>
-                                    <span className="text-sm font-black text-primary-dark">${planningAnalysis.totalBudgetedExpense.toLocaleString()}</span>
-                                    <span className="text-[8px] font-bold text-neutral-400 mt-0.5">Ingreso: ${planningAnalysis.totalIncome.toLocaleString()}</span>
-                                </div>
+
+                            <div className="mt-8 pt-6 border-t border-white/10 flex items-center justify-between">
+                                <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Estado de Salud</span>
+                                <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                                    planningAnalysis.margin > 0 ? 'bg-green-500/20 text-green-300' : 'bg-white/20 text-white'
+                                }`}>
+                                    {planningAnalysis.margin > 0 ? 'Superávit' : planningAnalysis.margin === 0 ? 'Equilibrado' : 'Déficit'}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -521,29 +637,48 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
             )}
 
             {activeTab === 'expense' && budgetAnalysis && (
-                <div className="mb-12 grid grid-cols-1 md:grid-cols-3 gap-6 animate-slide-up">
-                    {Object.entries(budgetAnalysis).map(([key, data]) => (
-                        <div key={key} className="bg-white dark:bg-white/5 p-6 rounded-[24px] border border-[var(--border-color)] dark:border-white/10 shadow-sm">
-                            <div className="flex justify-between items-center mb-4">
-                                <span className="text-[10px] font-black uppercase tracking-widest opacity-40">{data.label}</span>
-                                <span className={`text-[10px] font-black px-2 py-1 rounded-full ${
-                                    data.current > data.target ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'
-                                }`}>
-                                    Ideal: {data.target}%
-                                </span>
-                            </div>
-                            <div className="flex items-end gap-2 mb-2">
-                                <span className="text-2xl font-black text-primary-dark">{data.current.toFixed(1)}%</span>
-                                <span className="text-[10px] font-bold opacity-30 mb-1">del total gastado</span>
-                            </div>
-                            <div className="w-full h-2 bg-neutral-100 dark:bg-white/10 rounded-full overflow-hidden">
-                                <div 
-                                    className={`h-full transition-all duration-1000 ${data.color}`}
-                                    style={{ width: `${Math.min(data.current, 100)}%` }}
-                                />
-                            </div>
+                <div className="mb-16 space-y-6 animate-slide-up">
+                    <div className="flex items-center gap-3 px-2">
+                        <div className="w-8 h-8 rounded-xl bg-primary-dark/5 flex items-center justify-center text-primary-dark">
+                            <Activity size={18} />
                         </div>
-                    ))}
+                        <h4 className="text-lg font-black uppercase tracking-tighter text-primary-dark">Estado de Ejecución Real</h4>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {Object.entries(budgetAnalysis).map(([key, data]) => (
+                            <div key={key} className="bg-white dark:bg-white/5 p-6 rounded-[28px] border border-[var(--border-color)] dark:border-white/10 shadow-sm hover:shadow-md transition-all">
+                                <div className="flex justify-between items-center mb-6">
+                                    <span className="text-[10px] font-black uppercase tracking-widest opacity-40">{data.label}</span>
+                                    <div className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase ${
+                                        data.current > data.target ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'
+                                    }`}>
+                                        Meta: {data.target}%
+                                    </div>
+                                </div>
+                                
+                                <div className="flex items-baseline gap-2 mb-4">
+                                    <span className="text-3xl font-black text-primary-dark">{data.current.toFixed(1)}%</span>
+                                    <span className="text-[10px] font-bold opacity-30 uppercase">del gasto total</span>
+                                </div>
+                                
+                                <div className="space-y-2">
+                                    <div className="w-full h-1.5 bg-neutral-100 dark:bg-white/10 rounded-full overflow-hidden">
+                                        <div 
+                                            className={`h-full transition-all duration-1000 ${data.color}`}
+                                            style={{ width: `${Math.min(data.current, 100)}%` }}
+                                        />
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-[8px] font-black opacity-30 uppercase">Progreso vs Regla</span>
+                                        <span className={`text-[9px] font-black ${data.current > data.target ? 'text-red-500' : 'text-green-500'}`}>
+                                            {data.current > data.target ? `+${(data.current - data.target).toFixed(1)}% Excedido` : 'Dentro del rango'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
 
