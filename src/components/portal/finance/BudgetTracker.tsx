@@ -656,7 +656,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
                                             </div>
                                             <div className="text-right">
                                                 <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Margen del Plan</span>
-                                                <h3 className="text-3xl font-black tracking-tighter">
+                                                <h3 className="text-3xl font-black tracking-tighter text-white">
                                                     ${planningAnalysis.margin.toLocaleString()}
                                                 </h3>
                                             </div>
