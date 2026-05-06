@@ -140,9 +140,9 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
         if (totals.total === 0) return null;
 
         return {
-            needs: { label: 'Necesidades (50%)', current: (totals.fijo / totals.total) * 100, target: 50, color: 'bg-blue-500' },
-            wants: { label: 'Deseos (30%)', current: (totals.variable / totals.total) * 100, target: 30, color: 'bg-purple-500' },
-            savings: { label: 'Ahorro/Deuda (20%)', current: (totals.ahorroDeuda / totals.total) * 100, target: 20, color: 'bg-green-500' }
+            needs: { label: 'Necesidades (50%)', current: (totals.fijo / totals.total) * 100, target: 50, color: 'bg-blue-500', amount: totals.fijo },
+            wants: { label: 'Deseos (30%)', current: (totals.variable / totals.total) * 100, target: 30, color: 'bg-purple-500', amount: totals.variable },
+            savings: { label: 'Ahorro/Deuda (20%)', current: (totals.ahorroDeuda / totals.total) * 100, target: 20, color: 'bg-green-500', amount: totals.ahorroDeuda }
         };
     }, [budgetData]);
 
@@ -657,9 +657,14 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
                                     </div>
                                 </div>
                                 
-                                <div className="flex items-baseline gap-2 mb-4">
-                                    <span className="text-3xl font-black text-primary-dark">{data.current.toFixed(1)}%</span>
-                                    <span className="text-[10px] font-bold opacity-30 uppercase">del gasto total</span>
+                                <div className="space-y-1 mb-6">
+                                    <div className="flex items-baseline gap-1">
+                                        <span className="text-3xl font-black text-primary-dark">${(data as any).amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[11px] font-black text-accent">{data.current.toFixed(1)}%</span>
+                                        <span className="text-[10px] font-bold opacity-30 uppercase tracking-widest text-primary-dark">del gasto total</span>
+                                    </div>
                                 </div>
                                 
                                 <div className="space-y-2">
