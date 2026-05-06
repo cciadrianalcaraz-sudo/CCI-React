@@ -125,24 +125,63 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
             fijo: 0,
             variable: 0,
             ahorroDeuda: 0,
-            total: 0
+            totalSpent: 0,
+            fijoBudget: 0,
+            variableBudget: 0,
+            ahorroDeudaBudget: 0
         };
 
         budgetData.forEach(item => {
-            if (item.category === 'income') return; // Only expenses for 50/30/20
+            if (item.category === 'income') return;
             const amount = item.currentAmount;
-            totals.total += amount;
-            if (item.type === 'Fijo') totals.fijo += amount;
-            else if (item.type === 'Variable') totals.variable += amount;
-            else if (item.type === 'Ahorro' || item.type === 'Deuda') totals.ahorroDeuda += amount;
+            const budgeted = item.avgBudget;
+            
+            totals.totalSpent += amount;
+            
+            if (item.type === 'Fijo') {
+                totals.fijo += amount;
+                totals.fijoBudget += budgeted;
+            } else if (item.type === 'Variable') {
+                totals.variable += amount;
+                totals.variableBudget += budgeted;
+            } else if (item.type === 'Ahorro' || item.type === 'Deuda') {
+                totals.ahorroDeuda += amount;
+                totals.ahorroDeudaBudget += budgeted;
+            }
         });
 
-        if (totals.total === 0) return null;
+        if (totals.totalSpent === 0 && (totals.fijoBudget + totals.variableBudget + totals.ahorroDeudaBudget === 0)) return null;
+
+        const totalForPct = totals.totalSpent || 1;
 
         return {
-            needs: { label: 'Necesidades (50%)', current: (totals.fijo / totals.total) * 100, target: 50, color: 'bg-blue-500', amount: totals.fijo },
-            wants: { label: 'Deseos (30%)', current: (totals.variable / totals.total) * 100, target: 30, color: 'bg-purple-500', amount: totals.variable },
-            savings: { label: 'Ahorro/Deuda (20%)', current: (totals.ahorroDeuda / totals.total) * 100, target: 20, color: 'bg-green-500', amount: totals.ahorroDeuda }
+            needs: { 
+                label: 'Necesidades (50%)', 
+                current: (totals.fijo / totalForPct) * 100, 
+                target: 50, 
+                color: 'bg-blue-500', 
+                amount: totals.fijo,
+                budgeted: totals.fijoBudget,
+                remaining: totals.fijoBudget - totals.fijo
+            },
+            wants: { 
+                label: 'Deseos (30%)', 
+                current: (totals.variable / totalForPct) * 100, 
+                target: 30, 
+                color: 'bg-purple-500', 
+                amount: totals.variable,
+                budgeted: totals.variableBudget,
+                remaining: totals.variableBudget - totals.variable
+            },
+            savings: { 
+                label: 'Ahorro/Deuda (20%)', 
+                current: (totals.ahorroDeuda / totalForPct) * 100, 
+                target: 20, 
+                color: 'bg-green-500', 
+                amount: totals.ahorroDeuda,
+                budgeted: totals.ahorroDeudaBudget,
+                remaining: totals.ahorroDeudaBudget - totals.ahorroDeuda
+            }
         };
     }, [budgetData]);
 
@@ -657,13 +696,28 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
                                     </div>
                                 </div>
                                 
-                                <div className="space-y-1 mb-6">
-                                    <div className="flex items-baseline gap-1">
-                                        <span className="text-3xl font-black text-primary-dark">${(data as any).amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                                <div className="space-y-4 mb-6">
+                                    <div className="flex flex-col">
+                                        <div className="flex items-baseline gap-1">
+                                            <span className="text-3xl font-black text-primary-dark">${(data as any).amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[11px] font-black text-accent">{data.current.toFixed(1)}%</span>
+                                            <span className="text-[10px] font-bold opacity-30 uppercase tracking-widest text-primary-dark">del gasto total</span>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-[11px] font-black text-accent">{data.current.toFixed(1)}%</span>
-                                        <span className="text-[10px] font-bold opacity-30 uppercase tracking-widest text-primary-dark">del gasto total</span>
+
+                                    <div className={`p-3 rounded-2xl border ${
+                                        (data as any).remaining >= 0 
+                                            ? 'bg-green-500/5 border-green-500/10' 
+                                            : 'bg-red-500/5 border-red-500/10'
+                                    }`}>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Disponible</span>
+                                            <span className={`text-sm font-black ${(data as any).remaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                ${(data as any).remaining.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                                 
