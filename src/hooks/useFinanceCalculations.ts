@@ -113,7 +113,15 @@ export const useFinanceCalculations = (
                 return acc;
             }, {});
         
-        const sortedSummary = Object.values(grouped).sort((a, b) => a.concept.localeCompare(b.concept));
+        const sortedSummary = Object.values(grouped)
+            .map(item => {
+                if (item.income > item.expense) {
+                    return { concept: item.concept, income: item.income - item.expense, expense: 0 };
+                } else {
+                    return { concept: item.concept, income: 0, expense: item.expense - item.income };
+                }
+            })
+            .sort((a, b) => a.concept.localeCompare(b.concept));
         setSummaryData(sortedSummary);
         
         const historicalRecords = selectedMonth === 'all' 
@@ -128,29 +136,19 @@ export const useFinanceCalculations = (
                 return rDate.substring(0, 7);
             })).size || 1;
         
-        const historicalExpenses = historicalRecords
+        const historicalNet = historicalRecords
             .filter(r => {
                 const c = (r.concept || '').toUpperCase().trim();
-                return c !== 'SALDO INICIAL' && !c.includes('TRASPASO') && Number(r.expense) > 0;
+                return c !== 'SALDO INICIAL' && !c.includes('TRASPASO');
             })
-            .reduce((acc: Record<string, number>, curr: FinanceRecord) => {
+            .reduce((acc: Record<string, {income: number, expense: number}>, curr: FinanceRecord) => {
                 const c = curr.concept || 'SIN CONCEPTO';
-                if (!acc[c]) acc[c] = 0;
-                acc[c] += Number(curr.expense);
+                if (!acc[c]) acc[c] = { income: 0, expense: 0 };
+                acc[c].income += Number(curr.income) || 0;
+                acc[c].expense += Number(curr.expense) || 0;
                 return acc;
             }, {});
 
-        const historicalIncomes = historicalRecords
-            .filter(r => {
-                const c = (r.concept || '').toUpperCase().trim();
-                return c !== 'SALDO INICIAL' && !c.includes('TRASPASO') && Number(r.income) > 0;
-            })
-            .reduce((acc: Record<string, number>, curr: FinanceRecord) => {
-                const c = curr.concept || 'SIN CONCEPTO';
-                if (!acc[c]) acc[c] = 0;
-                acc[c] += Number(curr.income);
-                return acc;
-            }, {});
             
         const allEverConcepts = Array.from(new Set(records.map(r => (r.concept || '').toUpperCase().trim())))
             .filter(c => c !== '' && c !== 'SALDO INICIAL' && !c.includes('TRASPASO'));
@@ -214,8 +212,11 @@ export const useFinanceCalculations = (
             .map(concept => {
                 const manual = manualBudgets[concept];
                 // Auto-detect category based on historical data if not manually defined
-                const hasHistIncome = (historicalIncomes[concept] || 0) > (historicalExpenses[concept] || 0);
-                const hasCurrentIncome = (grouped[concept]?.income || 0) > (grouped[concept]?.expense || 0);
+                const conceptData = grouped[concept] || { income: 0, expense: 0 };
+                const histData = historicalNet[concept] || { income: 0, expense: 0 };
+
+                const hasHistIncome = (histData.income || 0) > (histData.expense || 0);
+                const hasCurrentIncome = (conceptData.income || 0) > (conceptData.expense || 0);
                 
                 const isIngresoType = conceptTypeMap[concept] === 'Ingreso';
                 const category = manual?.category || ((hasHistIncome || hasCurrentIncome || isIngresoType || incomeConcepts.has(concept)) ? 'income' : 'expense');
@@ -224,12 +225,13 @@ export const useFinanceCalculations = (
                 let currentAmount = 0;
                 
                 if (category === 'income') {
-                    histAvg = (historicalIncomes[concept] || 0) / historicalMonthsCount;
-                    currentAmount = grouped[concept]?.income || 0;
+                    histAvg = (histData.income - histData.expense) / historicalMonthsCount;
+                    currentAmount = conceptData.income - conceptData.expense;
                 } else {
-                    histAvg = (historicalExpenses[concept] || 0) / historicalMonthsCount;
-                    currentAmount = grouped[concept]?.expense || 0;
+                    histAvg = (histData.expense - histData.income) / historicalMonthsCount;
+                    currentAmount = conceptData.expense - conceptData.income;
                 }
+
 
                 const definedBudget = manual !== undefined ? manual.amount : histAvg;
                 

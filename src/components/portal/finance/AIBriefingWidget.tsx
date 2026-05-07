@@ -31,15 +31,28 @@ const AIBriefingWidget: React.FC<AIBriefingWidgetProps> = ({ records, goals, cre
                 return rMonth === targetMonth && (r.concept || '').toUpperCase().trim() !== 'SALDO INICIAL';
             });
 
-            const income = monthRecords.reduce((acc, r) => acc + (Number(r.income) || 0), 0);
-            const expense = monthRecords.reduce((acc, r) => acc + (Number(r.expense) || 0), 0);
-
-            // Calcular top categorías
-            const catMap: Record<string, number> = {};
+            // Agrupar por concepto para netear
+            const groupedConcepts: Record<string, { income: number, expense: number }> = {};
             monthRecords.forEach(r => {
-                if (Number(r.expense) > 0) {
-                    const type = r.concept || 'Otros';
-                    catMap[type] = (catMap[type] || 0) + Number(r.expense);
+                const c = r.concept || 'Otros';
+                if (!groupedConcepts[c]) groupedConcepts[c] = { income: 0, expense: 0 };
+                groupedConcepts[c].income += Number(r.income) || 0;
+                groupedConcepts[c].expense += Number(r.expense) || 0;
+            });
+
+            let totalIncome = 0;
+            let totalExpense = 0;
+            const catMap: Record<string, number> = {};
+
+            Object.entries(groupedConcepts).forEach(([concept, data]) => {
+                const netIncome = Math.max(0, data.income - data.expense);
+                const netExpense = Math.max(0, data.expense - data.income);
+                
+                totalIncome += netIncome;
+                totalExpense += netExpense;
+                
+                if (netExpense > 0) {
+                    catMap[concept] = netExpense;
                 }
             });
 
@@ -48,7 +61,7 @@ const AIBriefingWidget: React.FC<AIBriefingWidgetProps> = ({ records, goals, cre
                 .slice(0, 3)
                 .map(([name, amount]) => ({ name, amount }));
 
-            return { income, expense, topCategories };
+            return { income: totalIncome, expense: totalExpense, topCategories };
         };
 
         return {
