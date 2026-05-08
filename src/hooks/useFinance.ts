@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import type { FinanceRecord, PaymentMethod, FinanceCredit, FinanceGoal } from '../types/finance';
+import type { FinanceRecord, PaymentMethod, FinanceCredit, FinanceGoal, BudgetData } from '../types/finance';
+
 
 const EMERGENCY_COMPANY_MAP: Record<string, string> = {
     'a.alcarazpreciado@gmail.com': 'GRUPO ALCA',
@@ -56,7 +57,9 @@ export const useFinance = (user: { id: string; [key: string]: unknown }, propsRe
     const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
     const [credits, setCredits] = useState<FinanceCredit[]>([]);
     const [goals, setGoals] = useState<FinanceGoal[]>([]);
+    const [budgets, setBudgets] = useState<BudgetData[]>([]);
     const [companyIds, setCompanyIds] = useState<string[]>([user.id]);
+
     const userEmail = (user as any)?.email;
 
     // ── IDs de Empresa ────────────────────────────────────────────────────────
@@ -147,6 +150,24 @@ export const useFinance = (user: { id: string; [key: string]: unknown }, propsRe
             console.error('Error loading goals:', error);
         }
     }, [user.id]);
+    
+    // ── Presupuestos (para Forecast) ──────────────────────────────────────────
+    const loadBudgets = useCallback(async () => {
+        try {
+            const ids = await getCompanyUserIds(user.id, userEmail);
+            const { data, error } = await supabase
+                .from('finance_budgets')
+                .select('*')
+                .in('user_id', ids)
+                .order('month', { ascending: false });
+            
+            if (error) throw error;
+            setBudgets(data || []);
+        } catch (error) {
+            console.error('Error loading budgets:', error);
+        }
+    }, [user.id]);
+
 
     useEffect(() => {
         if (!propsRecords) {
@@ -155,7 +176,9 @@ export const useFinance = (user: { id: string; [key: string]: unknown }, propsRe
         loadPaymentMethods();
         loadCredits();
         loadGoals();
-    }, [user.id, loadRecords, loadPaymentMethods, loadCredits, loadGoals, propsRecords]);
+        loadBudgets();
+    }, [user.id, loadRecords, loadPaymentMethods, loadCredits, loadGoals, loadBudgets, propsRecords]);
+
 
     return {
         records,
@@ -163,10 +186,13 @@ export const useFinance = (user: { id: string; [key: string]: unknown }, propsRe
         paymentMethods,
         credits,
         goals,
+        budgets,
         companyIds,
         refreshRecords: loadRecords,
         refreshPaymentMethods: loadPaymentMethods,
         refreshCredits: loadCredits,
         refreshGoals: loadGoals,
+        refreshBudgets: loadBudgets,
     };
+
 };

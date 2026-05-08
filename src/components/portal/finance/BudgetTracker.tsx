@@ -67,7 +67,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
         return groups;
     }, [filteredBudgetData]);
 
-    const handleSaveBudget = async (concept: string, amount: number, category: string = 'expense', type?: string) => {
+    const handleSaveBudgetFull = async (concept: string, amount: number, category: string = 'expense', type?: string, due_day?: number) => {
         try {
             const { error } = await supabase
                 .from('finance_budgets')
@@ -78,6 +78,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
                     amount,
                     budget_category: category,
                     expense_type: type,
+                    due_day,
                     updated_at: new Date().toISOString()
                 }, { onConflict: 'user_id,concept,month,budget_category' });
 
@@ -89,6 +90,7 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
             toast.error('No se pudo guardar el presupuesto.');
         }
     };
+
 
     const handleDeleteBudget = async (concept: string) => {
         const ok = await confirm({
@@ -243,7 +245,9 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
                                 <th className="p-4 border-r border-[var(--border-color)] dark:border-white/10">Concepto</th>
                                 <th className="p-4 border-r border-[var(--border-color)] dark:border-white/10 text-right w-40">Presupuesto</th>
                                 <th className="p-4 border-r border-[var(--border-color)] dark:border-white/10 text-right w-56">{isIncome ? 'Ingreso Real' : 'Gasto Real'}</th>
+                                {isEditingBudget && <th className="p-4 border-r border-[var(--border-color)] dark:border-white/10 text-center w-24">Día</th>}
                                 <th className="p-4 text-right w-36">Estado</th>
+
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-neutral-100/50">
@@ -277,7 +281,8 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
                                                             <select 
                                                                 className="mt-1 text-[8px] font-black uppercase tracking-widest bg-neutral-100 border-none rounded px-1 py-0.5 outline-none focus:ring-1 focus:ring-accent"
                                                                 defaultValue={row.type}
-                                                                onChange={(e) => handleSaveBudget(row.concept, row.avgBudget, row.category, e.target.value)}
+                                                                onChange={(e) => handleSaveBudgetFull(row.concept, row.avgBudget, row.category, e.target.value, row.due_day)}
+
                                                             >
                                                                 <option value="Fijo">Fijo</option>
                                                                 <option value="Variable">Variable</option>
@@ -301,7 +306,8 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
                                                             type="number" 
                                                             className="w-20 bg-transparent outline-none text-right font-black text-xs text-primary-dark"
                                                             defaultValue={row.avgBudget}
-                                                            onBlur={(e) => handleSaveBudget(row.concept, parseFloat(e.target.value) || 0, row.category, row.type)}
+                                                            onBlur={(e) => handleSaveBudgetFull(row.concept, parseFloat(e.target.value) || 0, row.category, row.type, row.due_day)}
+
                                                         />
                                                         <button 
                                                             onClick={() => handleDeleteBudget(row.concept)}
@@ -337,7 +343,21 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
                                                     </div>
                                                 </div>
                                             </td>
+                                            {isEditingBudget && (
+                                                <td className="p-4 border-l border-neutral-100/50" onClick={(e) => e.stopPropagation()}>
+                                                    <input 
+                                                        type="number" 
+                                                        min="1" 
+                                                        max="31"
+                                                        placeholder="-"
+                                                        className="w-full bg-white border border-neutral-200 rounded-lg py-1 text-center font-black text-xs text-accent outline-none focus:border-accent"
+                                                        defaultValue={row.due_day || ''}
+                                                        onBlur={(e) => handleSaveBudgetFull(row.concept, row.avgBudget, row.category, row.type, parseInt(e.target.value) || undefined)}
+                                                    />
+                                                </td>
+                                            )}
                                             <td className="p-4 text-right font-bold">
+
                                                 {isIncome ? (
                                                     <span className={`px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest ${isGoalMet ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>
                                                         {isGoalMet ? 'Logrado' : 'En Progreso'}

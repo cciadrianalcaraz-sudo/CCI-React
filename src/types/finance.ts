@@ -27,7 +27,21 @@ export interface FinanceCredit {
     annual_rate: number;
     start_date: string;
     created_at: string;
+    cutoff_day?: number;
+    payment_day?: number;
 }
+
+export interface FinanceBudget {
+    id: string;
+    user_id: string;
+    concept: string;
+    month: string;
+    amount: number;
+    budget_category: 'income' | 'expense';
+    expense_type: string;
+    due_day?: number;
+}
+
 
 export interface FinanceGoal {
     id: string;
@@ -48,4 +62,6 @@ export interface BudgetData {
     type: string; // 'Fijo', 'Variable', etc.
     category: 'income' | 'expense';
     expense_type?: string;
+    due_day?: number;
 }
+

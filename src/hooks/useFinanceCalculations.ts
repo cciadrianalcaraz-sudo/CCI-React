@@ -22,7 +22,8 @@ export const useFinanceCalculations = (
         try {
             const { data, error } = await supabase
                 .from('finance_budgets')
-                .select('concept, amount, budget_category, expense_type')
+                .select('concept, amount, budget_category, expense_type, due_day')
+
                 .eq('month', month)
                 .in('user_id', companyIds);
             
@@ -34,8 +35,10 @@ export const useFinanceCalculations = (
                     budgetMap[b.concept] = { 
                         amount: Number(b.amount), 
                         category: b.budget_category || 'expense',
-                        type: b.expense_type
+                        type: b.expense_type,
+                        due_day: b.due_day
                     };
+
                 });
             }
             setManualBudgets(budgetMap);
@@ -242,8 +245,10 @@ export const useFinanceCalculations = (
                     difference: category === 'income' ? currentAmount - definedBudget : definedBudget - currentAmount,
                     type: manual?.type || conceptTypeMap[concept] || (category === 'income' ? 'Ingreso' : 'Variable'),
                     category,
-                    expense_type: manual?.type
+                    expense_type: manual?.type,
+                    due_day: manual?.due_day
                 };
+
             })
             .filter(row => row.avgBudget > 0 || row.currentAmount > 0 || row.category === 'income')
             .sort((a,b) => b.avgBudget - a.avgBudget);

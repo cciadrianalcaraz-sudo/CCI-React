@@ -4,7 +4,7 @@ import {
     LogOut, 
     Bell, 
     LayoutDashboard, BarChart3, Search,
-    ArrowRight, Sun, Moon
+    ArrowRight, Sun, Moon, Calendar as CalendarIcon
 } from "lucide-react";
 import Button from "../components/ui/Button";
 import { supabase } from "../lib/supabase";
@@ -12,7 +12,9 @@ import FinanceTracker from "../components/portal/FinanceTracker";
 import AdminDashboard from "../components/portal/AdminDashboard";
 import TicketUploader from "../components/portal/TicketUploader";
 import FinancialDashboard from "../components/portal/finance/DashboardView";
+import CashflowCalendar from "../components/portal/finance/CashflowCalendar";
 import { useFinance } from "../hooks/useFinance";
+
 // Recharts imports removed as they are now handled by FinancialDashboard
 
 const MASTER_EMAIL = 'cci.adrianalcaraz@gmail.com';
@@ -190,10 +192,11 @@ function PortalView({ user, onLogout }: { user: any, onLogout: () => void }) {
     const [docs, setDocs] = useState<Document[]>([]);
     const [records, setRecords] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'dashboard' | 'finance' | 'tickets'>(() => {
+    const [activeTab, setActiveTab] = useState<'dashboard' | 'finance' | 'calendar' | 'tickets'>(() => {
         const saved = localStorage.getItem(`portal_active_tab_${user.id}`);
-        return (saved === 'dashboard' || saved === 'finance' || saved === 'tickets') ? saved : 'dashboard';
+        return (saved === 'dashboard' || saved === 'finance' || saved === 'calendar' || saved === 'tickets') ? saved : 'dashboard';
     });
+
 
     useEffect(() => {
         if (user?.id) localStorage.setItem(`portal_active_tab_${user.id}`, activeTab);
@@ -409,8 +412,10 @@ function PortalView({ user, onLogout }: { user: any, onLogout: () => void }) {
                         <div className="hidden md:flex flex-wrap gap-4 mb-8 border-b border-[var(--border-color)] pb-4 animate-fade-in">
                             {[
                                 { id: 'dashboard', label: 'Panel Principal', icon: LayoutDashboard },
+                                { id: 'calendar', label: 'Cashflow Forecast', icon: CalendarIcon },
                                 { id: 'finance', label: 'Finanzas Personales', icon: BarChart3 },
                                 { id: 'tickets', label: 'Tickets y Facturas', icon: FileText }
+
                             ].map(tab => (
                                 <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={`px-6 py-2.5 rounded-full font-bold text-sm transition-all flex items-center gap-2 ${activeTab === tab.id ? 'bg-[var(--text-primary)] text-[var(--bg-card)] shadow-lg scale-105' : 'bg-[var(--bg-card)] dark:bg-white/5 border border-[var(--border-color)] opacity-60 hover:opacity-100 hover:border-accent'}`}>
                                     <tab.icon size={18} /> {tab.label}
@@ -430,7 +435,17 @@ function PortalView({ user, onLogout }: { user: any, onLogout: () => void }) {
                                     paymentMethods={paymentMethods}
                                 />
                             </div>
+                        ) : activeTab === 'calendar' ? (
+                            <div className="animate-fade-in">
+                                <CashflowCalendar 
+                                    records={financeRecords}
+                                    credits={credits}
+                                    budgets={budgets}
+                                    paymentMethods={paymentMethods}
+                                />
+                            </div>
                         ) : activeTab === 'finance' ? (
+
                             <div className="animate-fade-in"><FinanceTracker user={user} records={records} onRefresh={loadDashboardData} /></div>
                         ) : (
                             <div className="animate-fade-in"><TicketUploader user={user} isMaster={false} /></div>
@@ -448,18 +463,23 @@ function PortalView({ user, onLogout }: { user: any, onLogout: () => void }) {
                             <input autoFocus className="bg-transparent border-none outline-none flex-1 text-lg font-bold text-primary-dark placeholder:text-neutral-300" placeholder="Escribe un comando..." onKeyDown={e => {
                                 if (e.key === 'Enter') {
                                     const v = e.currentTarget.value.toLowerCase();
-                                    if (v.includes('panel')) setActiveTab('dashboard');
+                                    if (v.includes('panel') || v.includes('dashboard')) setActiveTab('dashboard');
                                     else if (v.includes('finanza')) setActiveTab('finance');
-                                    else if (v.includes('ticket')) setActiveTab('tickets');
+                                    else if (v.includes('calendario') || v.includes('forecast') || v.includes('proyeccion')) setActiveTab('calendar');
+                                    else if (v.includes('ticket') || v.includes('factura')) setActiveTab('tickets');
+
                                     setIsCommandCenterOpen(false);
                                 }
                             }} />
                             <span className="text-[10px] font-black text-neutral-400 border border-neutral-200 px-2 py-1 rounded-lg">ESC</span>
                         </div>
                         <div className="p-4 space-y-2">
-                            <button onClick={() => { setActiveTab('dashboard'); setIsCommandCenterOpen(false); }} className="w-full flex items-center justify-between p-4 hover:bg-neutral-50 rounded-2xl transition-all"><div className="flex items-center gap-4"><LayoutDashboard size={18}/><span className="font-bold text-sm">Dashboard</span></div><ArrowRight size={14}/></button>
-                            <button onClick={() => { setActiveTab('finance'); setIsCommandCenterOpen(false); }} className="w-full flex items-center justify-between p-4 hover:bg-neutral-50 rounded-2xl transition-all"><div className="flex items-center gap-4"><BarChart3 size={18}/><span className="font-bold text-sm">Finanzas</span></div><ArrowRight size={14}/></button>
-                    </div>
+                            <button onClick={() => { setActiveTab('dashboard'); setIsCommandCenterOpen(false); }} className="w-full flex items-center justify-between p-4 hover:bg-neutral-50 rounded-2xl transition-all"><div className="flex items-center gap-4"><LayoutDashboard size={18}/><span className="font-bold text-sm">Dashboard Principal</span></div><ArrowRight size={14}/></button>
+                            <button onClick={() => { setActiveTab('calendar'); setIsCommandCenterOpen(false); }} className="w-full flex items-center justify-between p-4 hover:bg-neutral-50 rounded-2xl transition-all"><div className="flex items-center gap-4"><CalendarIcon size={18}/><span className="font-bold text-sm">Cashflow Forecast</span></div><ArrowRight size={14}/></button>
+                            <button onClick={() => { setActiveTab('finance'); setIsCommandCenterOpen(false); }} className="w-full flex items-center justify-between p-4 hover:bg-neutral-50 rounded-2xl transition-all"><div className="flex items-center gap-4"><BarChart3 size={18}/><span className="font-bold text-sm">Control Presupuestario</span></div><ArrowRight size={14}/></button>
+                            <button onClick={() => { setActiveTab('tickets'); setIsCommandCenterOpen(false); }} className="w-full flex items-center justify-between p-4 hover:bg-neutral-50 rounded-2xl transition-all"><div className="flex items-center gap-4"><FileText size={18}/><span className="font-bold text-sm">Tickets y Facturación</span></div><ArrowRight size={14}/></button>
+                        </div>
+
                 </div>
             </div>
             )}
@@ -468,9 +488,11 @@ function PortalView({ user, onLogout }: { user: any, onLogout: () => void }) {
             <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-[400px] bg-white/80 dark:bg-black/40 backdrop-blur-2xl border border-white/20 dark:border-white/10 rounded-[2rem] p-2 shadow-2xl z-[100] flex items-center justify-around overflow-hidden animate-slide-up">
                 {[
                     { id: 'dashboard', label: 'Inicio', icon: LayoutDashboard },
+                    { id: 'calendar', label: 'Calendario', icon: CalendarIcon },
                     { id: 'finance', label: 'Finanzas', icon: BarChart3 },
                     { id: 'tickets', label: 'Tickets', icon: FileText }
                 ].map(item => {
+
                     const isActive = activeTab === item.id;
                     return (
                         <button
