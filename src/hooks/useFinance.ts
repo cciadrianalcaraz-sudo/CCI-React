@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import type { FinanceRecord, PaymentMethod, FinanceCredit, FinanceGoal, BudgetData } from '../types/finance';
-
+import type { FinanceRecord, PaymentMethod, FinanceCredit, FinanceGoal, FinanceBudget } from '../types/finance';
 
 const EMERGENCY_COMPANY_MAP: Record<string, string> = {
     'a.alcarazpreciado@gmail.com': 'GRUPO ALCA',
@@ -57,7 +56,7 @@ export const useFinance = (user: { id: string; [key: string]: unknown }, propsRe
     const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
     const [credits, setCredits] = useState<FinanceCredit[]>([]);
     const [goals, setGoals] = useState<FinanceGoal[]>([]);
-    const [budgets, setBudgets] = useState<BudgetData[]>([]);
+    const [budgets, setBudgets] = useState<FinanceBudget[]>([]);
     const [companyIds, setCompanyIds] = useState<string[]>([user.id]);
 
     const userEmail = (user as any)?.email;
@@ -196,3 +195,4 @@ export const useFinance = (user: { id: string; [key: string]: unknown }, propsRe
     };
 
 };
+

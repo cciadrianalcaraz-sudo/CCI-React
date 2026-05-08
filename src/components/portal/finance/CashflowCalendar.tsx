@@ -3,7 +3,6 @@ import {
     Calendar as CalendarIcon, 
     ChevronLeft, 
     ChevronRight, 
-    DollarSign, 
     AlertCircle, 
     CheckCircle2, 
     ArrowUpRight, 
@@ -11,12 +10,13 @@ import {
     TrendingUp,
     ShieldCheck
 } from 'lucide-react';
-import type { FinanceRecord, FinanceCredit, BudgetData, PaymentMethod } from '../../../types/finance';
+
+import type { FinanceRecord, FinanceCredit, FinanceBudget, PaymentMethod } from '../../../types/finance';
 
 interface CashflowCalendarProps {
     records: FinanceRecord[];
     credits: FinanceCredit[];
-    budgets: BudgetData[];
+    budgets: FinanceBudget[];
     paymentMethods: PaymentMethod[];
 }
 
@@ -68,7 +68,7 @@ const CashflowCalendar: React.FC<CashflowCalendarProps> = ({
         const items: any[] = [];
 
         // Fixed items from budgets
-        // We only take items that have a due_day and are for the current selected month or 'default' (latest month available)
+        // We only take items that have a due_day and are for the current selected month
         const relevantBudgets = budgets.filter(b => b.month === currentMonthStr && b.due_day);
         
         relevantBudgets.forEach(b => {
@@ -89,6 +89,7 @@ const CashflowCalendar: React.FC<CashflowCalendarProps> = ({
                 original: b
             });
         });
+
 
         // Credit payments
         credits.forEach(c => {
