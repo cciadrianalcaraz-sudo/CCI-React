@@ -39,8 +39,9 @@ export interface FinanceBudget {
     amount: number;
     budget_category: 'income' | 'expense';
     expense_type: string;
-    due_day?: number;
+    due_day?: string;
 }
+
 
 
 export interface FinanceGoal {
@@ -62,6 +63,7 @@ export interface BudgetData {
     type: string; // 'Fijo', 'Variable', etc.
     category: 'income' | 'expense';
     expense_type?: string;
-    due_day?: number;
+    due_day?: string;
 }
+
 

@@ -14,8 +14,9 @@ export const useFinanceCalculations = (
     const [paymentBalancesData, setPaymentBalancesData] = useState<{method: string, initialBalance: number, income: number, expense: number, finalBalance: number}[]>([]);
     
     const [budgetData, setBudgetData] = useState<any[]>([]);
-    const [manualBudgets, setManualBudgets] = useState<Record<string, {amount: number, category: string, type?: string, due_day?: number}>>({});
+    const [manualBudgets, setManualBudgets] = useState<Record<string, {amount: number, category: string, type?: string, due_day?: string}>>({});
     const [planningAnalysis, setPlanningAnalysis] = useState<any>(null);
+
 
 
     const loadManualBudgets = useCallback(async (month: string) => {
@@ -29,10 +30,12 @@ export const useFinanceCalculations = (
                 .in('user_id', companyIds);
             
             
+            
             if (error) throw error;
             
-            const budgetMap: Record<string, {amount: number, category: string, type?: string, due_day?: number}> = {};
+            const budgetMap: Record<string, {amount: number, category: string, type?: string, due_day?: string}> = {};
             if (data) {
+
 
                 data.forEach((b: any) => {
                     budgetMap[b.concept] = { 

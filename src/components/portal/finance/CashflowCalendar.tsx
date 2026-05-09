@@ -72,23 +72,37 @@ const CashflowCalendar: React.FC<CashflowCalendarProps> = ({
         const relevantBudgets = budgets.filter(b => b.month === currentMonthStr && b.due_day);
         
         relevantBudgets.forEach(b => {
-            // Check if already paid in this month
-            const isPaid = records.some(r => {
-                const rMonth = r.date.includes('/') ? r.date.split('/').reverse().join('-').substring(0, 7) : r.date.substring(0, 7);
-                return rMonth === currentMonthStr && 
-                       r.concept.toUpperCase().trim() === b.concept.toUpperCase().trim() &&
-                       (b.budget_category === 'income' ? Number(r.income) > 0 : Number(r.expense) > 0);
-            });
+            if (!b.due_day) return;
 
-            items.push({
-                type: b.budget_category === 'income' ? 'income' : 'expense',
-                concept: b.concept,
-                amount: b.amount,
-                day: b.due_day,
-                isPaid,
-                original: b
+            // Parse multiple days (e.g., "15, 30")
+            const days = b.due_day.split(',').map(d => parseInt(d.trim())).filter(d => !isNaN(d));
+            const amountPerDay = b.amount / (days.length || 1);
+
+            days.forEach(day => {
+                // Check if already paid in this month (This is tricky with multiple days)
+                // For now, we'll mark as paid if there's AT LEAST ONE record for this concept this month
+                // Ideally we'd match the specific installment, but without more data, this is the first step.
+                const isPaid = records.some(r => {
+                    const rMonth = r.date.includes('/') ? r.date.split('/').reverse().join('-').substring(0, 7) : r.date.substring(0, 7);
+                    const rDay = parseInt(r.date.includes('/') ? r.date.split('/')[0] : r.date.split('-')[2]);
+                    
+                    return rMonth === currentMonthStr && 
+                           r.concept.toUpperCase().trim() === b.concept.toUpperCase().trim() &&
+                           (b.budget_category === 'income' ? Number(r.income) > 0 : Number(r.expense) > 0) &&
+                           (days.length === 1 || Math.abs(rDay - day) <= 3); // Simple heuristic: if payment is within 3 days of scheduled day
+                });
+
+                items.push({
+                    type: b.budget_category === 'income' ? 'income' : 'expense',
+                    concept: b.concept,
+                    amount: amountPerDay,
+                    day: day,
+                    isPaid,
+                    original: b
+                });
             });
         });
+
 
 
         // Credit payments

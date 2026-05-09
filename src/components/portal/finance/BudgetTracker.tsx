@@ -67,7 +67,8 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
         return groups;
     }, [filteredBudgetData]);
 
-    const handleSaveBudgetFull = async (concept: string, amount: number, category: string = 'expense', type?: string, due_day?: number) => {
+    const handleSaveBudgetFull = async (concept: string, amount: number, category: string = 'expense', type?: string, due_day?: string) => {
+
         try {
             const { error } = await supabase
                 .from('finance_budgets')
@@ -346,15 +347,14 @@ const BudgetTracker: React.FC<BudgetTrackerProps> = ({
                                             {isEditingBudget && (
                                                 <td className="p-4 border-l border-neutral-100/50" onClick={(e) => e.stopPropagation()}>
                                                     <input 
-                                                        type="number" 
-                                                        min="1" 
-                                                        max="31"
+                                                        type="text" 
                                                         placeholder="-"
                                                         className="w-full bg-white border border-neutral-200 rounded-lg py-1 text-center font-black text-xs text-accent outline-none focus:border-accent"
                                                         defaultValue={row.due_day || ''}
-                                                        onBlur={(e) => handleSaveBudgetFull(row.concept, row.avgBudget, row.category, row.type, parseInt(e.target.value) || undefined)}
+                                                        onBlur={(e) => handleSaveBudgetFull(row.concept, row.avgBudget, row.category, row.type, e.target.value || undefined)}
                                                     />
                                                 </td>
+
                                             )}
                                             <td className="p-4 text-right font-bold">
 
