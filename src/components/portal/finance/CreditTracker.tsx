@@ -159,7 +159,7 @@ const CreditTracker: React.FC<CreditTrackerProps> = ({
                         </div>
                         Registrar Nuevo Crédito Bancario
                     </h4>
-                    <form onSubmit={handleSaveCredit} className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
+                    <form onSubmit={handleSaveCredit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
                         <div className="space-y-2">
                             <label className="text-[10px] font-black uppercase opacity-40 ml-1">Nombre del Crédito</label>
                             <input type="text" required value={creditName} onChange={e => setCreditName(e.target.value)} placeholder="Ej: Crédito Hipotecario" className="w-full bg-[var(--bg-main)] dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:border-accent transition-all" />
@@ -176,20 +176,37 @@ const CreditTracker: React.FC<CreditTrackerProps> = ({
                             <label className="text-[10px] font-black uppercase opacity-40 ml-1">Fecha de Inicio</label>
                             <input type="date" required value={creditStartDate} onChange={e => setCreditStartDate(e.target.value)} className="w-full bg-[var(--bg-main)] dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:border-accent transition-all" />
                         </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase opacity-40 ml-1">Día de Corte</label>
-                            <input type="number" min="1" max="31" value={creditCutoffDay} onChange={e => setCreditCutoffDay(e.target.value === '' ? '' : Number(e.target.value))} placeholder="Ej: 28" className="w-full bg-[var(--bg-main)] dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 rounded-2xl px-5 py-3.5 text-sm font-black outline-none focus:border-accent transition-all" />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase opacity-40 ml-1">Día de Pago</label>
-                            <input type="number" min="1" max="31" value={creditPaymentDay} onChange={e => setCreditPaymentDay(e.target.value === '' ? '' : Number(e.target.value))} placeholder="Ej: 18" className="w-full bg-[var(--bg-main)] dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 rounded-2xl px-5 py-3.5 text-sm font-black text-accent outline-none focus:border-accent transition-all" />
-                        </div>
 
+                        {/* SECCIÓN DE ALERTAS DESTACADA */}
+                        <div className="md:col-span-2 lg:col-span-2 space-y-2 bg-accent/5 p-5 rounded-3xl border border-accent/10">
+                            <label className="text-[10px] font-black uppercase text-accent ml-1">Día de Corte (Radar de Alertas)</label>
+                            <input 
+                                type="number" 
+                                min="1" max="31" 
+                                value={creditCutoffDay} 
+                                onChange={e => setCreditCutoffDay(e.target.value === '' ? '' : Number(e.target.value))} 
+                                placeholder="Ej: 28" 
+                                className="w-full bg-white dark:bg-white/5 border border-accent/20 rounded-2xl px-5 py-3 text-sm font-black outline-none focus:border-accent transition-all" 
+                            />
+                        </div>
+                        <div className="md:col-span-2 lg:col-span-2 space-y-2 bg-accent/5 p-5 rounded-3xl border border-accent/10">
+                            <label className="text-[10px] font-black uppercase text-accent ml-1">Día de Pago (Radar de Alertas)</label>
+                            <input 
+                                type="number" 
+                                min="1" max="31" 
+                                value={creditPaymentDay} 
+                                onChange={e => setCreditPaymentDay(e.target.value === '' ? '' : Number(e.target.value))} 
+                                placeholder="Ej: 5" 
+                                className="w-full bg-white dark:bg-white/5 border border-accent/20 rounded-2xl px-5 py-3 text-sm font-black outline-none focus:border-accent transition-all" 
+                            />
+                        </div>
+                        
                         <div className="md:col-span-2 lg:col-span-4 flex justify-end gap-4 pt-4 border-t border-[var(--border-color)] dark:border-white/5">
                             <Button outline type="button" onClick={() => setIsCreditFormOpen(false)}>Cancelar</Button>
                             <Button primary type="submit" loading={isSavingCredit}>Guardar Crédito</Button>
                         </div>
                     </form>
+
                 </div>
             )}
 
