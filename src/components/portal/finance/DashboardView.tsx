@@ -21,12 +21,15 @@ interface DashboardViewProps {
     summaryData: {concept: string, income: number, expense: number}[];
     uniqueMonths: {label: string, value: string}[];
     paymentMethods: PaymentMethod[];
+    budgets: any[];
 }
+
 
 const DashboardView: React.FC<DashboardViewProps> = ({ 
     records, goals, credits, selectedMonth, 
-    summaryData, paymentMethods
+    summaryData, paymentMethods, budgets
 }) => {
+
     const scrollRef = useRef<HTMLDivElement>(null);
     
     const scroll = (direction: 'left' | 'right') => {
@@ -193,6 +196,68 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             .map(([name, balance]) => ({ name, balance }))
             .sort((a, b) => b.balance - a.balance);
     }, [records, paymentMethods]);
+    
+    // 6. Sistema de Alertas Proactivas
+    const alerts = useMemo(() => {
+        const today = new Date();
+        const todayDay = today.getDate();
+        const list: any[] = [];
+
+        // Alertas de Crédito
+        credits.forEach(c => {
+            if (c.cutoff_day) {
+                const diff = (c.cutoff_day - todayDay + 31) % 31;
+                if (diff >= 0 && diff <= 3) {
+                    list.push({
+                        id: `cutoff-${c.id}`,
+                        type: 'cutoff',
+                        title: `Corte de ${c.name}`,
+                        desc: diff === 0 ? '¡Es hoy!' : `Faltan ${diff} ${diff === 1 ? 'día' : 'días'}`,
+                        priority: diff === 0 ? 'high' : 'medium'
+                    });
+                }
+            }
+            if (c.payment_day) {
+                const diff = (c.payment_day - todayDay + 31) % 31;
+                if (diff >= 0 && diff <= 5) {
+                    list.push({
+                        id: `payment-${c.id}`,
+                        type: 'payment',
+                        title: `Pago de ${c.name}`,
+                        desc: diff === 0 ? 'Vence hoy' : diff === 1 ? 'Vence mañana' : `Vence en ${diff} días`,
+                        priority: diff <= 1 ? 'high' : 'medium'
+                    });
+                }
+            }
+        });
+
+        // Alertas de Presupuesto (Sueldos, Rentas, etc)
+        budgets.forEach(b => {
+            if (b.due_day) {
+                const days = b.due_day.split(',').map((d: string) => parseInt(d.trim())).filter((d: number) => !isNaN(d));
+                days.forEach((day: number) => {
+                    const diff = (day - todayDay + 31) % 31;
+                    if (diff >= 0 && diff <= 3) {
+                        list.push({
+                            id: `budget-${b.id}-${day}`,
+                            type: b.budget_category === 'income' ? 'income' : 'expense',
+                            title: b.concept,
+                            desc: diff === 0 ? 'Programado para hoy' : `En ${diff} días`,
+                            priority: diff === 0 ? 'high' : 'low'
+                        });
+                    }
+                });
+            }
+        });
+
+        return list.sort((a, b) => {
+            if (a.priority === 'high' && b.priority !== 'high') return -1;
+            if (a.priority !== 'high' && b.priority === 'high') return 1;
+            return 0;
+        });
+
+    }, [credits, budgets]);
+
 
     // 5. Lógica de Resumen (Integrada)
     const totalExpenses = summaryData.reduce((a, b) => a + b.expense, 0);
@@ -231,8 +296,37 @@ const DashboardView: React.FC<DashboardViewProps> = ({
     return (
         <div className="p-8 space-y-8 animate-fade-in text-[var(--text-primary)]">
             
-            {/* AI Strategic Widget - Executive Priority (OCULTO POR SOLICITUD) */}
-            {/* <AIBriefingWidget records={records} goals={goals} credits={credits} /> */}
+            {/* 0. Radar de Alertas Vigilante */}
+            {alerts.length > 0 && (
+                <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 animate-slide-down">
+                    {alerts.map(alert => (
+                        <div key={alert.id} className={`min-w-[280px] p-4 rounded-[2rem] border flex items-center gap-4 transition-all hover:scale-[1.02] shadow-sm ${
+                            alert.priority === 'high' 
+                                ? 'bg-red-500/10 border-red-500/30' 
+                                : alert.priority === 'medium'
+                                ? 'bg-amber-500/10 border-amber-500/30'
+                                : 'bg-blue-500/10 border-blue-500/30'
+                        }`}>
+                            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${
+                                alert.priority === 'high' ? 'bg-red-500 text-white' : 
+                                alert.priority === 'medium' ? 'bg-amber-500 text-white' : 'bg-blue-500 text-white'
+                            }`}>
+                                {alert.type === 'cutoff' ? <PieChart size={18} /> : 
+                                 alert.type === 'payment' ? <Wallet size={18} /> : 
+                                 alert.type === 'income' ? <ArrowUpRight size={18} /> : <AlertTriangle size={18} />}
+                            </div>
+                            <div>
+                                <h5 className="text-xs font-black uppercase tracking-tight truncate max-w-[150px]">{alert.title}</h5>
+                                <p className={`text-[10px] font-bold uppercase tracking-widest ${
+                                    alert.priority === 'high' ? 'text-red-600' : 
+                                    alert.priority === 'medium' ? 'text-amber-600' : 'text-blue-600'
+                                }`}>{alert.desc}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
 
             {/* 1. Liquidity List (Top priority for decision making) */}
             <div className="w-full bg-white/30 dark:bg-white/5 rounded-[2.5rem] p-6 border border-white/20 dark:border-white/10 shadow-sm backdrop-blur-xl group">

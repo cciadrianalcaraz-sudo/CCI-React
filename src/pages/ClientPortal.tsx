@@ -212,6 +212,22 @@ function PortalView({ user, onLogout }: { user: any, onLogout: () => void }) {
         budgets,
         paymentMethods
     } = useFinance(user);
+    
+    const alertCount = useMemo(() => {
+        const todayDay = new Date().getDate();
+        let count = 0;
+        credits.forEach(c => {
+            if (c.cutoff_day && ((c.cutoff_day - todayDay + 31) % 31 <= 3)) count++;
+            if (c.payment_day && ((c.payment_day - todayDay + 31) % 31 <= 5)) count++;
+        });
+        budgets.forEach(b => {
+            if (b.due_day) {
+                const days = b.due_day.split(',').map((d: any) => parseInt(d.trim())).filter((d: any) => !isNaN(d));
+                if (days.some((day: number) => ((day - todayDay + 31) % 31 <= 3))) count++;
+            }
+        });
+        return count;
+    }, [credits, budgets]);
 
 
     const summaryData = useMemo(() => {
@@ -401,8 +417,9 @@ function PortalView({ user, onLogout }: { user: any, onLogout: () => void }) {
                         </button>
                         <button className="p-3 bg-white dark:bg-white/10 rounded-xl border border-light-beige dark:border-white/10 hover:border-accent transition-all text-primary-dark dark:text-white relative group">
                             <Bell size={20} />
-                            {docs.some(d => d.status === 'pendiente') && <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-primary-dark animate-pulse"></span>}
+                            {(docs.some(d => d.status === 'pendiente') || alertCount > 0) && <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-primary-dark animate-pulse"></span>}
                         </button>
+
                         <button onClick={onLogout} className="flex items-center gap-2 bg-white dark:bg-white/10 border border-light-beige dark:border-white/10 px-4 py-3 rounded-xl font-bold text-primary-dark dark:text-white hover:bg-red-50 dark:hover:bg-red-500/20 hover:text-red-600 transition-all shadow-sm">
                             <LogOut size={18} /> Cerrar Sesión
                         </button>
@@ -435,6 +452,7 @@ function PortalView({ user, onLogout }: { user: any, onLogout: () => void }) {
                                     summaryData={summaryData}
                                     uniqueMonths={availableMonths}
                                     paymentMethods={paymentMethods}
+                                    budgets={budgets}
                                 />
                             </div>
                         ) : activeTab === 'calendar' ? (
