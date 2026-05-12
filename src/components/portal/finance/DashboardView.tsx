@@ -231,6 +231,34 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             }
         });
 
+        // Alertas de Cuentas (Tarjetas de crédito registradas como cuenta)
+        paymentMethods.forEach(pm => {
+            if (pm.cutoff_day) {
+                const diff = (pm.cutoff_day - todayDay + 31) % 31;
+                if (diff >= 0 && diff <= 3) {
+                    list.push({
+                        id: `pm-cutoff-${pm.id}`,
+                        type: 'cutoff',
+                        title: `Corte de ${pm.name}`,
+                        desc: diff === 0 ? '¡Es hoy!' : `Faltan ${diff} ${diff === 1 ? 'día' : 'días'}`,
+                        priority: diff === 0 ? 'high' : 'medium'
+                    });
+                }
+            }
+            if (pm.payment_day) {
+                const diff = (pm.payment_day - todayDay + 31) % 31;
+                if (diff >= 0 && diff <= 5) {
+                    list.push({
+                        id: `pm-payment-${pm.id}`,
+                        type: 'payment',
+                        title: `Pago de ${pm.name}`,
+                        desc: diff === 0 ? 'Vence hoy' : diff === 1 ? 'Vence mañana' : `Vence en ${diff} días`,
+                        priority: diff <= 1 ? 'high' : 'medium'
+                    });
+                }
+            }
+        });
+
         // Alertas de Presupuesto (Sueldos, Rentas, etc)
         budgets.forEach(b => {
             if (b.due_day) {
@@ -256,7 +284,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             return 0;
         });
 
-    }, [credits, budgets]);
+    }, [credits, budgets, paymentMethods]);
+
 
 
     // 5. Lógica de Resumen (Integrada)

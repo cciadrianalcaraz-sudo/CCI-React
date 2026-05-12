@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { Edit2, Trash2, DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
+import { Edit2, Trash2, DollarSign, TrendingUp, TrendingDown, Bell } from 'lucide-react';
+
 import Button from '../../ui/Button';
 import { toast } from '../../../lib/toast';
 import { useConfirm } from '../../../hooks/useConfirm';
@@ -43,6 +44,13 @@ export default function BalancesManager({
     const [reassignModal, setReassignModal] = useState<{ method: string; count: number } | null>(null);
     const [reassignTarget, setReassignTarget] = useState('');
     const [isReassigning, setIsReassigning] = useState(false);
+    
+    // Alert Editing states
+    const [editingAccount, setEditingAccount] = useState<any | null>(null);
+    const [editCutoff, setEditCutoff] = useState<number | ''>('');
+    const [editPayment, setEditPayment] = useState<number | ''>('');
+    const [isSavingAlerts, setIsSavingAlerts] = useState(false);
+
 
     const { confirm, ConfirmModal } = useConfirm();
 
@@ -158,6 +166,31 @@ export default function BalancesManager({
             toast.error(`No se pudo realizar el traspaso: ${(error as any).message}`);
         }
     };
+    
+    const handleSaveAccountAlerts = async () => {
+        if (!editingAccount) return;
+        setIsSavingAlerts(true);
+        try {
+            const { error } = await supabase
+                .from('finance_payment_methods')
+                .update({
+                    cutoff_day: editCutoff === '' ? null : Number(editCutoff),
+                    payment_day: editPayment === '' ? null : Number(editPayment)
+                })
+                .eq('id', editingAccount.id);
+            
+            if (error) throw error;
+            toast.success('Alertas configuradas correctamente.');
+            setEditingAccount(null);
+            onRefresh();
+        } catch (err) {
+            console.error(err);
+            toast.error('Error al guardar configuración de alertas.');
+        } finally {
+            setIsSavingAlerts(false);
+        }
+    };
+
 
     const handleDeleteAccount = async (method: string) => {
         const recordsCount = records.filter(r => r.payment_method === method).length;
@@ -250,6 +283,22 @@ export default function BalancesManager({
                                         <td className="p-5 text-center flex items-center justify-center gap-2">
                                             <button 
                                                 onClick={() => {
+                                                    const pm = savedPaymentMethods.find(p => p.name === row.method);
+                                                    if (pm) {
+                                                        setEditingAccount(pm);
+                                                        setEditCutoff(pm.cutoff_day || '');
+                                                        setEditPayment(pm.payment_day || '');
+                                                    } else {
+                                                        toast.error("No se pudo encontrar la configuración de la cuenta.");
+                                                    }
+                                                }}
+                                                className="w-8 h-8 flex items-center justify-center text-accent hover:bg-accent/10 rounded-lg transition-all"
+                                                title={`Configurar Alertas de Corte/Pago para ${row.method}`}
+                                            >
+                                                <Bell size={14} />
+                                            </button>
+                                            <button 
+                                                onClick={() => {
                                                     const count = records.filter(r => r.payment_method === row.method).length;
                                                     setReassignModal({ method: row.method, count });
                                                     setReassignTarget('');
@@ -269,6 +318,7 @@ export default function BalancesManager({
                                         </td>
                                     </tr>
                                 ))}
+
                             </tbody>
                         </table>
                     </div>
@@ -515,9 +565,62 @@ export default function BalancesManager({
                 </div>
             )}
 
+            {/* EDIT ALERTS MODAL */}
+            {editingAccount && (
+                <div className="fixed inset-0 z-[400] flex items-center justify-center p-4 animate-fade-in">
+                    <div className="absolute inset-0 bg-primary-dark/40 backdrop-blur-md" onClick={() => setEditingAccount(null)}></div>
+                    <div className="bg-[var(--bg-card)] dark:bg-[#1a1a1a] w-full max-w-md rounded-[3rem] p-10 shadow-2xl relative animate-scale-in border border-[var(--border-color)] dark:border-white/10">
+                        <div className="flex items-center gap-4 mb-2">
+                            <div className="w-12 h-12 rounded-2xl bg-accent/20 flex items-center justify-center text-accent">
+                                <Bell size={24} />
+                            </div>
+                            <div>
+                                <h4 className="text-xl font-black text-[var(--text-primary)]">Configurar Alertas</h4>
+                                <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest">{editingAccount.name}</p>
+                            </div>
+                        </div>
+                        
+                        <div className="mt-8 space-y-6">
+                            <p className="text-xs text-neutral-500 leading-relaxed">
+                                Configura los días del mes para recibir recordatorios automáticos en tu Radar de Alertas.
+                            </p>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase text-neutral-400 ml-1">Día de Corte</label>
+                                    <input 
+                                        type="number" min="1" max="31"
+                                        value={editCutoff}
+                                        onChange={e => setEditCutoff(e.target.value === '' ? '' : Number(e.target.value))}
+                                        placeholder="Ej: 28"
+                                        className="w-full bg-[var(--bg-main)] dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 rounded-2xl px-5 py-3.5 text-sm font-black text-[var(--text-primary)] outline-none focus:border-accent"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase text-neutral-400 ml-1">Día de Pago</label>
+                                    <input 
+                                        type="number" min="1" max="31"
+                                        value={editPayment}
+                                        onChange={e => setEditPayment(e.target.value === '' ? '' : Number(e.target.value))}
+                                        placeholder="Ej: 5"
+                                        className="w-full bg-[var(--bg-main)] dark:bg-white/5 border border-[var(--border-color)] dark:border-white/10 rounded-2xl px-5 py-3.5 text-sm font-black text-[var(--text-primary)] outline-none focus:border-accent"
+                                    />
+                                </div>
+                            </div>
+                            
+                            <div className="flex gap-4 pt-4 border-t border-[var(--border-color)] dark:border-white/5">
+                                <Button outline className="flex-1 py-4" onClick={() => setEditingAccount(null)}>Cancelar</Button>
+                                <Button primary className="flex-1 py-4" loading={isSavingAlerts} onClick={handleSaveAccountAlerts}>Guardar Cambios</Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <SavingsGoalsManager user={user} goals={goals} onRefresh={onRefresh} />
             
             {ConfirmModal}
         </div>
+
     );
 }

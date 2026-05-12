@@ -17,7 +17,11 @@ export interface PaymentMethod {
     id: string;
     user_id: string;
     name: string;
+    cutoff_day?: number;
+    payment_day?: number;
+    initial_balance?: number;
 }
+
 
 export interface FinanceCredit {
     id: string;

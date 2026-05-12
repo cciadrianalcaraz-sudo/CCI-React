@@ -220,6 +220,10 @@ function PortalView({ user, onLogout }: { user: any, onLogout: () => void }) {
             if (c.cutoff_day && ((c.cutoff_day - todayDay + 31) % 31 <= 3)) count++;
             if (c.payment_day && ((c.payment_day - todayDay + 31) % 31 <= 5)) count++;
         });
+        paymentMethods.forEach(pm => {
+            if (pm.cutoff_day && ((pm.cutoff_day - todayDay + 31) % 31 <= 3)) count++;
+            if (pm.payment_day && ((pm.payment_day - todayDay + 31) % 31 <= 5)) count++;
+        });
         budgets.forEach(b => {
             if (b.due_day) {
                 const days = b.due_day.split(',').map((d: any) => parseInt(d.trim())).filter((d: any) => !isNaN(d));
@@ -227,7 +231,8 @@ function PortalView({ user, onLogout }: { user: any, onLogout: () => void }) {
             }
         });
         return count;
-    }, [credits, budgets]);
+    }, [credits, budgets, paymentMethods]);
+
 
 
     const summaryData = useMemo(() => {

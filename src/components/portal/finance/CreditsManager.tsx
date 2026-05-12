@@ -55,7 +55,8 @@ export default function CreditsManager({ user, credits, records, paymentMethods,
 
             // SYNC: Crear automáticamente el método de pago (Cuenta) correspondiente
             await supabase
-                .from('payment_methods')
+                .from('finance_payment_methods')
+
                 .insert([{
                     user_id: user.id,
                     name: creditName.trim().toUpperCase(),
@@ -94,7 +95,8 @@ export default function CreditsManager({ user, credits, records, paymentMethods,
 
             // SYNC: Eliminar también el método de pago para evitar basura
             await supabase
-                .from('payment_methods')
+                .from('finance_payment_methods')
+
                 .delete()
                 .eq('user_id', user.id)
                 .eq('name', name.toUpperCase());
