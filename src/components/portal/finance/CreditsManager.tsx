@@ -51,8 +51,17 @@ export default function CreditsManager({ user, credits, records, paymentMethods,
                     payment_day: creditPaymentDay === '' ? null : Number(creditPaymentDay)
                 }]);
 
-
             if (error) throw error;
+
+            // SYNC: Crear automáticamente el método de pago (Cuenta) correspondiente
+            await supabase
+                .from('payment_methods')
+                .insert([{
+                    user_id: user.id,
+                    name: creditName.trim().toUpperCase(),
+                    initial_balance: -Number(creditInitialBalance)
+                }]);
+
             toast.success('Línea de crédito registrada.');
             setIsCreditFormOpen(false);
             setCreditName('');
@@ -82,8 +91,17 @@ export default function CreditsManager({ user, credits, records, paymentMethods,
         try {
             const { error } = await supabase.from('finance_credits').delete().eq('id', id);
             if (error) throw error;
-            toast.success('Crédito eliminado.');
+
+            // SYNC: Eliminar también el método de pago para evitar basura
+            await supabase
+                .from('payment_methods')
+                .delete()
+                .eq('user_id', user.id)
+                .eq('name', name.toUpperCase());
+
+            toast.success('Crédito y cuenta asociada eliminados.');
             onRefresh();
+
         } catch (error) {
             console.error('Error deleting credit:', error);
             toast.error(`No se pudo eliminar el crédito: ${(error as any).message}`);
@@ -222,17 +240,21 @@ export default function CreditsManager({ user, credits, records, paymentMethods,
                 </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {credits.length === 0 && !isCreditFormOpen && (
-                    <div className="col-span-full py-20 text-center border-2 border-dashed border-light-beige rounded-[3rem]">
-                        <div className="w-20 h-20 bg-neutral-50 rounded-full flex items-center justify-center mx-auto mb-6 text-neutral-300">
-                            <TrendingDown size={40} />
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                {/* LISTA DE CRÉDITOS (3 columnas en LG) */}
+                <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {credits.length === 0 && !isCreditFormOpen && (
+                        <div className="col-span-full py-20 text-center border-2 border-dashed border-light-beige rounded-[3rem]">
+                            <div className="w-20 h-20 bg-neutral-50 rounded-full flex items-center justify-center mx-auto mb-6 text-neutral-300">
+                                <TrendingDown size={40} />
+                            </div>
+                            <p className="text-neutral-400 font-bold uppercase tracking-widest text-sm">No tienes créditos registrados</p>
+                            <p className="text-xs text-neutral-300 mt-2">Usa el botón superior para añadir tu primer compromiso financiero.</p>
                         </div>
-                        <p className="text-neutral-400 font-bold uppercase tracking-widest text-sm">No tienes créditos registrados</p>
-                        <p className="text-xs text-neutral-300 mt-2">Usa el botón superior para añadir tu primer compromiso financiero.</p>
-                    </div>
-                )}
-                {credits.map(credit => {
+                    )}
+                    {credits.map(credit => {
+                        // ... (el mapeo de créditos sigue igual)
+
                     const creditPayments = records.filter(r => 
                         (r.concept.toUpperCase().includes(credit.name.toUpperCase()) || 
                          r.description.toUpperCase().includes(credit.name.toUpperCase())) && 
@@ -344,7 +366,47 @@ export default function CreditsManager({ user, credits, records, paymentMethods,
                         </div>
                     );
                 })}
+                </div>
+
+                
+                {/* LISTA LATERAL DE CUENTAS EXISTENTES (1 columna en LG) */}
+                <div className="bg-[var(--bg-card)] dark:bg-white/5 rounded-[2.5rem] p-8 border border-[var(--border-color)] dark:border-white/10 h-fit sticky top-8 animate-fade-in shadow-sm">
+                    <div className="flex items-center justify-between mb-6">
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Radar de Cuentas</h4>
+                        <div className="w-2 h-2 rounded-full bg-accent animate-pulse"></div>
+                    </div>
+                    
+                    <div className="space-y-3">
+                        {paymentMethods.length === 0 ? (
+                            <p className="text-[10px] text-neutral-400 italic text-center py-4">No hay cuentas registradas</p>
+                        ) : (
+                            paymentMethods.map(pm => (
+                                <div key={pm.id} className="flex items-center justify-between p-4 bg-[var(--bg-main)] dark:bg-white/5 rounded-2xl border border-[var(--border-color)] dark:border-white/5 group hover:border-accent/30 transition-all hover:translate-x-1">
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-black text-primary-dark dark:text-white uppercase truncate max-w-[120px]">{pm.name}</span>
+                                        <div className="flex items-center gap-1.5 mt-0.5">
+                                            <span className="w-1 h-1 rounded-full bg-neutral-300"></span>
+                                            <span className="text-[8px] font-bold text-neutral-400 uppercase tracking-tighter">Activa</span>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className={`text-[11px] font-black ${Number(pm.initial_balance) < 0 ? 'text-rose-500' : 'text-emerald-500'}`}>
+                                            ${Math.abs(Number(pm.initial_balance)).toLocaleString()}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+
+                    <div className="mt-8 pt-6 border-t border-[var(--border-color)] dark:border-white/5">
+                        <p className="text-[8px] font-bold text-neutral-400 uppercase leading-relaxed">
+                            Cualquier crédito nuevo se sincronizará automáticamente con esta lista.
+                        </p>
+                    </div>
+                </div>
             </div>
+
 
             {/* CREDIT PAYMENT MODAL */}
             {isCreditPaymentFormOpen && activeCreditForPayment && (
