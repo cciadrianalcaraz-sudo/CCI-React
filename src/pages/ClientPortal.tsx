@@ -245,7 +245,8 @@ function PortalView({ user, onLogout }: { user: any, onLogout: () => void }) {
         const grouped = filtered
             .filter(r => {
                 const c = (r.concept || '').toUpperCase().trim();
-                return c !== 'SALDO INICIAL' && !c.includes('TRASPASO');
+                const type = (r.expense_type || '').toUpperCase().trim();
+                return c !== 'SALDO INICIAL' && !c.includes('TRASPASO') && type !== 'TRASPASO';
             })
             .reduce((acc: any, curr) => {
                 const c = curr.concept || 'SIN CONCEPTO';

@@ -50,7 +50,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({
         const filtered = records.filter(r => {
             const rMonth = r.date.includes('/') ? r.date.split('/').reverse().join('-').substring(0, 7) : r.date.substring(0, 7);
             const c = (r.concept || '').toUpperCase().trim();
-            const isInternal = c === 'SALDO INICIAL' || c.includes('TRASPASO');
+            const type = (r.expense_type || '').toUpperCase().trim();
+            const isInternal = c === 'SALDO INICIAL' || c.includes('TRASPASO') || type === 'TRASPASO';
             return (selectedMonth === 'all' || rMonth === currentMonth) && !isInternal;
         });
 
@@ -70,7 +71,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({
         const filtered = records.filter(r => {
             const rMonth = r.date.includes('/') ? r.date.split('/').reverse().join('-').substring(0, 7) : r.date.substring(0, 7);
             const c = (r.concept || '').toUpperCase().trim();
-            const isInternal = c === 'SALDO INICIAL' || c.includes('TRASPASO');
+            const type = (r.expense_type || '').toUpperCase().trim();
+            const isInternal = c === 'SALDO INICIAL' || c.includes('TRASPASO') || type === 'TRASPASO';
             return (selectedMonth === 'all' || rMonth.startsWith(currentMonth)) && !isInternal;
         });
 
@@ -125,7 +127,10 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             
             const monthRecords = records.filter(r => {
                 const rMonth = r.date.includes('/') ? r.date.split('/').reverse().join('-').substring(0, 7) : r.date.substring(0, 7);
-                return rMonth === monthStr && (r.concept || '').toUpperCase().trim() !== 'SALDO INICIAL' && !r.concept?.toUpperCase().includes('TRASPASO');
+                const c = (r.concept || '').toUpperCase().trim();
+                const type = (r.expense_type || '').toUpperCase().trim();
+                const isInternal = c === 'SALDO INICIAL' || c.includes('TRASPASO') || type === 'TRASPASO';
+                return rMonth === monthStr && !isInternal;
             });
 
             const income = monthRecords.reduce((acc, r) => acc + (Number(r.income) || 0), 0);
@@ -148,7 +153,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({
         const filtered = records.filter(r => {
             const rMonth = r.date.includes('/') ? r.date.split('/').reverse().join('-').substring(0, 7) : r.date.substring(0, 7);
             const c = (r.concept || '').toUpperCase().trim();
-            const isInternal = c === 'SALDO INICIAL' || c.includes('TRASPASO');
+            const type = (r.expense_type || '').toUpperCase().trim();
+            const isInternal = c === 'SALDO INICIAL' || c.includes('TRASPASO') || type === 'TRASPASO';
             return (selectedMonth === 'all' || rMonth === currentMonth) && Number(r.expense) > 0 && !isInternal;
         });
 

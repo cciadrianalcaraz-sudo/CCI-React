@@ -110,7 +110,8 @@ export const useFinanceCalculations = (
         const grouped = filteredRecords
             .filter(r => {
                 const c = (r.concept || '').toUpperCase().trim();
-                return c !== 'SALDO INICIAL' && !c.includes('TRASPASO');
+                const type = (r.expense_type || '').toUpperCase().trim();
+                return c !== 'SALDO INICIAL' && !c.includes('TRASPASO') && type !== 'TRASPASO';
             })
             .reduce((acc: Record<string, {concept: string, income: number, expense: number}>, curr: FinanceRecord) => {
                 const c = curr.concept || 'SIN CONCEPTO';
@@ -148,7 +149,8 @@ export const useFinanceCalculations = (
         const historicalNet = historicalRecords
             .filter(r => {
                 const c = (r.concept || '').toUpperCase().trim();
-                return c !== 'SALDO INICIAL' && !c.includes('TRASPASO');
+                const type = (r.expense_type || '').toUpperCase().trim();
+                return c !== 'SALDO INICIAL' && !c.includes('TRASPASO') && type !== 'TRASPASO';
             })
             .reduce((acc: Record<string, {income: number, expense: number}>, curr: FinanceRecord) => {
                 const c = curr.concept || 'SIN CONCEPTO';
@@ -349,8 +351,7 @@ export const useFinanceCalculations = (
         return filteredRecords
             .filter(record => {
                 const c = (record.concept || '').toUpperCase().trim();
-                const isInternal = c === 'SALDO INICIAL' || c.includes('TRASPASO');
-                if (isInternal) return false;
+                const isInternal = c === 'SALDO INICIAL' || c.includes('TRASPASO') || (record.expense_type || '').toUpperCase() === 'TRASPASO';
                 
                 if (!searchTerm) return true;
                 const search = searchTerm.toLowerCase();

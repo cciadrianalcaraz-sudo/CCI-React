@@ -138,7 +138,8 @@ export default function BalancesManager({
                 provider: `Hacia: ${transferDest}`,
                 income: 0,
                 expense: numAmount,
-                description: `${transferDesc} (Traspaso: ${transferOrigin} -> ${transferDest})`
+                description: `${transferDesc} (Traspaso: ${transferOrigin} -> ${transferDest})`,
+                expense_type: 'Traspaso'
             }]);
             if (outErr) throw outErr;
 
@@ -151,7 +152,8 @@ export default function BalancesManager({
                 provider: `Desde: ${transferOrigin}`,
                 income: numAmount,
                 expense: 0,
-                description: `${transferDesc} (Traspaso: ${transferOrigin} -> ${transferDest})`
+                description: `${transferDesc} (Traspaso: ${transferOrigin} -> ${transferDest})`,
+                expense_type: 'Traspaso'
             }]);
             if (inErr) throw inErr;
 

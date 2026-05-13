@@ -176,13 +176,15 @@ const MovementsDetailedView: React.FC<MovementsDetailedViewProps> = ({
                                 {sortedRecords.map((record) => {
                                     const originalIndex = records.indexOf(record);
                                     const isInitialBalance = record.concept.toUpperCase() === 'SALDO INICIAL';
+                                    const isTransfer = (record.concept || '').toUpperCase().includes('TRASPASO') || (record.expense_type || '').toUpperCase() === 'TRASPASO';
                                     return (
-                                        <tr key={record.id} className={`hover:bg-[var(--bg-main)] dark:hover:bg-white/5 transition-colors group ${isInitialBalance ? 'bg-amber-500/10' : ''}`}>
+                                        <tr key={record.id} className={`hover:bg-[var(--bg-main)] dark:hover:bg-white/5 transition-colors group ${isInitialBalance ? 'bg-amber-500/10' : isTransfer ? 'bg-sky-500/5 opacity-80' : ''}`}>
                                             <td className="p-4 px-5 whitespace-nowrap opacity-40 font-bold text-[10px]">{originalIndex + 1}</td>
                                             <td className="p-4 px-5 whitespace-nowrap">
                                                 <div className="flex items-center gap-2">
                                                     <span className="font-black text-xs uppercase tracking-wider">{record.concept}</span>
-                                                    {isInitialBalance && <span className="text-[8px] bg-accent/20 text-accent px-1.5 py-0.5 rounded-full font-black uppercase tracking-widest">Ajuste</span>}
+                                                    {isInitialBalance && <span className="text-[8px] bg-amber-500/20 text-amber-600 px-1.5 py-0.5 rounded-full font-black uppercase tracking-widest">Ajuste</span>}
+                                                    {isTransfer && <span className="text-[8px] bg-sky-500/20 text-sky-600 px-1.5 py-0.5 rounded-full font-black uppercase tracking-widest">Traspaso</span>}
                                                 </div>
                                                 <div className="mt-1">
                                                     <span className={`text-[8px] px-2 py-0.5 rounded-md font-black uppercase tracking-widest ${
@@ -190,6 +192,7 @@ const MovementsDetailedView: React.FC<MovementsDetailedViewProps> = ({
                                                         record.expense_type === 'Ahorro' ? 'bg-teal-100 text-teal-700' :
                                                         record.expense_type === 'Deuda' ? 'bg-orange-100 text-orange-700' :
                                                         record.expense_type === 'Ingreso' ? 'bg-green-100 text-green-700' :
+                                                        record.expense_type === 'Traspaso' ? 'bg-sky-100 text-sky-700' :
                                                         'bg-neutral-100 text-neutral-500'
                                                     }`}>
                                                         {record.expense_type || 'Variable'}
@@ -204,10 +207,10 @@ const MovementsDetailedView: React.FC<MovementsDetailedViewProps> = ({
                                             </td>
                                             <td className="p-4 px-5 whitespace-nowrap text-xs font-medium opacity-60">{record.provider}</td>
                                             <td className="p-4 px-5 text-right whitespace-nowrap text-green-600 font-bold text-sm">
-                                                {isInitialBalance ? '-' : (Number(record.income) !== 0 ? `$${Number(record.income).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-')}
+                                                {(isInitialBalance || isTransfer) ? (record.income > 0 ? `$${Number(record.income).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-') : (Number(record.income) !== 0 ? `$${Number(record.income).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-')}
                                             </td>
                                             <td className="p-4 px-5 text-right whitespace-nowrap text-red-500 font-bold text-sm">
-                                                {isInitialBalance ? '-' : (Number(record.expense) !== 0 ? `$${Number(record.expense).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-')}
+                                                {(isInitialBalance || isTransfer) ? (record.expense > 0 ? `$${Number(record.expense).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-') : (Number(record.expense) !== 0 ? `$${Number(record.expense).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-')}
                                             </td>
                                             <td className={`p-4 px-5 text-right whitespace-nowrap font-black text-sm ${Number(record.balance) < 0 ? 'text-red-500' : ''}`}>
                                                 ${Number(record.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
