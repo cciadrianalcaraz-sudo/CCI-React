@@ -350,9 +350,6 @@ export const useFinanceCalculations = (
         let runningBalanceFlow = 0;
         return filteredRecords
             .filter(record => {
-                const c = (record.concept || '').toUpperCase().trim();
-                const isInternal = c === 'SALDO INICIAL' || c.includes('TRASPASO') || (record.expense_type || '').toUpperCase() === 'TRASPASO';
-                
                 if (!searchTerm) return true;
                 const search = searchTerm.toLowerCase();
                 return (
