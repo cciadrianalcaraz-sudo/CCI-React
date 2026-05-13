@@ -221,16 +221,16 @@ export default function BalancesManager({
 
     const renderPaymentOptions = () => (
         <>
-            <option value="" disabled>Seleccione pago...</option>
+            <option value="" disabled className="text-slate-900 bg-white">Seleccione pago...</option>
             {savedPaymentMethods.length > 0 ? (
                 savedPaymentMethods.map(pm => (
-                    <option key={pm.id} value={pm.name}>{pm.name}</option>
+                    <option key={pm.id} value={pm.name} className="text-slate-900 bg-white">{pm.name}</option>
                 ))
             ) : (
                 <>
-                    <option value="EFECTIVO">EFECTIVO</option>
-                    <option value="TARJETA DÉBITO">TARJETA DÉBITO</option>
-                    <option value="TARJETA CRÉDITO">TARJETA CRÉDITO</option>
+                    <option value="EFECTIVO" className="text-slate-900 bg-white">EFECTIVO</option>
+                    <option value="TARJETA DÉBITO" className="text-slate-900 bg-white">TARJETA DÉBITO</option>
+                    <option value="TARJETA CRÉDITO" className="text-slate-900 bg-white">TARJETA CRÉDITO</option>
                 </>
             )}
         </>
@@ -522,9 +522,9 @@ export default function BalancesManager({
                                         onChange={e => setReassignTarget(e.target.value)}
                                         className="w-full bg-neutral-50 border border-light-beige rounded-2xl px-6 py-4 text-sm font-bold text-primary-dark outline-none focus:border-accent appearance-none cursor-pointer"
                                     >
-                                        <option value="">Selecciona una cuenta...</option>
+                                        <option value="" className="text-slate-900 bg-white">Selecciona una cuenta...</option>
                                         {savedPaymentMethods.filter(p => p.name !== reassignModal.method).map(pm => (
-                                            <option key={pm.id} value={pm.name}>{pm.name}</option>
+                                            <option key={pm.id} value={pm.name} className="text-slate-900 bg-white">{pm.name}</option>
                                         ))}
                                     </select>
                                     <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none opacity-50"><TrendingDown size={14} /></div>

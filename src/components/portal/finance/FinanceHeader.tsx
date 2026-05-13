@@ -157,7 +157,7 @@ const FinanceHeader: React.FC<FinanceHeaderProps> = ({
                                     className="bg-transparent text-[10px] font-black text-slate-500 dark:text-slate-400 outline-none cursor-pointer uppercase tracking-widest appearance-none pr-8"
                                 >
                                     {uniqueMonths.map(m => (
-                                        <option key={m.value} value={m.value} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">{m.label}</option>
+                                        <option key={m.value} value={m.value} className="text-slate-900 bg-white">{m.label}</option>
                                     ))}
                                 </select>
                                 <div className="absolute right-6 pointer-events-none text-slate-300">

@@ -156,12 +156,12 @@ const RecordForm: React.FC<RecordFormProps> = ({
                                 { label: 'Gasto (-)', value: expense, setter: (v: any) => setExpense(v === '' ? '' : Number(v)), type: 'number', color: 'text-rose-500', placeholder: '0.00' },
                                 { label: 'Clasificación', value: expenseType, setter: setExpenseType, type: 'select', options: (
                                     <>
-                                        <option value="Variable">💅 Variable</option>
-                                        <option value="Fijo">🏡 Gasto Fijo</option>
-                                        <option value="Ahorro">💰 Inversión</option>
-                                        <option value="Deuda">💳 Deudas</option>
-                                        <option value="Ingreso">💵 Ingreso</option>
-                                        <option value="Traspaso">🔄 Traspaso</option>
+                                        <option value="Variable" className="text-slate-900 bg-white">💅 Variable</option>
+                                        <option value="Fijo" className="text-slate-900 bg-white">🏡 Gasto Fijo</option>
+                                        <option value="Ahorro" className="text-slate-900 bg-white">💰 Inversión</option>
+                                        <option value="Deuda" className="text-slate-900 bg-white">💳 Deudas</option>
+                                        <option value="Ingreso" className="text-slate-900 bg-white">💵 Ingreso</option>
+                                        <option value="Traspaso" className="text-slate-900 bg-white">🔄 Traspaso</option>
                                     </>
                                 )},
                                 { label: 'Notas', value: description, setter: setDescription, type: 'text', placeholder: 'Opcional...' }

@@ -233,16 +233,16 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
 
     const renderPaymentOptions = () => (
         <>
-            <option value="" disabled>Seleccione pago...</option>
+            <option value="" disabled className="text-slate-900 bg-white">Seleccione pago...</option>
             {savedPaymentMethods.length > 0 ? (
                 savedPaymentMethods.map(pm => (
-                    <option key={pm.id} value={pm.name}>{pm.name}</option>
+                    <option key={pm.id} value={pm.name} className="text-slate-900 bg-white">{pm.name}</option>
                 ))
             ) : (
                 <>
-                    <option value="EFECTIVO">EFECTIVO</option>
-                    <option value="TARJETA DÉBITO">TARJETA DÉBITO</option>
-                    <option value="TARJETA CRÉDITO">TARJETA CRÉDITO</option>
+                    <option value="EFECTIVO" className="text-slate-900 bg-white">EFECTIVO</option>
+                    <option value="TARJETA DÉBITO" className="text-slate-900 bg-white">TARJETA DÉBITO</option>
+                    <option value="TARJETA CRÉDITO" className="text-slate-900 bg-white">TARJETA CRÉDITO</option>
                 </>
             )}
         </>
