@@ -1,7 +1,8 @@
-import { useRef, useState } from 'react';
-import { Sparkles, Plus, Download } from 'lucide-react';
+import { useRef, useState, useMemo } from 'react';
+import { Sparkles, Plus, Download, TrendingUp, TrendingDown, Activity } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { toast } from '../../../lib/toast';
+import type { FinanceRecord } from '../../../types/finance';
 
 interface SnapshotModalProps {
     showSnapshot: boolean;
@@ -9,6 +10,7 @@ interface SnapshotModalProps {
     summaryData: { concept: string; income: number; expense: number }[];
     uniqueMonths: { label: string; value: string }[];
     selectedMonth: string;
+    records?: FinanceRecord[];
 }
 
 export default function SnapshotModal({ 
@@ -16,7 +18,8 @@ export default function SnapshotModal({
     setShowSnapshot, 
     summaryData, 
     uniqueMonths, 
-    selectedMonth 
+    selectedMonth,
+    records = []
 }: SnapshotModalProps) {
     const snapshotRef = useRef<HTMLDivElement>(null);
     const [isDownloading, setIsDownloading] = useState(false);
@@ -64,6 +67,39 @@ export default function SnapshotModal({
         ? summaryData.reduce((prev, current) => (prev.expense > current.expense) ? prev : current)
         : null;
 
+    const deltas = useMemo(() => {
+        if (!records.length || !selectedMonth || selectedMonth === 'all') return { incomeDelta: 0, expenseDelta: 0 };
+        
+        const [year, month] = selectedMonth.split('-').map(Number);
+        const prevMonthDate = new Date(year, month - 2, 1);
+        const prevMonthStr = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, '0')}`;
+
+        let income = 0, expense = 0, prevIncome = 0, prevExpense = 0;
+
+        records.forEach(r => {
+            const rMonth = r.date.includes('/') ? r.date.split('/').reverse().join('-').substring(0, 7) : r.date.substring(0, 7);
+            const c = (r.concept || '').toUpperCase().trim();
+            const type = (r.expense_type || '').toUpperCase().trim();
+            const isInternal = c === 'SALDO INICIAL' || c.includes('TRASPASO') || type === 'TRASPASO';
+            
+            if (!isInternal) {
+                if (rMonth === selectedMonth) {
+                    income += (Number(r.income) || 0);
+                    expense += (Number(r.expense) || 0);
+                }
+                if (rMonth === prevMonthStr) {
+                    prevIncome += (Number(r.income) || 0);
+                    prevExpense += (Number(r.expense) || 0);
+                }
+            }
+        });
+        
+        const incomeDelta = prevIncome > 0 ? ((income - prevIncome) / prevIncome) * 100 : (income > 0 ? 100 : 0);
+        const expenseDelta = prevExpense > 0 ? ((expense - prevExpense) / prevExpense) * 100 : (expense > 0 ? 100 : 0);
+
+        return { incomeDelta, expenseDelta };
+    }, [records, selectedMonth]);
+
     return (
         <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4 md:p-8">
             <div className="absolute inset-0 bg-black/80 backdrop-blur-md animate-fade-in" onClick={() => setShowSnapshot(false)}></div>
@@ -100,15 +136,31 @@ export default function SnapshotModal({
                         <div className="grid grid-cols-2 gap-6 pt-4 border-t border-white/10">
                             <div className="space-y-1">
                                 <p className="text-[9px] font-black uppercase tracking-widest text-green-400">Ingresos</p>
-                                <p className="text-xl font-black text-white/90">
+                                <p className="text-xl font-black text-white/90 mb-1">
                                     +${totalIncome.toLocaleString()}
                                 </p>
+                                {selectedMonth !== 'all' && (
+                                    <div className={`inline-flex items-center gap-1 text-[8px] font-black tracking-widest uppercase ${
+                                        deltas.incomeDelta > 0 ? 'text-green-400' : deltas.incomeDelta < 0 ? 'text-red-400' : 'text-white/40'
+                                    }`}>
+                                        {deltas.incomeDelta > 0 ? <TrendingUp size={10} /> : deltas.incomeDelta < 0 ? <TrendingDown size={10} /> : <Activity size={10} />}
+                                        <span>{deltas.incomeDelta > 0 ? '+' : ''}{deltas.incomeDelta.toFixed(1)}% vs ant.</span>
+                                    </div>
+                                )}
                             </div>
                             <div className="space-y-1">
                                 <p className="text-[9px] font-black uppercase tracking-widest text-red-400">Gastos</p>
-                                <p className="text-xl font-black text-white/90">
+                                <p className="text-xl font-black text-white/90 mb-1">
                                     -${totalExpense.toLocaleString()}
                                 </p>
+                                {selectedMonth !== 'all' && (
+                                    <div className={`inline-flex items-center gap-1 text-[8px] font-black tracking-widest uppercase ${
+                                        deltas.expenseDelta > 0 ? 'text-red-400' : deltas.expenseDelta < 0 ? 'text-green-400' : 'text-white/40'
+                                    }`}>
+                                        {deltas.expenseDelta > 0 ? <TrendingUp size={10} /> : deltas.expenseDelta < 0 ? <TrendingDown size={10} /> : <Activity size={10} />}
+                                        <span>{deltas.expenseDelta > 0 ? '+' : ''}{deltas.expenseDelta.toFixed(1)}% vs ant.</span>
+                                    </div>
+                                )}
                             </div>
                         </div>
 

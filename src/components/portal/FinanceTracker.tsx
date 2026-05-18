@@ -279,6 +279,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                 summaryData={summaryData}
                 uniqueMonths={uniqueMonths}
                 selectedMonth={selectedMonth}
+                records={records}
             />
 
             <RecordForm 

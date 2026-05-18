@@ -2,7 +2,7 @@ import React, { useMemo, useRef } from 'react';
 import { 
     Target, 
     ArrowUpRight, Wallet, PieChart, 
-    Activity, AlertTriangle, TrendingUp,
+    Activity, AlertTriangle, TrendingUp, TrendingDown,
     ChevronLeft, ChevronRight, Plus
 } from 'lucide-react';
 import { 
@@ -47,22 +47,60 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             ? `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
             : selectedMonth;
 
-        const filtered = records.filter(r => {
+        const [year, month] = currentMonth.split('-').map(Number);
+        const prevMonthDate = new Date(year, month - 2, 1);
+        const prevMonthStr = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, '0')}`;
+
+        let income = 0;
+        let expense = 0;
+        let prevIncome = 0;
+        let prevExpense = 0;
+
+        let totalIncome = 0;
+        let totalExpense = 0;
+
+        records.forEach(r => {
             const rMonth = r.date.includes('/') ? r.date.split('/').reverse().join('-').substring(0, 7) : r.date.substring(0, 7);
             const c = (r.concept || '').toUpperCase().trim();
             const type = (r.expense_type || '').toUpperCase().trim();
             const isInternal = c === 'SALDO INICIAL' || c.includes('TRASPASO') || type === 'TRASPASO';
-            return (selectedMonth === 'all' || rMonth === currentMonth) && !isInternal;
+            
+            if (!isInternal) {
+                // Cálculo para deltas del mes actual vs anterior (siempre usa el mes de selectedMonth)
+                if (rMonth === currentMonth) {
+                    income += (Number(r.income) || 0);
+                    expense += (Number(r.expense) || 0);
+                }
+                if (rMonth === prevMonthStr) {
+                    prevIncome += (Number(r.income) || 0);
+                    prevExpense += (Number(r.expense) || 0);
+                }
+
+                // Cálculo para los totales globales (respeta si selectedMonth es 'all')
+                if (selectedMonth === 'all' || rMonth === currentMonth) {
+                    totalIncome += (Number(r.income) || 0);
+                    totalExpense += (Number(r.expense) || 0);
+                }
+            }
         });
 
-        const income = filtered.reduce((acc, r) => acc + (Number(r.income) || 0), 0);
-        const expense = filtered.reduce((acc, r) => acc + (Number(r.expense) || 0), 0);
-        const balance = income - expense;
-        const savingsRate = income > 0 ? ((income - expense) / income) * 100 : 0;
+        const balance = totalIncome - totalExpense;
+        const savingsRate = totalIncome > 0 ? ((totalIncome - totalExpense) / totalIncome) * 100 : 0;
         
         const totalDebt = credits.reduce((acc, c) => acc + (c.initial_balance || 0), 0); 
         
-        return { income, expense, balance, savingsRate, totalDebt };
+        const incomeDelta = prevIncome > 0 ? ((income - prevIncome) / prevIncome) * 100 : (income > 0 ? 100 : 0);
+        const expenseDelta = prevExpense > 0 ? ((expense - prevExpense) / prevExpense) * 100 : (expense > 0 ? 100 : 0);
+
+        return { 
+            income: totalIncome, 
+            expense: totalExpense, 
+            balance, 
+            savingsRate, 
+            totalDebt,
+            incomeDelta,
+            expenseDelta
+        };
     }, [records, selectedMonth, credits]);
 
     // 1.5 Cálculos Analizador 50/30/20 y Salud
@@ -458,38 +496,50 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                     <div className="absolute -top-12 -right-12 w-40 h-40 bg-blue-600/20 rounded-full blur-[60px] group-hover:bg-blue-600/30 transition-colors duration-700"></div>
                 </div>
 
-                {/* Card 3: Entradas de Capital */}
-                <div className="lg:col-span-3 bg-[var(--bg-card)] dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] p-6 border border-[var(--border-color)] dark:border-white/10 shadow-sm flex flex-col">
-                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 flex items-center gap-2 mb-2">
-                        <TrendingUp size={14} className="text-green-500" /> Ingresos
+                {/* Card 3: Comparativa Mensual */}
+                <div className="lg:col-span-3 bg-[var(--bg-card)] dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] p-6 border border-[var(--border-color)] dark:border-white/10 shadow-sm flex flex-col justify-between group relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/5 rounded-full blur-[40px] group-hover:bg-sky-500/10 transition-all duration-500"></div>
+                    
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 flex items-center gap-2 mb-4 relative z-10">
+                        <Activity size={14} className="text-sky-500" /> Comparativa Mes
                     </h4>
-                    <p className="text-xl font-heading font-black text-[var(--text-primary)] mb-2">
-                        ${totalIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                    </p>
-                    <div className="flex-1 h-[80px] w-full relative">
-                        {summaryData.filter(d => d.income > 0).length > 0 ? (
-                            <ResponsiveContainer width="100%" height="100%">
-                                <RePieChart>
-                                    <Pie 
-                                        data={summaryData.filter(d => d.income > 0).sort((a,b) => b.income - a.income)} 
-                                        dataKey="income" 
-                                        nameKey="concept" 
-                                        cx="50%" cy="50%" 
-                                        innerRadius={25} 
-                                        outerRadius={40} 
-                                        paddingAngle={5}
-                                        stroke="none"
-                                    >
-                                        {summaryData.filter(d => d.income > 0).map((_, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip content={<CustomTooltip />} />
-                                </RePieChart>
-                            </ResponsiveContainer>
-                        ) : (
-                            <div className="absolute inset-0 flex items-center justify-center text-neutral-300 text-[10px] font-black uppercase tracking-widest">Sin ingresos</div>
-                        )}
+                    
+                    <div className="space-y-4 relative z-10">
+                        {/* Gastos Delta */}
+                        <div>
+                            <div className="flex justify-between items-end mb-1">
+                                <p className="text-xl font-heading font-black text-[var(--text-primary)]">
+                                    ${stats.expense.toLocaleString('en-US', { minimumFractionDigits: 0 })}
+                                </p>
+                                <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Gastos</span>
+                            </div>
+                            <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-black tracking-widest uppercase ${
+                                stats.expenseDelta > 0 ? 'bg-red-500/10 text-red-500' : 
+                                stats.expenseDelta < 0 ? 'bg-green-500/10 text-green-500' : 'bg-neutral-500/10 text-neutral-500'
+                            }`}>
+                                {stats.expenseDelta > 0 ? <TrendingUp size={12} /> : stats.expenseDelta < 0 ? <TrendingDown size={12} /> : <Activity size={12} />}
+                                <span>{stats.expenseDelta > 0 ? '+' : ''}{stats.expenseDelta.toFixed(1)}% vs ant.</span>
+                            </div>
+                        </div>
+
+                        <div className="w-full h-px bg-gradient-to-r from-transparent via-[var(--border-color)] dark:via-white/10 to-transparent"></div>
+
+                        {/* Ingresos Delta */}
+                        <div>
+                            <div className="flex justify-between items-end mb-1">
+                                <p className="text-xl font-heading font-black text-[var(--text-primary)]">
+                                    ${stats.income.toLocaleString('en-US', { minimumFractionDigits: 0 })}
+                                </p>
+                                <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Ingresos</span>
+                            </div>
+                            <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-black tracking-widest uppercase ${
+                                stats.incomeDelta > 0 ? 'bg-green-500/10 text-green-500' : 
+                                stats.incomeDelta < 0 ? 'bg-red-500/10 text-red-500' : 'bg-neutral-500/10 text-neutral-500'
+                            }`}>
+                                {stats.incomeDelta > 0 ? <TrendingUp size={12} /> : stats.incomeDelta < 0 ? <TrendingDown size={12} /> : <Activity size={12} />}
+                                <span>{stats.incomeDelta > 0 ? '+' : ''}{stats.incomeDelta.toFixed(1)}% vs ant.</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
