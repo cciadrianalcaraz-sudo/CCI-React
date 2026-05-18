@@ -7,8 +7,7 @@ import {
 } from 'lucide-react';
 import { 
     AreaChart, Area, XAxis, YAxis, CartesianGrid, 
-    Tooltip, ResponsiveContainer, BarChart, Bar, Cell,
-    PieChart as RePieChart, Pie
+    Tooltip, ResponsiveContainer, BarChart, Bar, Cell
 } from 'recharts';
 import type { FinanceRecord, FinanceGoal, FinanceCredit, PaymentMethod } from '../../../types/finance';
 import { COLORS } from '../../../utils/financeUtils';
