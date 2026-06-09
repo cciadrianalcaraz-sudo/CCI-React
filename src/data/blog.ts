@@ -12,47 +12,184 @@ export interface BlogPost {
 }
 
 export const blogPosts: BlogPost[] = [
+    {
+        id: 'resico-oportunidades-riesgos-2026',
+        title: 'RESICO 2026: Cómo mantener sus beneficios fiscales sin sorpresas',
+        excerpt: 'El Régimen Simplificado de Confianza ofrece tasas de ISR muy bajas, pero un solo descuido puede hacerte perder el beneficio. Conoce las reglas clave.',
+        content: `
+            <p>El Régimen Simplificado de Confianza (RESICO) se ha consolidado en 2026 como una de las mejores opciones para personas físicas con actividades empresariales, profesionales o de arrendamiento. Sus tasas mínimas de Impuesto sobre la Renta (ISR), que oscilan entre el 1% y el 2.5%, representan un gran alivio financiero. Sin embargo, gozar de este beneficio conlleva una disciplina fiscal estricta.</p>
+            
+            <h2>Los límites que no debes superar</h2>
+            <p>El límite de ingresos permitidos para tributar en RESICO es de <strong>$3.5 millones de pesos anuales</strong>. Si superas esta cantidad en el ejercicio fiscal actual o en el inmediato anterior, el SAT te excluirá de manera automática, obligándote a tributar en el Régimen de Actividad Empresarial o Arrendamiento de forma retroactiva.</p>
 
+            <h2>Los 3 riesgos críticos que causan expulsión</h2>
+            <p>Muchos contribuyentes han perdido este beneficio no por superar los ingresos, sino por descuidos de control administrativo:</p>
+            <ul>
+                <li><strong>No presentar la Declaración Anual:</strong> Esta es la causa número uno de salida del régimen. La declaración debe presentarse a tiempo para consolidar los pagos mensuales.</li>
+                <li><strong>Retrasos en declaraciones mensuales:</strong> Omitir tres o más pagos provisionales consecutivos o no consecutivos te deja fuera de RESICO de manera irrevocable.</li>
+                <li><strong>No contar con e.firma activa:</strong> La firma electrónica vigente es obligatoria. El SAT realiza revisiones periódicas y suspende a quienes no la tengan actualizada.</li>
+            </ul>
+
+            <blockquote>"Tributar en RESICO es un privilegio fiscal que requiere un control interno impecable. Un solo error puede costar miles de pesos en impuestos retroactivos."</blockquote>
+
+            <h2>Recomendaciones para blindar tu RESICO en 2026</h2>
+            <p>Te aconsejamos monitorear tu Opinión de Cumplimiento de forma mensual (debe mantenerse en 'Positiva'), revisar que tu Buzón Tributario tenga medios de contacto vigentes y proyectar tus ingresos con anticipación si estás cerca del límite de los 3.5 millones. En <strong>CCI Consultoría Contable Integral</strong>, automatizamos este monitoreo para que operes con total tranquilidad.</p>
+        `,
+        date: '08 de Junio, 2026',
+        author: 'Adrian Alcaraz',
+        category: 'Fiscal',
+        readTime: '5 min',
+        image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=80&w=800',
+        featured: true
+    },
+    {
+        id: 'planeacion-financiera-segundo-semestre-2026',
+        title: 'Planeación Financiera para el Segundo Semestre: Estrategias de Crecimiento',
+        excerpt: 'A mitad de año, es crucial evaluar los presupuestos y proyectar el flujo de efectivo para el cierre del ejercicio. Te damos un roadmap práctico.',
+        content: `
+            <p>Llegar al meridiano del año fiscal es el momento perfecto para evaluar la trayectoria financiera de tu negocio. Una planeación financiera activa a mitad de año permite corregir desviaciones, optimizar recursos y preparar el cierre de ejercicio con ventajas fiscales óptimas.</p>
+            
+            <h2>1. Análisis de Variaciones (Presupuestado vs. Real)</h2>
+            <p>El primer paso consiste en comparar los números reales del primer semestre con el presupuesto original. Debes identificar:</p>
+            <ul>
+                <li>¿Qué líneas de negocio o productos superaron las metas y cuáles quedaron rezagados?</li>
+                <li>¿Existen sobrecostos operativos que deban recortarse de inmediato?</li>
+                <li>¿El margen de utilidad neta se alinea con la meta proyectada?</li>
+            </ul>
+
+            <h2>2. Proyección de Flujo de Efectivo (Cashflow Forecast)</h2>
+            <p>La liquidez es el oxígeno de la empresa. Te sugerimos realizar una proyección de ingresos y gastos para los próximos 6 meses. Esto te permitirá planificar inversiones de capital (CapEx), saber si necesitarás financiamiento temporal o si cuentas con excedentes para liquidar deudas caras.</p>
+
+            <h2>3. Precierre Fiscal Preventivo</h2>
+            <p>No esperes a diciembre para calcular tus impuestos. Realizar un cálculo estimado del impuesto anual en junio/julio te da margen de maniobra para tomar decisiones estratégicas: deducir inversiones necesarias, ajustar el coeficiente de utilidad o programar gastos deducibles autorizados antes de que termine el año.</p>
+
+            <blockquote>"La planeación financiera no predice el futuro, pero te prepara para resistir imprevistos y aprovechar oportunidades antes que tu competencia."</blockquote>
+
+            <p>Contar con herramientas digitales adecuadas facilita este proceso. En nuestro <strong>Portal de Clientes CCI</strong>, puedes ver gráficos en tiempo real de tu flujo y controlar tus presupuestos para que tomes decisiones con datos duros y claridad absoluta.</p>
+        `,
+        date: '05 de Junio, 2026',
+        author: 'Equipo CCI',
+        category: 'Finanzas',
+        readTime: '6 min',
+        image: 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&q=80&w=800'
+    },
+    {
+        id: 'cfdi-4-req-clave',
+        title: 'CFDI 4.0: requisitos clave que debes revisar antes de facturar',
+        excerpt: 'Asegura que tus facturas sean válidas revisando los datos obligatorios del emisor y receptor bajo el estándar actual.',
+        content: `
+            <p>Todas las facturas electrónicas en México se emiten bajo el estándar CFDI 4.0, lo que exige una precisión absoluta en los datos. El SAT valida automáticamente los datos fiscales del emisor y receptor en cada timbrado.</p>
+            
+            <h2>Datos obligatorios del receptor</h2>
+            <p>Para que una factura sea válida y deducible, necesitas verificar que los siguientes campos coincidan exactamente con la Constancia de Situación Fiscal actualizada del cliente:</p>
+            <ul>
+                <li><strong>Nombre o Razón Social:</strong> Debe capturarse en mayúsculas y sin incluir el régimen de capital (por ejemplo, omitir "S.A. de C.V.").</li>
+                <li><strong>RFC:</strong> Sin errores ni espacios.</li>
+                <li><strong>Código Postal:</strong> El correspondiente al domicilio fiscal registrado del receptor.</li>
+                <li><strong>Régimen Fiscal:</strong> Debe ser coherente con el tipo de deducción que aplicará.</li>
+            </ul>
+
+            <h2>Errores comunes al facturar en 2026</h2>
+            <p>Los fallos más frecuentes que provocan el rechazo de facturas incluyen el uso incorrecto de las claves de productos/servicios, ingresar un Uso de CFDI incompatible con el régimen fiscal del receptor, o capturar mal el código postal por mudanzas no notificadas ante el SAT.</p>
+
+            <blockquote>"Solicitar siempre la Constancia de Situación Fiscal actualizada a tus clientes antes de emitir la primera factura es la mejor práctica para evitar cancelaciones y retrabajos."</blockquote>
+
+            <p>Mantener tus procesos de facturación en orden reduce la carga administrativa y agiliza los cobros. Si requieres asesoría para implementar flujos de facturación eficientes y libres de errores, nuestro equipo en CCI está a tu disposición.</p>
+        `,
+        date: '01 de Junio, 2026',
+        author: 'Adrian Alcaraz',
+        category: 'Finanzas',
+        readTime: '4 min',
+        image: 'https://images.pexels.com/photos/265087/pexels-photo-265087.jpeg?auto=compress&cs=tinysrgb&w=800'
+    },
+    {
+        id: 'errores-fiscales-comunes',
+        title: 'Errores fiscales comunes que pueden generarte multas de inmediato',
+        excerpt: 'Muchos contribuyentes enfrentan sanciones por descuidos que podrían evitarse con una administración correcta. Evita estos 4 errores.',
+        content: `
+            <p>Muchos contribuyentes enfrentan sanciones fiscales no por evadir impuestos de forma consciente, sino por errores operativos y descuidos administrativos que pueden evitarse fácilmente implementando orden y control interno.</p>
+            
+            <h2>Error 1: No presentar declaraciones (o hacerlo a destiempo)</h2>
+            <p>Esto puede generar requerimientos y multas que van desde $1,400 hasta más de $17,000 pesos por cada obligación omitida. Además, esto puede manchar tu Opinión de Cumplimiento y retirarte de regímenes benéficos como el RESICO.</p>
+
+            <h2>Error 2: Emitir facturas con método de pago incorrecto</h2>
+            <p>Confundir "PUE" (Pago en una sola exhibición) con "PPD" (Pago en parcialidades o diferido) es un error grave. Si emites un CFDI PUE y no te lo pagan en el mes corriente, el SAT asumirá que ya cobraste ese dinero y te exigirá el pago de impuestos correspondiente.</p>
+
+            <h2>Error 3: No conservar la contabilidad y su materialidad</h2>
+            <p>La ley obliga a conservar la documentación contable y comprobantes de las operaciones durante un mínimo de 5 años. En caso de una auditoría, no contar con los estados de cuenta, contratos o entregables que demuestren las transacciones puede invalidar las deducciones.</p>
+
+            <h2>Error 4: No revisar el Buzón Tributario</h2>
+            <p>El Buzón Tributario es el medio oficial de comunicación del SAT. Ignorar las notificaciones o no tener actualizados los medios de contacto es motivo de multas y puede resultar en una determinación fiscal perjudicial sin tu conocimiento oportuno.</p>
+
+            <blockquote>"Una administración fiscal preventiva apoyada en un buen control de procesos ahorra tiempo, dinero y elimina el estrés de las notificaciones del SAT."</blockquote>
+
+            <p>En CCI Consultoría Contable Integral te ayudamos a auditar tus procesos administrativos para erradicar estos errores comunes antes de que se traduzcan en sanciones.</p>
+        `,
+        date: '18 de Mayo, 2026',
+        author: 'Equipo CCI',
+        category: 'Estrategia',
+        readTime: '4 min',
+        image: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&q=80&w=800'
+    },
+    {
+        id: 'materialidad-operaciones-fiscales',
+        title: 'Materialidad en operaciones fiscales: qué es y por qué es importante',
+        excerpt: 'No basta con tener una factura. Demostrar que una operación realmente ocurrió es clave para evitar que el SAT la considere simulación.',
+        content: `
+            <p>En las auditorías actuales del SAT, contar con un CFDI y el registro contable de una operación ya no es suficiente. Las autoridades fiscales exigen comprobar la "materialidad" de la transacción para descartar que se trate de operaciones simuladas destinadas a la deducción indebida de impuestos.</p>
+            
+            <h2>¿Qué es la materialidad?</h2>
+            <p>La materialidad es la evidencia objetiva de que una transacción realmente existió en el mundo real: que el servicio fue prestado o el bien fue entregado, y que la empresa cuenta con la infraestructura, personal y recursos para haberlo llevado a cabo.</p>
+
+            <h2>Elementos clave para demostrar la materialidad</h2>
+            <p>Para proteger tus deducciones y asegurar la validez de tus operaciones, debes armar un expediente que contenga:</p>
+            <ul>
+                <li><strong>Contratos:</strong> Firmados por las partes, preferentemente con fecha cierta (certificación notarial o firma electrónica avanzada).</li>
+                <li><strong>Entregables y reportes:</strong> Documentación detallada del trabajo realizado (presentaciones, correos electrónicos, bitácoras de avance).</li>
+                <li><strong>Evidencia física y digital:</strong> Fotografías, hojas de recepción de mercancía, guías de envío de paquetería, cotizaciones previas.</li>
+                <li><strong>Medios de pago:</strong> Transferencias bancarias claras que vinculen las cuentas autorizadas de las empresas involucradas.</li>
+            </ul>
+
+            <blockquote>"Ante una auditoría del SAT, el contribuyente tiene la carga de la prueba. Un expediente sólido de materialidad es tu mejor defensa fiscal."</blockquote>
+
+            <p>Implementar políticas de control interno para archivar y organizar esta evidencia desde el momento en que se contrata un servicio es fundamental. En CCI asesoramos a las empresas en el diseño de estos expedientes de soporte para blindar su operación fiscal.</p>
+        `,
+        date: '25 de Mayo, 2026',
+        author: 'Adrian Alcaraz',
+        category: 'Legal',
+        readTime: '7 min',
+        image: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&q=80&w=800'
+    },
     {
         id: 'guia-sat-2026',
         title: 'Guía 2026: Cómo darse de alta en el SAT paso a paso',
         excerpt: 'Iniciar actividades económicas implica cumplir con obligaciones fiscales. Te explicamos cómo registrarte de forma correcta y legal.',
         content: `
-            <p>Iniciar actividades económicas en México implica cumplir con obligaciones fiscales ante el Servicio de Administración Tributaria (SAT). Darse de alta correctamente es el primer paso para operar legalmente, emitir facturas y evitar sanciones fiscales.</p>
+            <p>Iniciar un negocio, comenzar a trabajar bajo el esquema de honorarios profesionales, rentar una propiedad o emprender en plataformas digitales implica cumplir con obligaciones fiscales ante el SAT. Darse de alta correctamente es el primer paso indispensable para operar dentro del marco de la ley y poder facturar a tus clientes.</p>
             
-            <h2>¿Quién debe darse de alta en el SAT?</h2>
-            <p>Deben inscribirse en el RFC las personas que:</p>
+            <h2>¿Quiénes deben inscribirse en el RFC?</h2>
+            <p>La inscripción en el Registro Federal de Contribuyentes (RFC) es obligatoria en México para cualquier persona física que perciba ingresos por:</p>
             <ul>
-                <li>Inician un negocio</li>
-                <li>Trabajan por honorarios</li>
-                <li>Rentan un inmueble</li>
-                <li>Reciben ingresos por plataformas digitales</li>
-                <li>Tienen un empleo formal</li>
+                <li>Sueldos y salarios.</li>
+                <li>Actividades empresariales y comerciales.</li>
+                <li>Servicios profesionales (honorarios).</li>
+                <li>Arrendamiento de inmuebles.</li>
+                <li>Ventas a través de plataformas digitales (Amazon, Uber, etc.).</li>
             </ul>
 
-            <h2>Paso 1: Preinscripción en línea</h2>
-            <p>Debes ingresar al portal del SAT y realizar la preinscripción al RFC. Se te solicitarán datos como:</p>
-            <ul>
-                <li>CURP y Nombre completo</li>
-                <li>Fecha de nacimiento</li>
-                <li>Domicilio fiscal</li>
-                <li>Actividad económica</li>
-            </ul>
+            <h2>Guía paso a paso para el registro</h2>
+            <ol className="space-y-3 my-6 pl-5 list-decimal">
+                <li><strong>Preinscripción en el portal del SAT:</strong> Llena el formulario en línea con tus datos básicos (CURP, nombre, domicilio). Al finalizar, obtendrás un acuse de preinscripción.</li>
+                <li><strong>Agendar una cita:</strong> Ingresa al sistema de citas del SAT para seleccionar el módulo más cercano. Debido a la alta demanda, te recomendamos inscribirte en la fila virtual si no encuentras espacios disponibles inmediatos.</li>
+                <li><strong>Asistir a la oficina del SAT:</strong> Acude puntualmente con los documentos requeridos: identificación oficial vigente, CURP, comprobante de domicilio reciente y una memoria USB para guardar tus archivos de firma electrónica.</li>
+                <li><strong>Generar tu e.firma y Contraseña:</strong> Durante tu cita, registrarán tus datos biométricos (huellas, iris y fotografía) y te entregarán tus archivos de firma digital (.key y .cer), esenciales para operar en línea.</li>
+            </ol>
 
-            <h2>Paso 2: Generar cita en el SAT</h2>
-            <p>Después de la preinscripción deberás agendar una cita para finalizar el trámite en una oficina desconcentrada.</p>
+            <blockquote>"Elegir adecuadamente tu régimen fiscal (como el RESICO o el de Actividad Empresarial) en el momento del alta definirá tu porcentaje de impuestos y los gastos que podrás deducir legalmente."</blockquote>
 
-            <h2>Paso 3: Acudir a la oficina del SAT</h2>
-            <p>Es indispensable llevar identificación oficial, CURP, comprobante de domicilio y una unidad USB para guardar tu e.firma.</p>
-
-            <h2>Paso 4: Obtener tu e.firma</h2>
-            <p>La firma electrónica (e.firma) es indispensable para presentar declaraciones, firmar trámites y emitir facturas electrónicas.</p>
-
-            <blockquote>"Elegir correctamente tu régimen fiscal desde el inicio determinará tus impuestos a pagar y las deducciones permitidas."</blockquote>
-
-            <p>Darse de alta correctamente evita problemas fiscales futuros. Si necesitas asesoría para elegir tu régimen fiscal, en <strong>CCI Consultoría Contable Integral</strong> podemos ayudarte.</p>
+            <p>Darse de alta de forma óptima desde el primer día te evita aclaraciones y multas futuras. Si requieres asesoría para definir tu régimen fiscal idóneo antes de tu cita, en CCI te ayudamos con el diagnóstico inicial sin costo.</p>
         `,
-        date: '11 de Marzo, 2026',
+        date: '15 de Mayo, 2026',
         author: 'Adrian Alcaraz',
         category: 'Fiscal',
         readTime: '6 min',
@@ -60,119 +197,37 @@ export const blogPosts: BlogPost[] = [
     },
     {
         id: 'declaracion-anual-2026-pf',
-        title: 'Declaración anual de personas físicas 2026: lo que debes saber',
-        excerpt: 'En abril de 2026 deberás declarar los ingresos de 2025. Conoce quiénes están obligados y qué puedes deducir.',
+        title: 'Declaración Anual de Personas Físicas: Claves para el cumplimiento exitoso',
+        excerpt: 'Presentar tu declaración en el plazo correspondiente te evita multas y te abre la posibilidad de obtener saldos a favor. Conoce las bases.',
         content: `
-            <p>Cada año los contribuyentes deben presentar su declaración anual ante el SAT. En abril de 2026, las personas físicas deberán declarar los ingresos obtenidos durante el ejercicio 2025.</p>
+            <p>Cada año, las personas físicas en México tienen la obligación de presentar su declaración anual ante el SAT. En este proceso se reportan de forma detallada los ingresos obtenidos, los impuestos pagados y las deducciones personales del ejercicio fiscal inmediato anterior.</p>
             
-            <h2>¿Quiénes están obligados?</h2>
-            <p>Deben presentar declaración anual quienes:</p>
+            <h2>¿Quiénes están obligados a declarar?</h2>
+            <p>Como persona física, debes presentar declaración anual si te encuentras en alguno de estos supuestos:</p>
             <ul>
-                <li>Tuvieron ingresos por honorarios o arrendamiento.</li>
-                <li>Obtuvieron ingresos de plataformas digitales.</li>
-                <li>Trabajaron para dos o más patrones.</li>
-                <li>Percibieron ingresos mayores a $400,000 anuales.</li>
+                <li>Obtuviste ingresos por honorarios, arrendamiento o actividades empresariales.</li>
+                <li>Percibiste ingresos anuales superiores a los $400,000 pesos.</li>
+                <li>Tuviste dos o más patrones de forma simultánea o cambiaste de empleo durante el año.</li>
+                <li>Recibiste ingresos por intereses, dividendos o jubilaciones que excedan los montos exentos.</li>
             </ul>
 
-            <h2>Deducciones personales permitidas</h2>
-            <p>Aprovechar las deducciones puede generar un saldo a favor. Algunas permitidas son:</p>
+            <h2>Aprovecha las Deducciones Personales</h2>
+            <p>Presentar tu declaración es también la oportunidad de reportar gastos deducibles personales que pueden disminuir tu base gravable e incluso generar un saldo a favor que el SAT te devolverá. Los conceptos deducibles más comunes son:</p>
             <ul>
-                <li>Gastos médicos, dentales y hospitalarios.</li>
-                <li>Intereses reales de créditos hipotecarios.</li>
-                <li>Colegiaturas y donativos autorizados.</li>
+                <li>Gastos médicos, dentales, hospitalarios y de enfermería (pagados con medios electrónicos).</li>
+                <li>Colegiaturas desde preescolar hasta bachillerato (con montos límites establecidos).</li>
+                <li>Intereses reales devengados y efectivamente pagados de créditos hipotecarios (Infonavit, Bancos).</li>
+                <li>Aportaciones voluntarias a tu cuenta de retiro (AFORE / PPR).</li>
             </ul>
 
-            <blockquote>"Presentar tu declaración a tiempo no solo es una obligación, es una oportunidad para obtener devoluciones de impuestos."</blockquote>
+            <blockquote>"Una declaración anual elaborada con orden y sustentada en facturas correctas es el camino directo para recuperar impuestos mediante la devolución automática."</blockquote>
 
-            <p>Te recomendamos verificar tus facturas deducibles y revisar los ingresos precargados antes del plazo límite para evitar contratiempos.</p>
+            <p>Revisar periódicamente tus facturas y estados de cuenta durante el año te garantiza un trámite ágil y exitoso al momento de declarar. En CCI te acompañamos y revisamos tu contabilidad de manera integral para maximizar tus saldos a favor de forma legal y segura.</p>
         `,
-        date: '10 de Marzo, 2026',
+        date: '10 de Abril, 2026',
         author: 'Equipo CCI',
         category: 'Fiscal',
         readTime: '5 min',
         image: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&q=80&w=800'
-    },
-    {
-        id: 'materialidad-operaciones-fiscales',
-        title: 'Materialidad en operaciones fiscales: qué es y por qué es importante',
-        excerpt: 'No basta con tener una factura. Demostrar que una operación realmente ocurrió es clave para evitar que el SAT la considere simulación.',
-        content: `
-            <p>Las autoridades fiscales utilizan el criterio de materialidad para verificar si una operación realmente ocurrió o fue simulada para evadir impuestos.</p>
-            
-            <h2>¿Qué es la materialidad?</h2>
-            <p>La materialidad implica demostrar que una operación existió realmente, se realizó con recursos reales y generó efectos económicos para la empresa.</p>
-
-            <h2>Documentos que acreditan materialidad</h2>
-            <p>Para sustentar tus operaciones comerciales, es vital conservar:</p>
-            <ul>
-                <li>Contratos y cotizaciones debidamente firmados.</li>
-                <li>Transferencias bancarias y estados de cuenta.</li>
-                <li>Evidencia de entrega de bienes (guías de envío, fotografías).</li>
-                <li>Reportes de trabajo y correos electrónicos de seguimiento.</li>
-            </ul>
-
-            <h2>Riesgos de no demostrarla</h2>
-            <p>Sin sustento suficiente, el SAT puede rechazar deducciones, cancelar sellos digitales o determinar créditos fiscales severos.</p>
-
-            <p>Recordemos: <strong>No basta con tener una factura</strong>; se debe demostrar que la operación realmente tuvo lugar en el mundo físico y económico.</p>
-        `,
-        date: '08 de Marzo, 2026',
-        author: 'Adrian Alcaraz',
-        category: 'Legal',
-        readTime: '7 min',
-        image: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&q=80&w=800'
-    },
-    {
-        id: 'errores-fiscales-comunes',
-        title: 'Errores fiscales comunes que pueden generarte multas',
-        excerpt: 'Muchos contribuyentes enfrentan sanciones por descuidos que podrían evitarse con una administración correcta. Evita estos 4 errores.',
-        content: `
-            <p>Muchos contribuyentes enfrentan sanciones fiscales por errores operativos que pueden evitarse fácilmente con orden y asesoría.</p>
-            
-            <h2>Error 1: No presentar declaraciones</h2>
-            <p>Esto puede generar multas que van desde $1,400 hasta más de $17,000 pesos dependiendo de la omisión y el tiempo transcurrido.</p>
-
-            <h2>Error 2: Emitir facturas incorrectas</h2>
-            <p>Capturar mal el RFC, el Uso del CFDI o el Régimen Fiscal puede invalidar la operación y causar problemas tanto al emisor como al receptor.</p>
-
-            <h2>Error 3: No conservar documentación</h2>
-            <p>La ley obliga a conservar la documentación contable durante un mínimo de 5 años. No tenerla disponible en una auditoría es causal de sanciones.</p>
-
-            <h2>Error 4: No revisar el buzón tributario</h2>
-            <p>El SAT envía notificaciones importantes por este medio. Ignorarlas no detiene el proceso legal y puede llevar a sorpresas desagradables.</p>
-
-            <p>Una correcta administración fiscal inspirada en el control interno puede ahorrarte miles de pesos en multas innecesarias.</p>
-        `,
-        date: '05 de Marzo, 2026',
-        author: 'Equipo CCI',
-        category: 'Estrategia',
-        readTime: '4 min',
-        image: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&q=80&w=800'
-    },
-    {
-        id: 'cfdi-4-req-clave',
-        title: 'CFDI 4.0: requisitos clave que debes revisar antes de facturar',
-        excerpt: 'Asegura que tus facturas sean válidas revisando los datos obligatorios del emisor y receptor bajo el estándar actual.',
-        content: `
-            <p>Actualmente todas las facturas electrónicas en México se emiten bajo el estándar CFDI 4.0, lo que exige una precisión absoluta en los datos.</p>
-            
-            <h2>Datos obligatorios del receptor</h2>
-            <p>Para que una factura sea deducible, necesitas que estos datos coincidan exactamente con la Constancia de Situación Fiscal:</p>
-            <ul>
-                <li>Nombre completo o razón social (sin el régimen de capital).</li>
-                <li>RFC y Código postal del domicilio fiscal.</li>
-                <li>Régimen fiscal y Uso del CFDI.</li>
-            </ul>
-
-            <h2>Errores comunes al facturar</h2>
-            <p>Los fallos más frecuentes incluyen capturar mal el nombre, ignorar el código postal actualizado o usar un Uso de CFDI que el régimen del cliente no permite.</p>
-
-            <p><strong>Recomendación:</strong> Solicita siempre la Constancia de Situación Fiscal actualizada a tus clientes antes de emitir su primer factura en el periodo.</p>
-        `,
-        date: '01 de Marzo, 2026',
-        author: 'Adrian Alcaraz',
-        category: 'Finanzas',
-        readTime: '4 min',
-        image: 'https://images.pexels.com/photos/265087/pexels-photo-265087.jpeg?auto=compress&cs=tinysrgb&w=800'
     }
 ];
