@@ -2,6 +2,7 @@ import React from 'react';
 import { Search, TrendingUp, TrendingDown, DollarSign, Target, AlertTriangle, Activity } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { COLORS } from '../../../utils/financeUtils';
+import { useDragScroll } from '../../../hooks/useDragScroll';
 
 interface MovementsSummaryViewProps {
     summaryData: {concept: string, income: number, expense: number}[];
@@ -14,6 +15,7 @@ const MovementsSummaryView: React.FC<MovementsSummaryViewProps> = ({
     selectedMonth,
     uniqueMonths
 }) => {
+    const dragScrollRef = useDragScroll();
     const monthLabel = uniqueMonths.find(m => m.value === selectedMonth)?.label;
 
     if (summaryData.length === 0) {
@@ -263,7 +265,7 @@ const MovementsSummaryView: React.FC<MovementsSummaryViewProps> = ({
                     </div>
                 </div>
                 
-                <div className="overflow-x-auto">
+                <div ref={dragScrollRef} className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-[var(--bg-main)] dark:bg-white/5 text-[10px] uppercase tracking-[0.2em] font-black text-neutral-400 border-b-2 border-[var(--border-color)] dark:border-white/10">

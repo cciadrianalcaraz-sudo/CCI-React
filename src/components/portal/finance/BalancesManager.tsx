@@ -6,6 +6,7 @@ import Button from '../../ui/Button';
 import { toast } from '../../../lib/toast';
 import { useConfirm } from '../../../hooks/useConfirm';
 import SavingsGoalsManager from './SavingsGoalsManager';
+import { useDragScroll } from '../../../hooks/useDragScroll';
 
 interface BalancesManagerProps {
     user: { id: string; [key: string]: unknown };
@@ -30,6 +31,7 @@ export default function BalancesManager({
     uniqueMonths,
     onRefresh
 }: BalancesManagerProps) {
+    const dragScrollRef = useDragScroll();
     const [accMgmtTab, setAccMgmtTab] = useState<'initial' | 'transfer' | 'accounts'>('initial');
     const [newAccountName, setNewAccountName] = useState('');
     const [initialBalanceAmount, setInitialBalanceAmount] = useState<number | ''>('');
@@ -254,7 +256,7 @@ export default function BalancesManager({
                     <h4 className="text-[10px] font-black text-center p-6 bg-accent/5 border-b border-[var(--border-color)] dark:border-white/10 uppercase tracking-[0.2em]">
                         Estado Actual de Cuentas
                     </h4>
-                    <div className="overflow-x-auto custom-scrollbar pb-4">
+                    <div ref={dragScrollRef} className="overflow-x-auto custom-scrollbar pb-4">
                         <table className="w-full text-left">
                             <thead>
                                 <tr className="border-b border-[var(--border-color)] dark:border-white/10">

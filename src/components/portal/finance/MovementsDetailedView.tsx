@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Search, Edit2, Trash2, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import type { FinanceRecord } from '../../../types/finance';
 import { formatDate } from '../../../utils/financeUtils';
+import { useDragScroll } from '../../../hooks/useDragScroll';
 
 interface MovementsDetailedViewProps {
     records: FinanceRecord[];
@@ -22,6 +23,7 @@ const MovementsDetailedView: React.FC<MovementsDetailedViewProps> = ({
     onEdit,
     onDelete
 }) => {
+    const dragScrollRef = useDragScroll();
     const [sortConfig, setSortConfig] = useState<{ key: keyof FinanceRecord | 'index'; direction: 'asc' | 'desc' } | null>({ key: 'date', direction: 'desc' });
 
     const handleSort = (key: keyof FinanceRecord | 'index') => {
@@ -111,7 +113,7 @@ const MovementsDetailedView: React.FC<MovementsDetailedViewProps> = ({
             {/* Content Wrapper */}
             <div className={`${!isMobileVisible ? 'hidden md:block' : 'block animate-fade-in'}`}>
                 <div className="bg-[var(--bg-card)]/50 dark:bg-white/5 backdrop-blur-md rounded-[32px] border border-[var(--border-color)] dark:border-white/10 shadow-sm overflow-hidden">
-                    <div className="overflow-x-auto custom-scrollbar">
+                    <div ref={dragScrollRef} className="overflow-x-auto custom-scrollbar">
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="border-b border-[var(--border-color)] dark:border-white/10">

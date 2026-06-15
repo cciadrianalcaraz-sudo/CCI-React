@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import type { FinanceRecord, FinanceGoal, FinanceCredit, PaymentMethod } from '../../../types/finance';
 import { COLORS } from '../../../utils/financeUtils';
+import { useDragScroll } from '../../../hooks/useDragScroll';
 
 interface DashboardViewProps {
     records: FinanceRecord[];
@@ -30,6 +31,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
 }) => {
 
     const scrollRef = useRef<HTMLDivElement>(null);
+    const tableDragScrollRef = useDragScroll();
     
     const scroll = (direction: 'left' | 'right') => {
         if (scrollRef.current) {
@@ -798,7 +800,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                     </div>
                 </div>
                 
-                <div className="overflow-x-auto">
+                <div ref={tableDragScrollRef} className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-[var(--bg-main)] dark:bg-white/5 text-[10px] uppercase tracking-[0.2em] font-black text-neutral-400 border-b-2 border-[var(--border-color)] dark:border-white/10">
