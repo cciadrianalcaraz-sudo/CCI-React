@@ -343,11 +343,45 @@ export const useFinanceCalculations = (
 
     // getDisplayRecords returns the filtered and sorted records for the detailed view
     const getDisplayRecords = useCallback((searchTerm: string) => {
+        // 1. Filter records for the selected month
         const filteredRecords = selectedMonth === 'all' 
             ? records 
-            : records.filter(r => r.date.startsWith(selectedMonth));
+            : records.filter(r => {
+                const rDate = r.date.includes('/') ? r.date.split('/').reverse().join('-') : r.date;
+                return rDate.startsWith(selectedMonth);
+            });
 
+        // 2. Sort the filtered records chronologically (ascending) to calculate running balance
+        const sortedFiltered = [...filteredRecords].sort((a, b) => {
+            const dateA = a.date.includes('/') ? a.date.split('/').reverse().join('-') : a.date;
+            const dateB = b.date.includes('/') ? b.date.split('/').reverse().join('-') : b.date;
+            if (dateA !== dateB) return dateA.localeCompare(dateB);
+            
+            const timeA = new Date(a.created_at || 0).getTime();
+            const timeB = new Date(b.created_at || 0).getTime();
+            return timeA - timeB;
+        });
+
+        // 3. Compute running balance starting at 0 for this filtered set, ignoring transfers
         let runningBalanceFlow = 0;
+        const balanceMap = new Map<string, number>();
+
+        sortedFiltered.forEach(record => {
+            const isAdjustment = (record.concept || '').toUpperCase().trim() === 'SALDO INICIAL';
+            const isTransfer = (record.concept || '').toUpperCase().includes('TRASPASO') || (record.expense_type || '').toUpperCase() === 'TRASPASO';
+            const recordIncome = Number(record.income) || 0;
+            const recordExpense = Number(record.expense) || 0;
+
+            if (isAdjustment) {
+                runningBalanceFlow = recordIncome - recordExpense;
+            } else if (!isTransfer) {
+                runningBalanceFlow += recordIncome - recordExpense;
+            }
+            // If it is a transfer, runningBalanceFlow is unchanged
+            balanceMap.set(record.id, runningBalanceFlow);
+        });
+
+        // 4. Apply search term filter and attach the calculated balance
         return filteredRecords
             .filter(record => {
                 if (!searchTerm) return true;
@@ -360,13 +394,9 @@ export const useFinanceCalculations = (
                 );
             })
             .map(record => {
-                const isAdjustment = (record.concept || '').toUpperCase().trim() === 'SALDO INICIAL';
-                if (!isAdjustment) {
-                    runningBalanceFlow = runningBalanceFlow + Number(record.income) - Number(record.expense);
-                }
                 return {
                     ...record,
-                    balance: runningBalanceFlow
+                    balance: balanceMap.get(record.id) ?? 0
                 };
             });
     }, [records, selectedMonth]);
