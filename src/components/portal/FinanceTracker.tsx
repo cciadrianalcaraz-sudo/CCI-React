@@ -319,7 +319,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                         onRefresh={loadRecords} 
                     />
                 ) : viewMode === 'detailed' ? (
-                    <div className="space-y-6 p-8 md:p-10 pb-32">
+                    <div className="space-y-6 p-8 md:p-10 pb-48">
                         {searchTerm && (
                             <div className="flex flex-col lg:flex-row gap-6 p-8 bg-sky-500/[0.03] dark:bg-white/[0.02] rounded-[2.5rem] border border-sky-500/10 animate-scale-in shadow-sm">
                                 <div className="flex-1 flex items-center gap-5">
@@ -354,7 +354,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                         />
                     </div>
                 ) : viewMode === 'budget' ? (
-                    <div className="pb-32">
+                    <div className="pb-48">
                         <BudgetTracker 
                             userId={user.id}
                             selectedMonth={selectedMonth}
@@ -365,7 +365,7 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                         />
                     </div>
                 ) : viewMode === 'balances' ? (
-                    <div className="pb-32">
+                    <div className="pb-48">
                         <BalancesManager 
                             user={user}
                             companyIds={companyIds}
