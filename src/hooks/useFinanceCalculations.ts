@@ -7,7 +7,7 @@ export const useFinanceCalculations = (
     companyIds: string[]
 ) => {
     const [selectedMonth, setSelectedMonth] = useState<string>('');
-    const [uniqueMonths, setUniqueMonths] = useState<{label: string, value: string}[]>([]);
+    const [uniqueMonths, setUniqueMonths] = useState<{label: string, value: string, hasRecords?: boolean}[]>([]);
     
     const [summaryData, setSummaryData] = useState<{concept: string, income: number, expense: number}[]>([]);
     const [uniqueConcepts, setUniqueConcepts] = useState<string[]>([]);
@@ -76,11 +76,12 @@ export const useFinanceCalculations = (
             const date = new Date(Number(year), Number(month) - 1, 1);
             return {
                 value: m,
-                label: date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
+                label: date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }),
+                hasRecords: recordMonths.includes(m)
             };
         });
         
-        setUniqueMonths([{label: 'Todos los meses', value: 'all'}, ...formattedMonths]);
+        setUniqueMonths([{label: 'Todos los meses', value: 'all', hasRecords: true}, ...formattedMonths]);
         
         if (!selectedMonth && formattedMonths.length > 0) {
             const currentMonthStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;

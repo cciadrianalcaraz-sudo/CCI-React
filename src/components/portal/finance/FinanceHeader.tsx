@@ -9,7 +9,7 @@ interface FinanceHeaderProps {
     setViewMode: (mode: 'detailed' | 'balances' | 'budget' | 'credits') => void;
     selectedMonth: string;
     setSelectedMonth: (month: string) => void;
-    uniqueMonths: {label: string, value: string}[];
+    uniqueMonths: {label: string, value: string, hasRecords?: boolean}[];
     searchTerm: string;
     setSearchTerm: (term: string) => void;
     isUploading: boolean;
@@ -36,6 +36,11 @@ const FinanceHeader: React.FC<FinanceHeaderProps> = ({
     onToggleForm, isFormOpen,
     kpis
 }) => {
+    const currentMonthPrefix = new Date().toISOString().substring(0, 7);
+    const displayMonths = viewMode === 'budget' 
+        ? uniqueMonths 
+        : uniqueMonths.filter(m => m.value === 'all' || m.hasRecords || m.value <= currentMonthPrefix);
+
     return (
         <div className="bg-transparent">
             {/* Main Header Section */}
@@ -156,7 +161,7 @@ const FinanceHeader: React.FC<FinanceHeaderProps> = ({
                                     onChange={(e) => setSelectedMonth(e.target.value)}
                                     className="bg-transparent text-[10px] font-black text-slate-500 dark:text-slate-400 outline-none cursor-pointer uppercase tracking-widest appearance-none pr-8"
                                 >
-                                    {uniqueMonths.map(m => (
+                                    {displayMonths.map(m => (
                                         <option key={m.value} value={m.value} className="text-slate-900 bg-white">{m.label}</option>
                                     ))}
                                 </select>
