@@ -130,7 +130,11 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
 
                 if (error) throw error;
                 if (data && data.length > 0) {
-                    loadRecords();
+                    if (onRefresh) {
+                        onRefresh();
+                    } else {
+                        loadRecords();
+                    }
                     resetForm();
                     setIsFormOpen(false);
                     toast.success('Registro actualizado correctamente.');
@@ -153,7 +157,11 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
 
                 if (error) throw error;
                 if (data && data.length > 0) {
-                    loadRecords();
+                    if (onRefresh) {
+                        onRefresh();
+                    } else {
+                        loadRecords();
+                    }
                     resetForm();
                     setIsFormOpen(false);
                     toast.success('Registro guardado correctamente.');
