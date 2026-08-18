@@ -18,6 +18,7 @@ export default {
       fontFamily: {
         sans: ['Manrope', 'system-ui', 'sans-serif'],
         heading: ['Montserrat', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
       },
       boxShadow: {
         custom: '0 24px 60px rgba(23, 55, 95, 0.12)',

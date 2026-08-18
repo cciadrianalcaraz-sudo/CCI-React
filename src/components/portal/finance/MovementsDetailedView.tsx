@@ -15,7 +15,7 @@ const SortIcon: React.FC<{
     sortConfig: { key: keyof FinanceRecord | 'index'; direction: 'asc' | 'desc' } | null 
 }> = ({ column, sortConfig }) => {
     if (!sortConfig || sortConfig.key !== column) return <ChevronsUpDown size={12} className="opacity-30 group-hover:opacity-100 transition-opacity" />;
-    return sortConfig.direction === 'asc' ? <ChevronUp size={12} className="text-white" /> : <ChevronDown size={12} className="text-white" />;
+    return sortConfig.direction === 'asc' ? <ChevronUp size={12} className="text-accent dark:text-amber-500" /> : <ChevronDown size={12} className="text-accent dark:text-amber-500" />;
 };
 
 const MovementsDetailedView: React.FC<MovementsDetailedViewProps> = ({
@@ -116,123 +116,98 @@ const MovementsDetailedView: React.FC<MovementsDetailedViewProps> = ({
                     <div ref={dragScrollRef} className="overflow-x-auto custom-scrollbar">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="border-b border-[var(--border-color)] dark:border-white/10">
-                                    <th 
-                                        className="sticky top-0 z-10 p-5 whitespace-nowrap bg-accent text-white text-[10px] font-black uppercase tracking-[0.2em] cursor-pointer hover:bg-black/10 transition-colors group"
-                                        onClick={() => handleSort('index')}
-                                    >
-                                        <div className="flex items-center gap-2">ID <SortIcon column="index" sortConfig={sortConfig} /></div>
+                                <tr className="border-b border-black/5 dark:border-white/5">
+                                    {[
+                                        { key: 'index', label: 'ID' },
+                                        { key: 'concept', label: 'Concepto' },
+                                        { key: 'date', label: 'Fecha' },
+                                        { key: 'payment_method', label: 'Pago' },
+                                        { key: 'provider', label: 'Proveedor' },
+                                        { key: 'income', label: 'Ingreso', align: 'right' },
+                                        { key: 'expense', label: 'Gasto', align: 'right' },
+                                        { key: 'balance', label: 'Saldo', align: 'right' },
+                                        { key: 'description', label: 'Descripción' }
+                                    ].map((col) => (
+                                        <th 
+                                            key={col.key}
+                                            className={`sticky top-0 z-10 p-5 whitespace-nowrap bg-white/90 dark:bg-black/60 backdrop-blur-xl text-neutral-500 dark:text-neutral-400 text-[10px] font-bold uppercase tracking-widest cursor-pointer hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group ${col.align === 'right' ? 'text-right' : ''}`}
+                                            onClick={() => handleSort(col.key as any)}
+                                        >
+                                            <div className={`flex items-center gap-2 ${col.align === 'right' ? 'justify-end' : ''}`}>
+                                                {col.label} <SortIcon column={col.key as any} sortConfig={sortConfig} />
+                                            </div>
+                                        </th>
+                                    ))}
+                                    <th className="sticky top-0 z-10 p-5 text-center whitespace-nowrap bg-white/90 dark:bg-black/60 backdrop-blur-xl text-neutral-500 dark:text-neutral-400 text-[10px] font-bold uppercase tracking-widest">
+                                        Acciones
                                     </th>
-                                    <th 
-                                        className="sticky top-0 z-10 p-5 whitespace-nowrap bg-accent text-white text-[10px] font-black uppercase tracking-[0.2em] cursor-pointer hover:bg-black/10 transition-colors group"
-                                        onClick={() => handleSort('concept')}
-                                    >
-                                        <div className="flex items-center gap-2">Concepto <SortIcon column="concept" sortConfig={sortConfig} /></div>
-                                    </th>
-                                    <th 
-                                        className="sticky top-0 z-10 p-5 whitespace-nowrap bg-accent text-white text-[10px] font-black uppercase tracking-[0.2em] cursor-pointer hover:bg-black/10 transition-colors group"
-                                        onClick={() => handleSort('date')}
-                                    >
-                                        <div className="flex items-center gap-2">Fecha <SortIcon column="date" sortConfig={sortConfig} /></div>
-                                    </th>
-                                    <th 
-                                        className="sticky top-0 z-10 p-5 whitespace-nowrap bg-accent text-white text-[10px] font-black uppercase tracking-[0.2em] cursor-pointer hover:bg-black/10 transition-colors group"
-                                        onClick={() => handleSort('payment_method')}
-                                    >
-                                        <div className="flex items-center gap-2">Pago <SortIcon column="payment_method" sortConfig={sortConfig} /></div>
-                                    </th>
-                                    <th 
-                                        className="sticky top-0 z-10 p-5 whitespace-nowrap bg-accent text-white text-[10px] font-black uppercase tracking-[0.2em] cursor-pointer hover:bg-black/10 transition-colors group"
-                                        onClick={() => handleSort('provider')}
-                                    >
-                                        <div className="flex items-center gap-2">Proveedor <SortIcon column="provider" sortConfig={sortConfig} /></div>
-                                    </th>
-                                    <th 
-                                        className="sticky top-0 z-10 p-5 text-right whitespace-nowrap bg-accent text-white text-[10px] font-black uppercase tracking-[0.2em] cursor-pointer hover:bg-black/10 transition-colors group"
-                                        onClick={() => handleSort('income')}
-                                    >
-                                        <div className="flex items-center justify-end gap-2">Ingreso <SortIcon column="income" sortConfig={sortConfig} /></div>
-                                    </th>
-                                    <th 
-                                        className="sticky top-0 z-10 p-5 text-right whitespace-nowrap bg-accent text-white text-[10px] font-black uppercase tracking-[0.2em] cursor-pointer hover:bg-black/10 transition-colors group"
-                                        onClick={() => handleSort('expense')}
-                                    >
-                                        <div className="flex items-center justify-end gap-2">Gasto <SortIcon column="expense" sortConfig={sortConfig} /></div>
-                                    </th>
-                                    <th 
-                                        className="sticky top-0 z-10 p-5 text-right whitespace-nowrap bg-accent text-white text-[10px] font-black uppercase tracking-[0.2em] cursor-pointer hover:bg-black/10 transition-colors group"
-                                        onClick={() => handleSort('balance')}
-                                    >
-                                        <div className="flex items-center justify-end gap-2">Saldo <SortIcon column="balance" sortConfig={sortConfig} /></div>
-                                    </th>
-                                    <th 
-                                        className="sticky top-0 z-10 p-5 whitespace-nowrap max-w-xs bg-accent text-white text-[10px] font-black uppercase tracking-[0.2em] cursor-pointer hover:bg-black/10 transition-colors group"
-                                        onClick={() => handleSort('description')}
-                                    >
-                                        <div className="flex items-center gap-2">Descripción <SortIcon column="description" sortConfig={sortConfig} /></div>
-                                    </th>
-                                    <th className="sticky top-0 z-10 p-5 text-center whitespace-nowrap bg-accent text-white text-[10px] font-black uppercase tracking-[0.2em]">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-[var(--border-color)] dark:divide-white/5">
+                            <tbody className="divide-y divide-black/5 dark:divide-white/5">
                                 {sortedRecords.map((record) => {
                                     const originalIndex = records.indexOf(record);
                                     const isInitialBalance = record.concept.toUpperCase() === 'SALDO INICIAL';
                                     const isTransfer = (record.concept || '').toUpperCase().includes('TRASPASO') || (record.expense_type || '').toUpperCase() === 'TRASPASO';
                                     return (
-                                        <tr key={record.id} className={`hover:bg-[var(--bg-main)] dark:hover:bg-white/5 transition-colors group ${isInitialBalance ? 'bg-amber-500/10' : isTransfer ? 'bg-sky-500/5 opacity-80' : ''}`}>
-                                            <td className="p-4 px-5 whitespace-nowrap opacity-40 font-bold text-[10px]">{originalIndex + 1}</td>
+                                        <tr key={record.id} className={`hover:bg-black/5 dark:hover:bg-white/5 transition-colors group ${isInitialBalance ? 'bg-amber-500/5' : isTransfer ? 'bg-sky-500/5' : ''}`}>
+                                            <td className="p-4 px-5 whitespace-nowrap opacity-40 font-mono text-[11px] font-semibold">{originalIndex + 1}</td>
                                             <td className="p-4 px-5 whitespace-nowrap">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="font-black text-xs uppercase tracking-wider">{record.concept}</span>
-                                                    {isInitialBalance && <span className="text-[8px] bg-amber-500/20 text-amber-600 px-1.5 py-0.5 rounded-full font-black uppercase tracking-widest">Ajuste</span>}
-                                                    {isTransfer && <span className="text-[8px] bg-sky-500/20 text-sky-600 px-1.5 py-0.5 rounded-full font-black uppercase tracking-widest">Traspaso</span>}
+                                                    <span className="font-bold text-[13px] uppercase tracking-wide group-hover:text-accent transition-colors">{record.concept}</span>
+                                                    {isInitialBalance && <span className="text-[9px] bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-md font-bold uppercase tracking-wider border border-amber-500/20">Ajuste</span>}
+                                                    {isTransfer && <span className="text-[9px] bg-sky-500/10 text-sky-600 dark:text-sky-400 px-2 py-0.5 rounded-md font-bold uppercase tracking-wider border border-sky-500/20">Traspaso</span>}
                                                 </div>
-                                                <div className="mt-1">
-                                                    <span className={`text-[8px] px-2 py-0.5 rounded-md font-black uppercase tracking-widest ${
-                                                        record.expense_type === 'Fijo' ? 'bg-indigo-100 text-indigo-700' :
-                                                        record.expense_type === 'Ahorro' ? 'bg-teal-100 text-teal-700' :
-                                                        record.expense_type === 'Deuda' ? 'bg-orange-100 text-orange-700' :
-                                                        record.expense_type === 'Ingreso' ? 'bg-green-100 text-green-700' :
-                                                        record.expense_type === 'Traspaso' ? 'bg-sky-100 text-sky-700' :
-                                                        'bg-neutral-100 text-neutral-500'
+                                                <div className="mt-1.5 flex gap-2">
+                                                    <span className={`text-[9px] px-2.5 py-0.5 rounded-md font-bold uppercase tracking-wider border ${
+                                                        record.expense_type === 'Fijo' ? 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/20' :
+                                                        record.expense_type === 'Ahorro' ? 'bg-teal-500/10 text-teal-700 dark:text-teal-400 border-teal-500/20' :
+                                                        record.expense_type === 'Deuda' ? 'bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20' :
+                                                        record.expense_type === 'Ingreso' ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20' :
+                                                        record.expense_type === 'Traspaso' ? 'bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/20' :
+                                                        'bg-neutral-500/10 text-neutral-600 dark:text-neutral-400 border-neutral-500/20'
                                                     }`}>
                                                         {record.expense_type || 'Variable'}
                                                     </span>
                                                 </div>
                                             </td>
-                                            <td className="p-4 px-5 whitespace-nowrap text-xs opacity-60 font-medium">
+                                            <td className="p-4 px-5 whitespace-nowrap text-[12px] opacity-70 font-mono">
                                                 {formatDate(record.date)}
                                             </td>
                                             <td className="p-4 px-5 whitespace-nowrap">
-                                                <span className="bg-[var(--bg-main)] dark:bg-white/10 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter">{record.payment_method}</span>
+                                                <span className="bg-black/5 dark:bg-white/10 px-2.5 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider border border-black/5 dark:border-white/5 shadow-sm">{record.payment_method}</span>
                                             </td>
-                                            <td className="p-4 px-5 whitespace-nowrap text-xs font-medium opacity-60">{record.provider}</td>
-                                            <td className="p-4 px-5 text-right whitespace-nowrap text-green-600 font-bold text-sm">
-                                                {(isInitialBalance || isTransfer) ? (record.income > 0 ? `$${Number(record.income).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-') : (Number(record.income) !== 0 ? `$${Number(record.income).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-')}
+                                            <td className="p-4 px-5 whitespace-nowrap text-[13px] font-medium opacity-70">{record.provider}</td>
+                                            <td className="p-4 px-5 text-right whitespace-nowrap">
+                                                <span className={`font-mono tabular-nums font-semibold tracking-tight text-[15px] ${Number(record.income) > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'opacity-30'}`}>
+                                                    {(isInitialBalance || isTransfer) ? (record.income > 0 ? `+$${Number(record.income).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-') : (Number(record.income) !== 0 ? `+$${Number(record.income).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-')}
+                                                </span>
                                             </td>
-                                            <td className="p-4 px-5 text-right whitespace-nowrap text-red-500 font-bold text-sm">
-                                                {(isInitialBalance || isTransfer) ? (record.expense > 0 ? `$${Number(record.expense).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-') : (Number(record.expense) !== 0 ? `$${Number(record.expense).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-')}
+                                            <td className="p-4 px-5 text-right whitespace-nowrap">
+                                                <span className={`font-mono tabular-nums font-semibold tracking-tight text-[15px] ${Number(record.expense) > 0 ? 'text-rose-600 dark:text-rose-400' : 'opacity-30'}`}>
+                                                    {(isInitialBalance || isTransfer) ? (record.expense > 0 ? `-$${Number(record.expense).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-') : (Number(record.expense) !== 0 ? `-$${Number(record.expense).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-')}
+                                                </span>
                                             </td>
-                                            <td className={`p-4 px-5 text-right whitespace-nowrap font-black text-sm ${Number(record.balance) < 0 ? 'text-red-500' : ''}`}>
-                                                ${Number(record.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                            <td className="p-4 px-5 text-right whitespace-nowrap">
+                                                <span className={`font-mono tabular-nums font-bold tracking-tight text-[15px] ${Number(record.balance) < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-neutral-900 dark:text-white'}`}>
+                                                    ${Number(record.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                                </span>
                                             </td>
-                                            <td className="p-4 px-5 text-xs opacity-40 max-w-xs truncate italic">{record.description}</td>
+                                            <td className="p-4 px-5 text-[12px] opacity-60 max-w-xs truncate">{record.description}</td>
                                             <td className="p-4 px-5">
-                                                <div className="flex justify-center gap-3">
+                                                <div className="flex justify-center gap-2 opacity-10 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
                                                     <button 
                                                         onClick={(e) => { e.stopPropagation(); onEdit(record); }}
-                                                        className="w-9 h-9 flex items-center justify-center rounded-xl text-primary-dark/60 hover:text-white hover:bg-accent hover:shadow-lg hover:shadow-accent/20 transition-all duration-300 hover:scale-110 active:scale-95 md:opacity-0 md:group-hover:opacity-100"
+                                                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-neutral-100 dark:bg-white/10 text-neutral-600 dark:text-white hover:bg-accent hover:text-white hover:scale-105 active:scale-95 transition-all shadow-sm"
                                                         title="Editar"
                                                     >
-                                                        <Edit2 size={18} />
+                                                        <Edit2 size={14} />
                                                     </button>
                                                     <button 
                                                         onClick={(e) => { e.stopPropagation(); onDelete(record.id); }}
-                                                        className="w-9 h-9 flex items-center justify-center rounded-xl text-red-500/60 hover:text-white hover:bg-red-500 hover:shadow-lg hover:shadow-red-500/20 transition-all duration-300 hover:scale-110 active:scale-95 md:opacity-0 md:group-hover:opacity-100"
+                                                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-neutral-100 dark:bg-white/10 text-rose-500 hover:bg-rose-500 hover:text-white hover:scale-105 active:scale-95 transition-all shadow-sm"
                                                         title="Eliminar"
                                                     >
-                                                        <Trash2 size={18} />
+                                                        <Trash2 size={14} />
                                                     </button>
                                                 </div>
                                             </td>
