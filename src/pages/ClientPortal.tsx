@@ -206,7 +206,6 @@ function PortalView({ user, onLogout }: { user: any, onLogout: () => void }) {
     const [availableMonths, setAvailableMonths] = useState<{label: string, value: string}[]>([]);
 
     const { 
-        records: financeRecords, 
         goals, 
         credits,
         budgets,
@@ -237,7 +236,7 @@ function PortalView({ user, onLogout }: { user: any, onLogout: () => void }) {
 
     const summaryData = useMemo(() => {
         const month = selectedDashboardMonth || 'all';
-        const filtered = month === 'all' ? financeRecords : financeRecords.filter(r => {
+        const filtered = month === 'all' ? records : records.filter(r => {
              const rDate = r.date.includes('/') ? r.date.split('/').reverse().join('-') : r.date;
              return rDate.startsWith(month);
         });
@@ -257,7 +256,7 @@ function PortalView({ user, onLogout }: { user: any, onLogout: () => void }) {
             }, {});
         
         return Object.values(grouped).sort((a: any, b: any) => a.concept.localeCompare(b.concept)) as any[];
-    }, [financeRecords, selectedDashboardMonth]);
+    }, [records, selectedDashboardMonth]);
 
     useEffect(() => {
         console.log("[DashboardView] Current Profile State:", profile);
@@ -451,7 +450,7 @@ function PortalView({ user, onLogout }: { user: any, onLogout: () => void }) {
                         {activeTab === 'dashboard' ? (
                             <div className="animate-fade-in -mt-4">
                                 <FinancialDashboard 
-                                    records={financeRecords}
+                                    records={records}
                                     goals={goals}
                                     credits={credits}
                                     selectedMonth={selectedDashboardMonth}
@@ -465,7 +464,7 @@ function PortalView({ user, onLogout }: { user: any, onLogout: () => void }) {
                         ) : activeTab === 'calendar' ? (
                             <div className="animate-fade-in">
                                 <CashflowCalendar 
-                                    records={financeRecords}
+                                    records={records}
                                     credits={credits}
                                     budgets={budgets}
                                     paymentMethods={paymentMethods}
