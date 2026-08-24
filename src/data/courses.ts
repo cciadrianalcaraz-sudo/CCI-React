@@ -148,7 +148,7 @@ export const news: NewsItem[] = [
     {
         id: 'webinar-deducciones-2025',
         title: '🔴 En Vivo: Maximiza tu Saldo a Favor 2025',
-        date: 'Lunes 23 de Marzo, 2026',
+        date: 'Martes 01 de Septiembre, 2026',
         summary: 'Webinar exclusivo: Estrategias legales para optimizar tus deducciones personales y maximizar tu devolución de impuestos.',
         content: [
             'Deducciones personales: Cómo asegurar que el SAT las acepte sin problemas.',
@@ -161,7 +161,7 @@ export const news: NewsItem[] = [
     {
         id: 'prep-declaracion-pf',
         title: 'Preparación para la Declaración de Personas Físicas',
-        date: '19 de Marzo, 2026',
+        date: '05 de Septiembre, 2026',
         summary: 'Faltan pocos días para abril. Revisa tu visor de nómina y deducciones personales para evitar sorpresas.',
         content: [
             'Honorarios Médicos: Verifica que el pago haya sido por medios electrónicos.',
@@ -173,7 +173,7 @@ export const news: NewsItem[] = [
     {
         id: 'reforma-fiscal-2026',
         title: '🔍 Control Estricto del SAT en 2026',
-        date: '30 de Marzo, 2026',
+        date: '15 de Septiembre, 2026',
         summary: 'Entérate de los nuevos mecanismos de automatización que el SAT utiliza para cruzar tus ingresos.',
         content: [
             'Suspensión de Sellos (CSD): Modificaciones al Art. 17-H Bis para agilizar bloqueos.',
