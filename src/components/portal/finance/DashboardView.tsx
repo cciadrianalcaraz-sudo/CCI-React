@@ -374,16 +374,16 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             {alerts.length > 0 && (
                 <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 animate-slide-down">
                     {alerts.map(alert => (
-                        <div key={alert.id} className={`min-w-[280px] p-4 rounded-[2rem] border flex items-center gap-4 transition-all hover:scale-[1.02] shadow-sm ${
+                        <div key={alert.id} className={`min-w-[280px] p-4 rounded-[2rem] border flex items-center gap-4 transition-all duration-300 hover:scale-[1.05] hover:shadow-[0_10px_20px_rgba(0,0,0,0.1)] cursor-pointer group hover:border-opacity-100 ${
                             alert.priority === 'high' 
-                                ? 'bg-red-500/10 border-red-500/30' 
+                                ? 'bg-gradient-to-r from-red-500/10 to-transparent border-red-500/30 hover:border-red-500/60' 
                                 : alert.priority === 'medium'
-                                ? 'bg-amber-500/10 border-amber-500/30'
-                                : 'bg-blue-500/10 border-blue-500/30'
+                                ? 'bg-gradient-to-r from-amber-500/10 to-transparent border-amber-500/30 hover:border-amber-500/60'
+                                : 'bg-gradient-to-r from-blue-500/10 to-transparent border-blue-500/30 hover:border-blue-500/60'
                         }`}>
-                            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${
-                                alert.priority === 'high' ? 'bg-red-500 text-white' : 
-                                alert.priority === 'medium' ? 'bg-amber-500 text-white' : 'bg-blue-500 text-white'
+                            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 ${
+                                alert.priority === 'high' ? 'bg-red-500 text-white shadow-lg shadow-red-500/30' : 
+                                alert.priority === 'medium' ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30' : 'bg-blue-500 text-white shadow-lg shadow-blue-500/30'
                             }`}>
                                 {alert.type === 'cutoff' ? <PieChart size={18} /> : 
                                  alert.type === 'payment' ? <Wallet size={18} /> : 
@@ -440,13 +440,14 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                 
                 {/* --- ROW 1: KPI Cards (4 items x 3 cols = 12 cols) --- */}
                    {/* Card 1: Semáforo de Salud Financiera */}
-                <div className={`lg:col-span-3 rounded-[2.5rem] p-7 border shadow-sm backdrop-blur-xl relative group overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 flex flex-col justify-between ${
+                <div className={`lg:col-span-3 rounded-[2.5rem] p-7 border shadow-sm backdrop-blur-xl relative group overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 hover:border-opacity-50 flex flex-col justify-between ${
                     healthAndBudget.healthStatus === 'danger' 
-                        ? 'bg-red-500/5 border-red-500/20' 
+                        ? 'bg-gradient-to-br from-red-500/10 to-transparent border-red-500/20 hover:shadow-red-500/20' 
                         : healthAndBudget.healthStatus === 'warning'
-                        ? 'bg-amber-500/5 border-amber-500/20'
-                        : 'bg-emerald-500/5 border-emerald-500/20'
+                        ? 'bg-gradient-to-br from-amber-500/10 to-transparent border-amber-500/20 hover:shadow-amber-500/20'
+                        : 'bg-gradient-to-br from-emerald-500/10 to-transparent border-emerald-500/20 hover:shadow-emerald-500/20'
                 }`}>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/0 to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                     <div className="relative z-10">
                         <div className="flex justify-between items-start mb-6">
                             <span className="text-[10px] font-black uppercase tracking-[0.15em] opacity-40 text-[var(--text-primary)]">Salud Financiera</span>
@@ -473,7 +474,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
 
                 {/* Card 2: Capacidad de Ahorro */}
-                <div className="lg:col-span-3 bg-[#0f172a] dark:bg-white/[0.03] rounded-[2.5rem] p-7 text-white shadow-2xl relative overflow-hidden group flex flex-col justify-between hover:shadow-blue-500/10 transition-all duration-500 border border-white/5">
+                <div className="lg:col-span-3 bg-gradient-to-br from-[#0f172a] to-[#1e293b] dark:from-white/[0.05] dark:to-white/[0.01] rounded-[2.5rem] p-7 text-white shadow-2xl relative overflow-hidden group flex flex-col justify-between hover:shadow-[0_20px_40px_rgba(59,130,246,0.15)] hover:-translate-y-2 transition-all duration-500 border border-white/10 hover:border-blue-500/30">
+                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.02] mix-blend-overlay"></div>
                     <div className="relative z-10">
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 mb-1">Capacidad de Ahorro</p>
                         <div className="flex items-baseline gap-2">
@@ -498,8 +500,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
 
                 {/* Card 3: Comparativa Mensual */}
-                <div className="lg:col-span-3 bg-[var(--bg-card)] dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] p-6 border border-[var(--border-color)] dark:border-white/10 shadow-sm flex flex-col justify-between group relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/5 rounded-full blur-[40px] group-hover:bg-sky-500/10 transition-all duration-500"></div>
+                <div className="lg:col-span-3 bg-[var(--bg-card)] dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] p-6 border border-[var(--border-color)] dark:border-white/10 shadow-sm flex flex-col justify-between group relative overflow-hidden hover:shadow-2xl hover:shadow-sky-500/5 hover:-translate-y-2 transition-all duration-500 hover:border-sky-500/20">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/10 rounded-full blur-[40px] group-hover:bg-sky-500/20 group-hover:scale-150 transition-all duration-700"></div>
                     
                     <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 flex items-center gap-2 mb-4 relative z-10">
                         <Activity size={14} className="text-sky-500" /> Comparativa Mes
@@ -545,8 +547,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
 
                 {/* Card 4: Mayor Gasto */}
-                <div className="lg:col-span-3 bg-[var(--bg-card)] dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] p-6 border border-[var(--border-color)] dark:border-white/10 shadow-sm relative group overflow-hidden flex flex-col">
-                    <div className="absolute bottom-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-[50px] group-hover:bg-red-500/10 transition-all duration-500"></div>
+                <div className="lg:col-span-3 bg-[var(--bg-card)] dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] p-6 border border-[var(--border-color)] dark:border-white/10 shadow-sm relative group overflow-hidden flex flex-col hover:shadow-2xl hover:shadow-red-500/5 hover:-translate-y-2 transition-all duration-500 hover:border-red-500/20">
+                    <div className="absolute bottom-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-[50px] group-hover:bg-red-500/20 group-hover:scale-150 transition-all duration-700"></div>
                     <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 flex items-center gap-2 mb-2">
                         <AlertTriangle size={14} className="text-red-500" /> Mayor Gasto
                     </h4>
@@ -582,7 +584,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                 {/* --- ROW 2: Charts (8 + 4) --- */}
                 
                 {/* Main Performance Chart */}
-                <div className="lg:col-span-8 bg-white dark:bg-white/5 rounded-[3rem] p-8 md:p-10 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-xl relative overflow-hidden group">
+                <div className="lg:col-span-8 bg-white dark:bg-gradient-to-b dark:from-white/5 dark:to-transparent rounded-[3rem] p-8 md:p-10 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-xl relative overflow-hidden group hover:shadow-2xl hover:border-sky-500/20 transition-all duration-500">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-sky-500/5 rounded-full blur-[80px] group-hover:bg-sky-500/10 group-hover:scale-125 transition-all duration-700"></div>
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10 relative z-10">
                         <div>
                             <div className="flex items-center gap-3 mb-1">
@@ -657,7 +660,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
 
                 {/* Analizador 50/30/20 Vertical */}
-                <div className="lg:col-span-4 bg-[var(--bg-card)] dark:bg-white/5 rounded-[2.5rem] p-6 md:p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md relative overflow-hidden group flex flex-col">
+                <div className="lg:col-span-4 bg-[var(--bg-card)] dark:bg-gradient-to-b dark:from-white/5 dark:to-transparent rounded-[2.5rem] p-6 md:p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md relative overflow-hidden group flex flex-col hover:shadow-2xl hover:border-blue-500/20 transition-all duration-500">
                     <div className="flex items-center gap-3 mb-8 relative z-10">
                         <Target size={20} className="text-blue-500" />
                         <div>
@@ -712,13 +715,14 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                             <p className="text-[10px] font-bold text-neutral-400">${healthAndBudget.savingsDebt.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
                         </div>
                     </div>
-                    <div className="absolute bottom-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-[80px] -mr-32 -mb-32"></div>
+                    <div className="absolute bottom-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-[80px] -mr-32 -mb-32 group-hover:bg-blue-500/15 group-hover:scale-150 transition-all duration-700"></div>
                 </div>
 
                 {/* --- ROW 3: Details (6 + 6) --- */}
 
                 {/* Gastos por Tipo (BARRAS) */}
-                <div className="lg:col-span-6 bg-[var(--bg-card)] dark:bg-white/5 rounded-[2.5rem] p-6 md:p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md relative">
+                <div className="lg:col-span-6 bg-[var(--bg-card)] dark:bg-gradient-to-b dark:from-white/5 dark:to-transparent rounded-[2.5rem] p-6 md:p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md relative group hover:shadow-2xl hover:border-purple-500/20 transition-all duration-500">
+                    <div className="absolute top-1/2 right-0 w-48 h-48 bg-purple-500/5 rounded-full blur-[60px] -translate-y-1/2 group-hover:bg-purple-500/10 group-hover:scale-150 transition-all duration-700"></div>
                     <h3 className="text-lg font-black mb-6 flex items-center gap-3">
                         <PieChart size={20} className="text-purple-500" />
                         Distribución de Gastos
@@ -749,7 +753,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
 
                 {/* Goals Preview */}
-                <div className="lg:col-span-6 bg-[var(--bg-card)] dark:bg-white/5 rounded-[2.5rem] p-6 md:p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md overflow-hidden relative group">
+                <div className="lg:col-span-6 bg-[var(--bg-card)] dark:bg-gradient-to-b dark:from-white/5 dark:to-transparent rounded-[2.5rem] p-6 md:p-8 border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md overflow-hidden relative group hover:shadow-2xl hover:border-amber-500/20 transition-all duration-500">
+                    <div className="absolute top-1/2 right-0 w-48 h-48 bg-amber-500/5 rounded-full blur-[60px] -translate-y-1/2 group-hover:bg-amber-500/10 group-hover:scale-150 transition-all duration-700"></div>
                     <div className="flex justify-between items-center mb-8">
                         <div>
                             <h3 className="text-lg font-black flex items-center gap-3">
@@ -820,7 +825,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                             ) : summaryData.sort((a,b) => b.expense - a.expense).map((row, i) => {
                                 const weight = totalExpenses > 0 ? (row.expense / totalExpenses) * 100 : 0;
                                 return (
-                                    <tr key={row.concept} className="hover:bg-[var(--bg-main)] dark:hover:bg-white/5 transition-colors group">
+                                    <tr key={row.concept} className="hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors duration-300 group cursor-pointer">
                                         <td className="p-6 font-black text-xs uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-3">
                                             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: row.expense > 0 ? COLORS[i % COLORS.length] : 'transparent' }}></div>
                                             {row.concept}
