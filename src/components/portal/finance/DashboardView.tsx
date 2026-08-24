@@ -345,6 +345,12 @@ const DashboardView: React.FC<DashboardViewProps> = ({
 
     const [selectedPoint, setSelectedPoint] = React.useState<any>(null);
 
+    // Nuevos estados para Interacciones Drill-down
+    const [expandedTableRow, setExpandedTableRow] = React.useState<string | null>(null);
+    const [selectedAccountModal, setSelectedAccountModal] = React.useState<string | null>(null);
+    const [selectedBudgetModal, setSelectedBudgetModal] = React.useState<{type: string, title: string} | null>(null);
+    const [selectedCategoryModal, setSelectedCategoryModal] = React.useState<string | null>(null);
+
     const CustomTooltip = ({ active, payload }: any) => {
         if (active && payload && payload.length) {
             return (
@@ -453,8 +459,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                 >
                     {accountBalances.length > 0 ? (
                         accountBalances.map((acc, i) => (
-                            <div key={i} className="min-w-[180px] bg-[var(--bg-card)] dark:bg-white/10 p-5 rounded-3xl border border-[var(--border-color)] dark:border-white/10 shadow-sm group/card hover:-translate-y-1 transition-all">
-                                <p className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-1 group-hover/card:text-accent transition-colors">{acc.name}</p>
+                            <div key={i} onClick={() => setSelectedAccountModal(acc.name)} className="min-w-[180px] bg-[var(--bg-card)] dark:bg-white/10 p-5 rounded-3xl border border-[var(--border-color)] dark:border-white/10 shadow-sm group/card hover:-translate-y-1 hover:shadow-lg hover:border-accent/40 active:scale-95 transition-all cursor-pointer">
+                                <p className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-1 group-hover/card:text-accent transition-colors flex items-center justify-between">{acc.name} <Target size={10} className="opacity-0 group-hover/card:opacity-100 transition-opacity"/></p>
                                 <p className="text-lg font-black tracking-tighter">${acc.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
                             </div>
                         ))
@@ -700,7 +706,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                     
                     <div className="space-y-6 relative z-10 flex-1 flex flex-col justify-center">
                         {/* Necesidades 50% */}
-                        <div className="space-y-2">
+                        <div className="space-y-2 cursor-pointer group/budget hover:scale-[1.02] transition-transform" onClick={() => setSelectedBudgetModal({type: 'Fijo', title: 'Necesidades Básicas'})}>
                             <div className="flex justify-between items-end">
                                 <span className="text-xs font-black uppercase tracking-wider">Necesidades</span>
                                 <span className={`text-[10px] font-black ${healthAndBudget.needsRatio > 50 ? 'text-red-500' : 'text-neutral-400'}`}>
@@ -715,7 +721,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                         </div>
 
                         {/* Deseos 30% */}
-                        <div className="space-y-2">
+                        <div className="space-y-2 cursor-pointer group/budget hover:scale-[1.02] transition-transform" onClick={() => setSelectedBudgetModal({type: 'Variable', title: 'Deseos / Estilo de Vida'})}>
                             <div className="flex justify-between items-end">
                                 <span className="text-xs font-black uppercase tracking-wider">Deseos</span>
                                 <span className={`text-[10px] font-black ${healthAndBudget.wantsRatio > 30 ? 'text-amber-500' : 'text-neutral-400'}`}>
@@ -730,7 +736,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                         </div>
 
                         {/* Ahorro/Deuda 20% */}
-                        <div className="space-y-2">
+                        <div className="space-y-2 cursor-pointer group/budget hover:scale-[1.02] transition-transform" onClick={() => setSelectedBudgetModal({type: 'Ahorro / Deuda', title: 'Ahorro y Deudas'})}>
                             <div className="flex justify-between items-end">
                                 <span className="text-xs font-black uppercase tracking-wider">Ahorro / Deudas</span>
                                 <span className={`text-[10px] font-black ${healthAndBudget.savingsDebtRatio < 20 ? 'text-amber-500' : 'text-green-500'}`}>
@@ -758,7 +764,13 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                     </h3>
                     <div className="h-[250px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={categoryData} layout="vertical" margin={{ left: 20 }}>
+                            <BarChart 
+                                data={categoryData} 
+                                layout="vertical" 
+                                margin={{ left: 20 }}
+                                onClick={(data: any) => { if(data?.activeLabel) setSelectedCategoryModal(data.activeLabel); }}
+                                style={{cursor: 'pointer'}}
+                            >
                                 <XAxis type="number" hide />
                                 <YAxis 
                                     dataKey="name" 
@@ -854,29 +866,59 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                             ) : summaryData.sort((a,b) => b.expense - a.expense).map((row, i) => {
                                 const weight = totalExpenses > 0 ? (row.expense / totalExpenses) * 100 : 0;
                                 return (
-                                    <tr key={row.concept} className="hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors duration-300 group cursor-pointer">
-                                        <td className="p-6 font-black text-xs uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-3">
-                                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: row.expense > 0 ? COLORS[i % COLORS.length] : 'transparent' }}></div>
-                                            {row.concept}
-                                        </td>
-                                        <td className="p-6">
-                                            {row.expense > 0 ? (
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-full h-1.5 bg-neutral-100 dark:bg-white/5 rounded-full overflow-hidden flex-1">
-                                                        <div className="h-full rounded-full transition-all group-hover:brightness-110" 
-                                                             style={{ width: `${weight}%`, backgroundColor: COLORS[i % COLORS.length] }}></div>
+                                    <React.Fragment key={row.concept}>
+                                        <tr onClick={() => setExpandedTableRow(expandedTableRow === row.concept ? null : row.concept)} className={`hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors duration-300 group cursor-pointer ${expandedTableRow === row.concept ? 'bg-neutral-50 dark:bg-white/5' : ''}`}>
+                                            <td className="p-6 font-black text-xs uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-3">
+                                                <div className={`w-2 h-2 rounded-full transition-transform ${expandedTableRow === row.concept ? 'scale-150' : ''}`} style={{ backgroundColor: row.expense > 0 ? COLORS[i % COLORS.length] : 'transparent' }}></div>
+                                                {row.concept}
+                                            </td>
+                                            <td className="p-6">
+                                                {row.expense > 0 ? (
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-full h-1.5 bg-neutral-100 dark:bg-white/5 rounded-full overflow-hidden flex-1">
+                                                            <div className="h-full rounded-full transition-all group-hover:brightness-110" 
+                                                                 style={{ width: `${weight}%`, backgroundColor: COLORS[i % COLORS.length] }}></div>
+                                                        </div>
+                                                        <span className="text-[10px] font-black text-neutral-400 w-8">{weight.toFixed(0)}%</span>
                                                     </div>
-                                                    <span className="text-[10px] font-black text-neutral-400 w-8">{weight.toFixed(0)}%</span>
-                                                </div>
-                                            ) : <span className="text-neutral-300 dark:text-neutral-600">-</span>}
-                                        </td>
-                                        <td className="p-6 text-right font-bold text-sm text-green-600">
-                                            {row.income > 0 ? `$${row.income.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-'}
-                                        </td>
-                                        <td className="p-6 text-right font-bold text-sm text-red-500">
-                                            {row.expense > 0 ? `$${row.expense.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-'}
-                                        </td>
-                                    </tr>
+                                                ) : <span className="text-neutral-300 dark:text-neutral-600">-</span>}
+                                            </td>
+                                            <td className="p-6 text-right font-bold text-sm text-green-600">
+                                                {row.income > 0 ? `$${row.income.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-'}
+                                            </td>
+                                            <td className="p-6 text-right font-bold text-sm text-red-500">
+                                                {row.expense > 0 ? `$${row.expense.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '-'}
+                                            </td>
+                                        </tr>
+                                        {expandedTableRow === row.concept && (
+                                            <tr>
+                                                <td colSpan={4} className="p-0 border-b-2 border-accent/20">
+                                                    <div className="bg-white dark:bg-[#111722] shadow-inner p-4 md:p-6 animate-slide-down inset-shadow-sm">
+                                                        <h5 className="text-[10px] font-black uppercase tracking-widest text-accent mb-4 flex items-center gap-2">
+                                                            <ArrowUpRight size={14} /> Movimientos de {row.concept}
+                                                        </h5>
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+                                                            {records.filter(r => {
+                                                                const rMonth = r.date.includes('/') ? r.date.split('/').reverse().join('-').substring(0, 7) : r.date.substring(0, 7);
+                                                                const isInternal = (r.concept || '').toUpperCase().trim() === 'SALDO INICIAL' || (r.concept || '').toUpperCase().trim().includes('TRASPASO') || (r.expense_type || '').toUpperCase().trim() === 'TRASPASO';
+                                                                return (selectedMonth === 'all' || rMonth === selectedMonth) && !isInternal && (r.concept || '').toUpperCase().trim() === row.concept && (Number(r.expense) > 0 || Number(r.income) > 0);
+                                                            }).sort((a,b) => (Number(b.expense) || Number(b.income)) - (Number(a.expense) || Number(a.income))).map((r, idx) => (
+                                                                <div key={idx} className="flex justify-between items-center bg-neutral-50 dark:bg-white/5 p-3 rounded-2xl border border-neutral-100 dark:border-white/10 hover:border-accent/40 transition-all hover:-translate-y-0.5">
+                                                                    <div>
+                                                                        <p className="text-xs font-bold text-primary-dark dark:text-white capitalize truncate max-w-[150px]">{r.provider || 'Sin Proveedor'}</p>
+                                                                        <p className="text-[9px] font-bold text-neutral-400 mt-0.5">{r.date}</p>
+                                                                    </div>
+                                                                    <p className={`text-sm font-black ${Number(r.expense) > 0 ? 'text-red-500' : 'text-green-500'}`}>
+                                                                        ${(Number(r.expense) || Number(r.income)).toLocaleString('en-US', {minimumFractionDigits: 2})}
+                                                                    </p>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </React.Fragment>
                                 );
                             })}
                         </tbody>
@@ -954,6 +996,131 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                         >
                             Entendido
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL: INSPECTOR DE CUENTA (Liquidez) */}
+            {selectedAccountModal && (
+                <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 animate-fade-in">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedAccountModal(null)}></div>
+                    <div className="relative z-10 w-full max-w-md bg-white dark:bg-[#161c26] rounded-[2.5rem] p-8 shadow-2xl overflow-hidden border border-neutral-200 dark:border-white/10 animate-scale-in">
+                        <div className="flex justify-between items-start mb-6">
+                            <div>
+                                <h4 className="text-xl font-black text-primary-dark dark:text-white flex items-center gap-2"><Target size={18} className="text-accent" /> {selectedAccountModal}</h4>
+                                <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-[0.2em] mt-1">Últimos Movimientos de la Cuenta</p>
+                            </div>
+                            <button onClick={() => setSelectedAccountModal(null)} className="p-2 hover:bg-neutral-100 dark:hover:bg-white/5 rounded-full transition-colors text-neutral-400">
+                                <Plus size={24} className="rotate-45" />
+                            </button>
+                        </div>
+                        <div className="space-y-3 max-h-[50vh] overflow-y-auto px-1 custom-scrollbar">
+                            {records
+                                .filter(r => (r.payment_method || '').toUpperCase().trim() === selectedAccountModal.toUpperCase().trim())
+                                .sort((a,b) => new Date(b.date.includes('/') ? b.date.split('/').reverse().join('-') : b.date).getTime() - new Date(a.date.includes('/') ? a.date.split('/').reverse().join('-') : a.date).getTime())
+                                .slice(0, 15)
+                                .map((r, i) => (
+                                    <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-neutral-50 dark:bg-white/5 border border-neutral-100 dark:border-white/5 hover:border-accent/40 hover:-translate-y-0.5 transition-all">
+                                        <div className="flex flex-col">
+                                            <span className="text-xs font-black uppercase tracking-tight truncate max-w-[150px] text-[var(--text-primary)]">{r.concept === 'SALDO INICIAL' ? 'SALDO INICIAL' : r.provider || 'Sin Proveedor'}</span>
+                                            <span className="text-[9px] font-bold text-neutral-400 mt-0.5">{r.date}</span>
+                                        </div>
+                                        <span className={`text-sm font-black ${Number(r.income) > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                            {Number(r.income) > 0 ? `+$${Number(r.income).toLocaleString('en-US', {minimumFractionDigits: 2})}` : `-$${Number(r.expense).toLocaleString('en-US', {minimumFractionDigits: 2})}`}
+                                        </span>
+                                    </div>
+                                ))}
+                            {records.filter(r => (r.payment_method || '').toUpperCase().trim() === selectedAccountModal.toUpperCase().trim()).length === 0 && (
+                                <p className="text-xs text-neutral-500 text-center py-8 font-bold">No hay movimientos recientes.</p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL: SUPER TOOLTIP (Regla 50/30/20) */}
+            {selectedBudgetModal && (
+                <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 animate-fade-in">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedBudgetModal(null)}></div>
+                    <div className="relative z-10 w-full max-w-sm bg-white dark:bg-[#161c26] rounded-[2.5rem] p-8 shadow-2xl overflow-hidden border border-neutral-200 dark:border-white/10 animate-scale-in">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 rounded-full blur-[40px] -mr-16 -mt-16 pointer-events-none"></div>
+                        <div className="flex justify-between items-start mb-6">
+                            <div>
+                                <h4 className="text-lg font-black text-primary-dark dark:text-white capitalize">{selectedBudgetModal.title}</h4>
+                                <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-[0.2em] mt-1">Top 3 Categorías de Gasto</p>
+                            </div>
+                            <button onClick={() => setSelectedBudgetModal(null)} className="p-2 hover:bg-neutral-100 dark:hover:bg-white/5 rounded-full transition-colors text-neutral-400">
+                                <Plus size={24} className="rotate-45" />
+                            </button>
+                        </div>
+                        <div className="space-y-3">
+                            {(()=>{
+                                const filterMonth = selectedMonth === 'all' ? '' : selectedMonth;
+                                const filtered = records.filter(r => {
+                                    const rMonth = r.date.includes('/') ? r.date.split('/').reverse().join('-').substring(0, 7) : r.date.substring(0, 7);
+                                    const typeMatches = selectedBudgetModal.type === 'Fijo' ? r.expense_type === 'Fijo' : selectedBudgetModal.type === 'Variable' ? (!['Fijo', 'Ahorro', 'Deuda'].includes(r.expense_type || '')) : ['Ahorro', 'Deuda'].includes(r.expense_type || '');
+                                    return (selectedMonth === 'all' || rMonth.startsWith(filterMonth)) && typeMatches && Number(r.expense) > 0 && r.concept !== 'SALDO INICIAL' && !(r.concept || '').includes('TRASPASO') && r.expense_type !== 'TRASPASO';
+                                });
+                                // Agrupar por concepto
+                                const groups: Record<string, number> = {};
+                                filtered.forEach(r => {
+                                    const c = r.concept || 'Otros';
+                                    groups[c] = (groups[c] || 0) + Number(r.expense);
+                                });
+                                const top = Object.entries(groups).sort((a,b)=>b[1]-a[1]).slice(0,3);
+                                if(top.length === 0) return <p className="text-xs text-neutral-500 text-center py-4 font-bold">No hay gastos en esta categoría.</p>;
+                                return top.map(([concept, amount], idx) => (
+                                    <div key={idx} className="flex justify-between items-center p-4 rounded-2xl bg-neutral-50 dark:bg-white/5 border border-neutral-100 dark:border-white/5">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-accent font-black text-xs">{idx + 1}</div>
+                                            <span className="text-xs font-black uppercase tracking-tight text-[var(--text-primary)]">{concept}</span>
+                                        </div>
+                                        <span className="text-sm font-black text-red-500">${amount.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                                    </div>
+                                ));
+                            })()}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL: SOLO FOCUS (Gráfica de Categorías) */}
+            {selectedCategoryModal && (
+                <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 animate-fade-in">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedCategoryModal(null)}></div>
+                    <div className="relative z-10 w-full max-w-lg bg-white dark:bg-[#161c26] rounded-[2.5rem] p-8 shadow-2xl overflow-hidden border border-neutral-200 dark:border-white/10 animate-scale-in">
+                        <div className="flex justify-between items-start mb-6">
+                            <div>
+                                <h4 className="text-2xl font-black text-primary-dark dark:text-white uppercase flex items-center gap-2"><PieChart size={20} className="text-accent" /> {selectedCategoryModal}</h4>
+                                <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-[0.2em] mt-1">Desglose de la categoría seleccionada</p>
+                            </div>
+                            <button onClick={() => setSelectedCategoryModal(null)} className="p-2 hover:bg-neutral-100 dark:hover:bg-white/5 rounded-full transition-colors text-neutral-400">
+                                <Plus size={24} className="rotate-45" />
+                            </button>
+                        </div>
+                        <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                            {records.filter(r => {
+                                const rMonth = r.date.includes('/') ? r.date.split('/').reverse().join('-').substring(0, 7) : r.date.substring(0, 7);
+                                const isInternal = (r.concept || '').toUpperCase().trim() === 'SALDO INICIAL' || (r.concept || '').toUpperCase().trim().includes('TRASPASO') || (r.expense_type || '').toUpperCase().trim() === 'TRASPASO';
+                                const c = r.expense_type || 'Otros';
+                                return (selectedMonth === 'all' || rMonth === selectedMonth) && !isInternal && c === selectedCategoryModal && Number(r.expense) > 0;
+                            }).sort((a,b) => Number(b.expense) - Number(a.expense)).map((r, idx) => (
+                                <div key={idx} className="flex justify-between items-center bg-neutral-50 dark:bg-white/5 p-4 rounded-2xl border border-neutral-100 dark:border-white/5 hover:border-accent/40 hover:-translate-y-0.5 transition-all">
+                                    <div>
+                                        <p className="text-xs font-bold text-primary-dark dark:text-white capitalize max-w-[200px] truncate">{r.provider || 'Sin Proveedor'}</p>
+                                        <p className="text-[9px] font-bold text-neutral-400 mt-1">{r.concept} • {r.date}</p>
+                                    </div>
+                                    <p className="text-sm font-black text-red-500">${Number(r.expense).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+                                </div>
+                            ))}
+                            {records.filter(r => {
+                                const rMonth = r.date.includes('/') ? r.date.split('/').reverse().join('-').substring(0, 7) : r.date.substring(0, 7);
+                                const isInternal = (r.concept || '').toUpperCase().trim() === 'SALDO INICIAL' || (r.concept || '').toUpperCase().trim().includes('TRASPASO') || (r.expense_type || '').toUpperCase().trim() === 'TRASPASO';
+                                return (selectedMonth === 'all' || rMonth === selectedMonth) && !isInternal && (r.expense_type || 'Otros') === selectedCategoryModal && Number(r.expense) > 0;
+                            }).length === 0 && (
+                                <p className="text-xs text-neutral-500 text-center py-8 font-bold">Sin registros de gasto en esta categoría.</p>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}
