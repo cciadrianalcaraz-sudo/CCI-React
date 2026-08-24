@@ -3,7 +3,7 @@ import { Check } from "lucide-react";
 const packages = [
     {
         name: "Plan Básico",
-        price: "$1,200",
+        price: "$800",
         period: "MXN / mes",
         description: "Ideal para personas físicas o en el régimen RESICO que buscan cumplimiento sin complicaciones.",
         features: [
@@ -20,7 +20,7 @@ const packages = [
     },
     {
         name: "Plan Estratégico",
-        price: "$2,900",
+        price: "$1,500",
         period: "MXN / mes",
         description: "Para negocios en crecimiento que necesitan una visión clara de sus finanzas y estrategia fiscal.",
         features: [
@@ -37,7 +37,7 @@ const packages = [
     },
     {
         name: "Plan Premium",
-        price: "$4,500",
+        price: "$3,000",
         period: "MXN / mes",
         description: "Servicio integral de consultoría para empresas que requieren acompañamiento constante y alta especialización.",
         features: [
