@@ -459,6 +459,7 @@ function PortalView({ user, onLogout }: { user: any, onLogout: () => void }) {
                                     uniqueMonths={availableMonths}
                                     paymentMethods={paymentMethods}
                                     budgets={budgets}
+                                    onMonthChange={setSelectedDashboardMonth}
                                 />
                             </div>
                         ) : activeTab === 'calendar' ? (

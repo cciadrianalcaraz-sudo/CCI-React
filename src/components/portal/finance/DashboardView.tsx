@@ -3,7 +3,7 @@ import {
     Target, 
     ArrowUpRight, Wallet, PieChart, 
     Activity, AlertTriangle, TrendingUp, TrendingDown,
-    ChevronLeft, ChevronRight, Plus
+    ChevronLeft, ChevronRight, Plus, ChevronDown
 } from 'lucide-react';
 import { 
     AreaChart, Area, XAxis, YAxis, CartesianGrid, 
@@ -22,12 +22,13 @@ interface DashboardViewProps {
     uniqueMonths: {label: string, value: string}[];
     paymentMethods: PaymentMethod[];
     budgets: any[];
+    onMonthChange?: (month: string) => void;
 }
 
 
 const DashboardView: React.FC<DashboardViewProps> = ({ 
     records, goals, credits, selectedMonth, 
-    summaryData, paymentMethods, budgets
+    summaryData, paymentMethods, budgets, uniqueMonths, onMonthChange
 }) => {
 
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -370,6 +371,34 @@ const DashboardView: React.FC<DashboardViewProps> = ({
     return (
         <div className="p-8 space-y-8 animate-fade-in text-[var(--text-primary)]">
             
+            {/* Selector de Mes Dinámico */}
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-[var(--bg-card)] dark:bg-white/5 p-4 md:px-6 rounded-3xl border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md relative overflow-hidden group hover:shadow-lg hover:border-accent/20 transition-all duration-300">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 rounded-full blur-[40px] group-hover:bg-accent/10 transition-all duration-500"></div>
+                <div className="flex items-center gap-3 relative z-10 w-full md:w-auto">
+                    <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center text-accent group-hover:scale-110 transition-transform">
+                        <Activity size={24} />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-black tracking-tight text-[var(--text-primary)]">Análisis Financiero</h2>
+                        <p className="text-[10px] font-bold opacity-50 uppercase tracking-widest text-[var(--text-primary)]">Periodo Seleccionado</p>
+                    </div>
+                </div>
+                
+                <div className="relative w-full md:w-auto z-10 group/select">
+                    <select 
+                        value={selectedMonth}
+                        onChange={(e) => onMonthChange && onMonthChange(e.target.value)}
+                        className="w-full md:w-64 appearance-none bg-white dark:bg-[#161c26] border border-neutral-200 dark:border-white/20 text-primary-dark dark:text-white font-bold py-3.5 pl-6 pr-12 rounded-2xl outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all cursor-pointer shadow-sm group-hover/select:shadow-md group-hover/select:border-accent/50"
+                    >
+                        <option value="all">Histórico Completo</option>
+                        {uniqueMonths.map(m => (
+                            <option key={m.value} value={m.value}>{m.label}</option>
+                        ))}
+                    </select>
+                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 group-hover/select:text-accent transition-colors pointer-events-none" size={18} />
+                </div>
+            </div>
+
             {/* 0. Radar de Alertas Vigilante */}
             {alerts.length > 0 && (
                 <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 animate-slide-down">
