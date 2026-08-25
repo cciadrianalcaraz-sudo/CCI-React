@@ -413,9 +413,9 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             
             {/* Aurora Background (Dynamic Colors based on health) */}
             <div className="aurora-bg">
-                <div className={`aurora-blob w-[60vw] h-[60vw] -top-[20%] -left-[10%] ${stats.balance >= 0 ? 'bg-emerald-500/20' : 'bg-amber-500/20'}`}></div>
-                <div className={`aurora-blob w-[50vw] h-[50vw] top-[40%] -right-[10%] ${stats.balance >= 0 ? 'bg-teal-500/10' : 'bg-red-500/10'}`}></div>
-                <div className={`aurora-blob w-[70vw] h-[70vw] -bottom-[30%] left-[20%] ${stats.balance >= 0 ? 'bg-green-500/10' : 'bg-orange-500/10'} animation-delay-2000`}></div>
+                <div className={`aurora-blob w-[60vw] h-[60vw] -top-[20%] -left-[10%] ${stats.balance >= 0 ? 'bg-emerald-500' : 'bg-amber-500'}`}></div>
+                <div className={`aurora-blob w-[50vw] h-[50vw] top-[40%] -right-[10%] ${stats.balance >= 0 ? 'bg-teal-500' : 'bg-red-500'}`}></div>
+                <div className={`aurora-blob w-[70vw] h-[70vw] -bottom-[30%] left-[20%] ${stats.balance >= 0 ? 'bg-cyan-500' : 'bg-orange-500'} animation-delay-2000`}></div>
             </div>
 
             {/* Selector de Mes Dinámico */}
@@ -516,14 +516,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                 
                 {/* --- ROW 1: KPI Cards (4 items x 3 cols = 12 cols) --- */}
                    {/* Card 1: Semáforo de Salud Financiera */}
-                <div className={`lg:col-span-3 rounded-[2.5rem] p-7 border shadow-sm backdrop-blur-xl relative group overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 hover:border-opacity-50 flex flex-col justify-between ${
-                    healthAndBudget.healthStatus === 'danger' 
-                        ? 'bg-gradient-to-br from-red-500/10 to-transparent border-red-500/20 hover:shadow-red-500/20' 
-                        : healthAndBudget.healthStatus === 'warning'
-                        ? 'bg-gradient-to-br from-amber-500/10 to-transparent border-amber-500/20 hover:shadow-amber-500/20'
-                        : 'bg-gradient-to-br from-emerald-500/10 to-transparent border-emerald-500/20 hover:shadow-emerald-500/20'
-                }`}>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/0 to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div className={`lg:col-span-3 bg-[var(--bg-card)] dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] p-7 border border-[var(--border-color)] dark:border-white/5 shadow-sm relative group overflow-hidden flex flex-col justify-between hover:shadow-lg hover:-translate-y-1 transition-all duration-500 hover:border-black/5 dark:hover:border-white/10`}>
                     <div className="relative z-10">
                         <div className="flex justify-between items-start mb-6">
                             <span className="text-[10px] font-black uppercase tracking-[0.15em] opacity-40 text-[var(--text-primary)]">Salud Financiera</span>
@@ -550,34 +543,32 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
 
                 {/* Card 2: Capacidad de Ahorro */}
-                <div className="lg:col-span-3 bg-gradient-to-br from-[#0f172a] to-[#1e293b] dark:from-white/[0.05] dark:to-white/[0.01] rounded-[2.5rem] p-7 text-white shadow-2xl relative overflow-hidden group flex flex-col justify-between hover:shadow-[0_20px_40px_rgba(59,130,246,0.15)] hover:-translate-y-2 transition-all duration-500 border border-white/10 hover:border-blue-500/30">
-                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.02] mix-blend-overlay"></div>
+                <div className="lg:col-span-3 bg-[var(--bg-card)] dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] p-7 border border-[var(--border-color)] dark:border-white/5 shadow-sm relative group overflow-hidden flex flex-col justify-between hover:shadow-lg hover:-translate-y-1 transition-all duration-500 hover:border-black/5 dark:hover:border-white/10">
                     <div className="relative z-10">
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 mb-1">Capacidad de Ahorro</p>
-                        <div className="flex items-baseline gap-2">
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 mb-1 text-[var(--text-primary)]">Capacidad de Ahorro</p>
+                        <div className="flex items-baseline gap-2 text-[var(--text-primary)]">
                             <h4 className="text-5xl font-black tracking-tighter shadow-sm"><AnimatedNumber value={stats.savingsRate} />%</h4>
                             <span className="text-xs font-bold opacity-40">de margen</span>
                         </div>
                     </div>
                     <div className="relative z-10 mt-6">
-                        <div className="flex justify-between text-[8px] font-black uppercase tracking-widest mb-2 opacity-40">
+                        <div className="flex justify-between text-[8px] font-black uppercase tracking-widest mb-2 opacity-40 text-[var(--text-primary)]">
                             <span>Eficiencia</span>
                             <span>{stats.savingsRate > 20 ? 'Excelente' : 'Mejorable'}</span>
                         </div>
-                        <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden backdrop-blur-sm">
+                        <div className="h-1.5 w-full bg-neutral-100 dark:bg-white/10 rounded-full overflow-hidden">
                             <div 
-                                className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(59,130,246,0.5)]" 
+                                className="h-full bg-[var(--text-primary)] rounded-full transition-all duration-1000" 
                                 style={{ width: `${Math.min(100, stats.savingsRate)}%` }}
                             ></div>
                         </div>
                     </div>
-                    {/* Abstract background element */}
-                    <div className="absolute -top-12 -right-12 w-40 h-40 bg-blue-600/20 rounded-full blur-[60px] group-hover:bg-blue-600/30 transition-colors duration-700"></div>
+                    <div className="absolute -top-12 -right-12 w-40 h-40 bg-current opacity-[0.02] rounded-full blur-[60px] group-hover:opacity-[0.04] transition-opacity duration-700 text-[var(--text-primary)]"></div>
                 </div>
 
                 {/* Card 3: Comparativa Mensual */}
-                <div className="lg:col-span-3 bg-[var(--bg-card)] dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] p-6 border border-[var(--border-color)] dark:border-white/10 shadow-sm flex flex-col justify-between group relative overflow-hidden hover:shadow-2xl hover:shadow-sky-500/5 hover:-translate-y-2 transition-all duration-500 hover:border-sky-500/20">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/10 rounded-full blur-[40px] group-hover:bg-sky-500/20 group-hover:scale-150 transition-all duration-700"></div>
+                <div className="lg:col-span-3 bg-[var(--bg-card)] dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] p-6 border border-[var(--border-color)] dark:border-white/5 shadow-sm relative group overflow-hidden flex flex-col justify-between hover:shadow-lg hover:-translate-y-1 transition-all duration-500 hover:border-black/5 dark:hover:border-white/10">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-current opacity-[0.02] rounded-full blur-[40px] group-hover:opacity-[0.04] transition-opacity duration-700 text-[var(--text-primary)]"></div>
                     
                     <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 flex items-center gap-2 mb-4 relative z-10">
                         <Activity size={14} className="text-sky-500" /> Comparativa Mes
@@ -623,10 +614,10 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
 
                 {/* Card 4: Mayor Gasto */}
-                <div className="lg:col-span-3 bg-[var(--bg-card)] dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] p-6 border border-[var(--border-color)] dark:border-white/10 shadow-sm relative group overflow-hidden flex flex-col hover:shadow-2xl hover:shadow-red-500/5 hover:-translate-y-2 transition-all duration-500 hover:border-red-500/20">
-                    <div className="absolute bottom-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-[50px] group-hover:bg-red-500/20 group-hover:scale-150 transition-all duration-700"></div>
+                <div className="lg:col-span-3 bg-[var(--bg-card)] dark:bg-white/5 backdrop-blur-xl rounded-[2.5rem] p-6 border border-[var(--border-color)] dark:border-white/5 shadow-sm relative group overflow-hidden flex flex-col hover:shadow-lg hover:-translate-y-1 transition-all duration-500 hover:border-black/5 dark:hover:border-white/10">
+                    <div className="absolute bottom-0 right-0 w-32 h-32 bg-current opacity-[0.02] rounded-full blur-[50px] group-hover:opacity-[0.04] transition-opacity duration-700 text-[var(--text-primary)]"></div>
                     <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 flex items-center gap-2 mb-2">
-                        <AlertTriangle size={14} className="text-red-500" /> Mayor Gasto
+                        <AlertTriangle size={14} className="text-red-500 opacity-80" /> Mayor Gasto
                     </h4>
                     
                     {topExpenseConcept ? (
@@ -689,18 +680,18 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                             <AreaChart data={chartData} onClick={handleChartClick} style={{ cursor: 'pointer' }}>
                                 <defs>
                                     <linearGradient id="colorIngresos" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.6}/>
+                                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
                                         <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
                                     </linearGradient>
                                     <linearGradient id="colorGastos" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.5}/>
+                                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.2}/>
                                         <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
                                     </linearGradient>
                                     <filter id="neonGlowIngresos" x="-20%" y="-20%" width="140%" height="140%">
-                                        <feDropShadow dx="0" dy="8" stdDeviation="8" floodColor="#10b981" floodOpacity="0.5" />
+                                        <feDropShadow dx="0" dy="8" stdDeviation="6" floodColor="#10b981" floodOpacity="0.2" />
                                     </filter>
                                     <filter id="neonGlowGastos" x="-20%" y="-20%" width="140%" height="140%">
-                                        <feDropShadow dx="0" dy="8" stdDeviation="8" floodColor="#ef4444" floodOpacity="0.5" />
+                                        <feDropShadow dx="0" dy="8" stdDeviation="6" floodColor="#ef4444" floodOpacity="0.2" />
                                     </filter>
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" opacity={0.03} />
@@ -722,20 +713,20 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                                     type="monotone" 
                                     dataKey="ingresos" 
                                     stroke="#10b981" 
-                                    strokeWidth={4} 
+                                    strokeWidth={3} 
                                     fillOpacity={1} 
                                     fill="url(#colorIngresos)" 
-                                    activeDot={{ r: 6, strokeWidth: 0, fill: '#10b981', filter: 'url(#neonGlowIngresos)' }} 
+                                    activeDot={{ r: 5, strokeWidth: 0, fill: '#10b981', filter: 'url(#neonGlowIngresos)' }} 
                                     style={{ filter: 'url(#neonGlowIngresos)' }}
                                 />
                                 <Area 
                                     type="monotone" 
                                     dataKey="gastos" 
                                     stroke="#ef4444" 
-                                    strokeWidth={4} 
+                                    strokeWidth={3} 
                                     fillOpacity={1} 
                                     fill="url(#colorGastos)" 
-                                    activeDot={{ r: 6, strokeWidth: 0, fill: '#ef4444', filter: 'url(#neonGlowGastos)' }} 
+                                    activeDot={{ r: 5, strokeWidth: 0, fill: '#ef4444', filter: 'url(#neonGlowGastos)' }} 
                                     style={{ filter: 'url(#neonGlowGastos)' }}
                                 />
                             </AreaChart>
