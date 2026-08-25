@@ -26,6 +26,34 @@ interface DashboardViewProps {
 }
 
 
+const AnimatedNumber = ({ value, prefix = '' }: { value: number, prefix?: string }) => {
+    const [displayValue, setDisplayValue] = React.useState(0);
+    React.useEffect(() => {
+        let startTimestamp: number | null = null;
+        let animationFrame: number;
+        const duration = 1500;
+        const startValue = displayValue;
+        
+        const step = (timestamp: number) => {
+            if (!startTimestamp) startTimestamp = timestamp;
+            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+            const easeProgress = 1 - Math.pow(1 - progress, 4); 
+            
+            setDisplayValue(startValue + (value - startValue) * easeProgress);
+            
+            if (progress < 1) {
+                animationFrame = window.requestAnimationFrame(step);
+            } else {
+                setDisplayValue(value);
+            }
+        };
+        animationFrame = window.requestAnimationFrame(step);
+        return () => window.cancelAnimationFrame(animationFrame);
+    }, [value]);
+    return <span className="font-numbers">{prefix}{displayValue.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>;
+};
+
+
 const DashboardView: React.FC<DashboardViewProps> = ({ 
     records, goals, credits, selectedMonth, 
     summaryData, paymentMethods, budgets, uniqueMonths, onMonthChange
@@ -374,9 +402,22 @@ const DashboardView: React.FC<DashboardViewProps> = ({
         }
     };
 
+    const isProfitable = stats.balance >= 0;
+
     return (
-        <div className="p-8 space-y-8 animate-fade-in text-[var(--text-primary)]">
+        <div className="p-8 space-y-8 animate-fade-in text-[var(--text-primary)] relative overflow-hidden premium-glass"
+             style={{
+                 '--accent-color': stats.income === 0 && stats.expense === 0 ? '#b28a45' : (isProfitable ? '#10b981' : '#f59e0b')
+             } as React.CSSProperties}
+        >
             
+            {/* Aurora Background (Dynamic Colors based on health) */}
+            <div className="aurora-bg">
+                <div className={`aurora-blob w-[60vw] h-[60vw] -top-[20%] -left-[10%] ${stats.balance >= 0 ? 'bg-emerald-500/20' : 'bg-amber-500/20'}`}></div>
+                <div className={`aurora-blob w-[50vw] h-[50vw] top-[40%] -right-[10%] ${stats.balance >= 0 ? 'bg-teal-500/10' : 'bg-red-500/10'}`}></div>
+                <div className={`aurora-blob w-[70vw] h-[70vw] -bottom-[30%] left-[20%] ${stats.balance >= 0 ? 'bg-green-500/10' : 'bg-orange-500/10'} animation-delay-2000`}></div>
+            </div>
+
             {/* Selector de Mes Dinámico */}
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-[var(--bg-card)] dark:bg-white/5 p-4 md:px-6 rounded-3xl border border-[var(--border-color)] dark:border-white/10 shadow-sm backdrop-blur-md relative overflow-hidden group hover:shadow-lg hover:border-accent/20 transition-all duration-300">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 rounded-full blur-[40px] group-hover:bg-accent/10 transition-all duration-500"></div>
@@ -514,7 +555,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                     <div className="relative z-10">
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 mb-1">Capacidad de Ahorro</p>
                         <div className="flex items-baseline gap-2">
-                            <h4 className="text-5xl font-black tracking-tighter">{stats.savingsRate.toFixed(0)}%</h4>
+                            <h4 className="text-5xl font-black tracking-tighter shadow-sm"><AnimatedNumber value={stats.savingsRate} />%</h4>
                             <span className="text-xs font-bold opacity-40">de margen</span>
                         </div>
                     </div>
@@ -546,8 +587,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                         {/* Gastos Delta */}
                         <div>
                             <div className="flex justify-between items-end mb-1">
-                                <p className="text-xl font-heading font-black text-[var(--text-primary)]">
-                                    ${stats.expense.toLocaleString('en-US', { minimumFractionDigits: 0 })}
+                                <p className="text-xl font-heading font-black text-[var(--text-primary)] drop-shadow-sm">
+                                    <AnimatedNumber value={stats.expense} prefix="$" />
                                 </p>
                                 <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Gastos</span>
                             </div>
@@ -565,8 +606,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                         {/* Ingresos Delta */}
                         <div>
                             <div className="flex justify-between items-end mb-1">
-                                <p className="text-xl font-heading font-black text-[var(--text-primary)]">
-                                    ${stats.income.toLocaleString('en-US', { minimumFractionDigits: 0 })}
+                                <p className="text-xl font-heading font-black text-[var(--text-primary)] drop-shadow-sm">
+                                    <AnimatedNumber value={stats.income} prefix="$" />
                                 </p>
                                 <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Ingresos</span>
                             </div>
@@ -595,7 +636,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                                     {topExpenseConcept.toLowerCase()}
                                 </p>
                                 <p className="text-sm font-bold text-red-500">
-                                    ${topExpenseAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                    <AnimatedNumber value={topExpenseAmount} prefix="$" />
                                 </p>
                             </div>
                             
@@ -648,13 +689,19 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                             <AreaChart data={chartData} onClick={handleChartClick} style={{ cursor: 'pointer' }}>
                                 <defs>
                                     <linearGradient id="colorIngresos" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.2}/>
-                                        <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
+                                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.6}/>
+                                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
                                     </linearGradient>
                                     <linearGradient id="colorGastos" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#fb7185" stopOpacity={0.1}/>
-                                        <stop offset="95%" stopColor="#fb7185" stopOpacity={0}/>
+                                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.5}/>
+                                        <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
                                     </linearGradient>
+                                    <filter id="neonGlowIngresos" x="-20%" y="-20%" width="140%" height="140%">
+                                        <feDropShadow dx="0" dy="8" stdDeviation="8" floodColor="#10b981" floodOpacity="0.5" />
+                                    </filter>
+                                    <filter id="neonGlowGastos" x="-20%" y="-20%" width="140%" height="140%">
+                                        <feDropShadow dx="0" dy="8" stdDeviation="8" floodColor="#ef4444" floodOpacity="0.5" />
+                                    </filter>
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" opacity={0.03} />
                                 <XAxis 
@@ -674,20 +721,22 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                                 <Area 
                                     type="monotone" 
                                     dataKey="ingresos" 
-                                    stroke="#0ea5e9" 
+                                    stroke="#10b981" 
                                     strokeWidth={4} 
                                     fillOpacity={1} 
                                     fill="url(#colorIngresos)" 
-                                    activeDot={{ r: 6, strokeWidth: 0, fill: '#0ea5e9' }} 
+                                    activeDot={{ r: 6, strokeWidth: 0, fill: '#10b981', filter: 'url(#neonGlowIngresos)' }} 
+                                    style={{ filter: 'url(#neonGlowIngresos)' }}
                                 />
                                 <Area 
                                     type="monotone" 
                                     dataKey="gastos" 
-                                    stroke="#fb7185" 
+                                    stroke="#ef4444" 
                                     strokeWidth={4} 
                                     fillOpacity={1} 
                                     fill="url(#colorGastos)" 
-                                    activeDot={{ r: 6, strokeWidth: 0, fill: '#fb7185' }} 
+                                    activeDot={{ r: 6, strokeWidth: 0, fill: '#ef4444', filter: 'url(#neonGlowGastos)' }} 
+                                    style={{ filter: 'url(#neonGlowGastos)' }}
                                 />
                             </AreaChart>
                         </ResponsiveContainer>
