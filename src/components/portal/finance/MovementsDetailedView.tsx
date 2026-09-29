@@ -25,6 +25,37 @@ const MovementsDetailedView: React.FC<MovementsDetailedViewProps> = ({
 }) => {
     const dragScrollRef = useDragScroll();
     const [sortConfig, setSortConfig] = useState<{ key: keyof FinanceRecord | 'index'; direction: 'asc' | 'desc' } | null>({ key: 'date', direction: 'desc' });
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+    const toggleSelection = (id: string) => {
+        const newSelected = new Set(selectedIds);
+        if (newSelected.has(id)) {
+            newSelected.delete(id);
+        } else {
+            newSelected.add(id);
+        }
+        setSelectedIds(newSelected);
+    };
+
+    const toggleSelectAll = () => {
+        if (selectedIds.size === sortedRecords.length) {
+            setSelectedIds(new Set());
+        } else {
+            setSelectedIds(new Set(sortedRecords.map((r) => r.id)));
+        }
+    };
+
+    const selectedSubtotal = useMemo(() => {
+        let income = 0;
+        let expense = 0;
+        records.forEach(r => {
+            if (selectedIds.has(r.id)) {
+                income += (Number(r.income) || 0);
+                expense += (Number(r.expense) || 0);
+            }
+        });
+        return { income, expense, net: income - expense };
+    }, [records, selectedIds]);
 
     const handleSort = (key: keyof FinanceRecord | 'index') => {
         let direction: 'asc' | 'desc' = 'asc';
@@ -110,6 +141,64 @@ const MovementsDetailedView: React.FC<MovementsDetailedViewProps> = ({
                 </button>
             </div>
 
+            {/* Subtotal Selected Bar */}
+            {selectedIds.size > 0 && (
+                <div className="bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 p-5 rounded-[2rem] shadow-sm flex flex-col md:flex-row justify-between items-center gap-4 animate-fade-in mx-2 lg:mx-0 relative overflow-hidden">
+                    {/* Background glow decoration */}
+                    <div className="absolute top-0 right-0 w-64 h-full bg-gradient-to-l from-accent/5 dark:from-amber-500/10 to-transparent pointer-events-none" />
+                    
+                    <div className="flex items-center gap-4 w-full md:w-auto z-10 border-b border-black/5 dark:border-white/5 md:border-none pb-4 md:pb-0">
+                        <div className="min-w-12 h-12 w-12 rounded-2xl bg-accent/10 dark:bg-amber-500/20 border border-accent/20 dark:border-amber-500/30 flex items-center justify-center text-accent dark:text-amber-500 font-black text-xl shadow-inner">
+                            {selectedIds.size}
+                        </div>
+                        <div>
+                            <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5">Movimientos</div>
+                            <div className="text-sm font-black text-primary-dark dark:text-white uppercase tracking-wider">Subtotal Seleccionado</div>
+                        </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-4 md:gap-8 w-full md:w-auto justify-between md:justify-end flex-wrap z-10 flex-1">
+                        <div className="text-right">
+                            <div className="text-[10px] uppercase font-bold text-emerald-600/60 dark:text-emerald-400/60 tracking-widest mb-1">Ingresos</div>
+                            <div className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-sm md:text-base">
+                                +${selectedSubtotal.income.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            </div>
+                        </div>
+                        
+                        <div className="text-right">
+                            <div className="text-[10px] uppercase font-bold text-rose-600/60 dark:text-rose-400/60 tracking-widest mb-1">Gastos</div>
+                            <div className="font-mono font-bold text-rose-600 dark:text-rose-400 text-sm md:text-base">
+                                -${selectedSubtotal.expense.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            </div>
+                        </div>
+                        
+                        <div className="h-10 w-px bg-black/10 dark:bg-white/10 hidden md:block" />
+                        
+                        <div className="text-left md:text-right w-full md:w-auto flex flex-row md:flex-col justify-between items-center md:items-end border-t border-black/5 dark:border-white/5 md:border-none pt-4 md:pt-0 mt-1 md:mt-0">
+                            <div className="flex-1 md:flex-none">
+                                <div className="text-[10px] uppercase font-bold text-neutral-500 tracking-widest mb-1 text-left md:text-right">Balance Neto</div>
+                                <div className={`font-mono font-black text-lg md:text-xl tracking-tight text-left md:text-right ${selectedSubtotal.net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                                    {selectedSubtotal.net >= 0 ? '+' : '-'}${Math.abs(selectedSubtotal.net).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setSelectedIds(new Set())}
+                                className="block md:hidden text-[10px] font-bold text-neutral-500 hover:text-white transition-colors uppercase tracking-widest bg-black/5 dark:bg-white/5 py-2.5 px-4 rounded-xl mt-0"
+                            >
+                                Limpiar
+                            </button>
+                        </div>
+                        
+                        <button
+                            onClick={() => setSelectedIds(new Set())}
+                            className="hidden md:block w-full md:w-auto text-[10px] font-bold text-neutral-500 hover:text-white transition-colors uppercase tracking-widest bg-black/5 hover:bg-neutral-800 dark:bg-white/5 dark:hover:bg-white/20 py-2.5 px-4 rounded-xl"
+                        >
+                            Limpiar
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Content Wrapper */}
             <div className={`${!isMobileVisible ? 'hidden md:block' : 'block animate-fade-in'}`}>
                 <div className="bg-[var(--bg-card)]/50 dark:bg-white/5 backdrop-blur-md rounded-[32px] border border-[var(--border-color)] dark:border-white/10 shadow-sm overflow-hidden">
@@ -117,6 +206,17 @@ const MovementsDetailedView: React.FC<MovementsDetailedViewProps> = ({
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="border-b border-black/5 dark:border-white/5">
+                                    <th className="sticky top-0 z-10 p-5 pl-6 whitespace-nowrap bg-white/90 dark:bg-black/60 backdrop-blur-xl w-10 border-r border-black/5 dark:border-white/5">
+                                        <div className="flex items-center justify-center">
+                                            <input 
+                                                title="Seleccionar todo"
+                                                type="checkbox" 
+                                                className="w-4 h-4 cursor-pointer accent-accent dark:accent-amber-500 transition-all hover:scale-110"
+                                                checked={sortedRecords.length > 0 && selectedIds.size === sortedRecords.length}
+                                                onChange={toggleSelectAll}
+                                            />
+                                        </div>
+                                    </th>
                                     {[
                                         { key: 'index', label: 'ID' },
                                         { key: 'concept', label: 'Concepto' },
@@ -148,8 +248,20 @@ const MovementsDetailedView: React.FC<MovementsDetailedViewProps> = ({
                                     const originalIndex = records.indexOf(record);
                                     const isInitialBalance = record.concept.toUpperCase() === 'SALDO INICIAL';
                                     const isTransfer = (record.concept || '').toUpperCase().includes('TRASPASO') || (record.expense_type || '').toUpperCase() === 'TRASPASO';
+                                    const isSelected = selectedIds.has(record.id);
                                     return (
-                                        <tr key={record.id} className={`hover:bg-black/5 dark:hover:bg-white/5 transition-colors group ${isInitialBalance ? 'bg-amber-500/5' : isTransfer ? 'bg-sky-500/5' : ''}`}>
+                                        <tr key={record.id} className={`hover:bg-black/5 dark:hover:bg-white/5 transition-colors group ${isSelected ? 'bg-accent/5 dark:bg-amber-500/10' : isInitialBalance ? 'bg-amber-500/5' : isTransfer ? 'bg-sky-500/5' : ''}`}>
+                                            <td className="p-4 pl-6 whitespace-nowrap border-r border-black/5 dark:border-white/5 bg-transparent">
+                                                <div className="flex items-center justify-center">
+                                                    <input 
+                                                        title="Seleccionar movimiento"
+                                                        type="checkbox" 
+                                                        className="w-4 h-4 cursor-pointer accent-accent dark:accent-amber-500 transition-all hover:scale-110"
+                                                        checked={isSelected}
+                                                        onChange={() => toggleSelection(record.id)}
+                                                    />
+                                                </div>
+                                            </td>
                                             <td className="p-4 px-5 whitespace-nowrap opacity-40 font-mono text-[11px] font-semibold">{originalIndex + 1}</td>
                                             <td className="p-4 px-5 whitespace-nowrap">
                                                 <div className="flex items-center gap-2">
