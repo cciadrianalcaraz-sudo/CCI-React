@@ -36,7 +36,8 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
         goals,
         companyIds,
         refreshRecords: loadRecords,
-        refreshPaymentMethods: loadPaymentMethods
+        refreshPaymentMethods: loadPaymentMethods,
+        refreshGoals
     } = useFinance(user, propsRecords);
 
     const {
@@ -391,7 +392,12 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                         />
                     </div>
                 ) : viewMode === 'savings' ? (
-                    <SavingsSimulatorView records={records} />
+                    <SavingsSimulatorView 
+                        records={records} 
+                        goals={goals} 
+                        userId={user.id} 
+                        onRefreshGoals={refreshGoals} 
+                    />
                 ) : null}
             </div>
 
