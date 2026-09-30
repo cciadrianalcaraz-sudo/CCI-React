@@ -11,6 +11,8 @@ export const useFinanceCalculations = (
     
     const [summaryData, setSummaryData] = useState<{concept: string, income: number, expense: number}[]>([]);
     const [uniqueConcepts, setUniqueConcepts] = useState<string[]>([]);
+    const [filterConcept, setFilterConcept] = useState<string>('');
+    const [filterExpenseType, setFilterExpenseType] = useState<string>('');
     const [paymentBalancesData, setPaymentBalancesData] = useState<{method: string, initialBalance: number, income: number, expense: number, finalBalance: number}[]>([]);
     
     const [budgetData, setBudgetData] = useState<any[]>([]);
@@ -385,6 +387,9 @@ export const useFinanceCalculations = (
         // 4. Apply search term filter and attach the calculated balance
         return filteredRecords
             .filter(record => {
+                if (filterConcept && filterConcept !== 'all' && (record.concept || '').toUpperCase().trim() !== filterConcept.toUpperCase().trim()) return false;
+                if (filterExpenseType && filterExpenseType !== 'all' && (record.expense_type || '').toUpperCase().trim() !== filterExpenseType.toUpperCase().trim()) return false;
+                
                 if (!searchTerm) return true;
                 const search = searchTerm.toLowerCase();
                 return (
@@ -400,7 +405,7 @@ export const useFinanceCalculations = (
                     balance: balanceMap.get(record.id) ?? 0
                 };
             });
-    }, [records, selectedMonth]);
+    }, [records, selectedMonth, filterConcept, filterExpenseType]);
 
     return {
         selectedMonth,
@@ -413,6 +418,10 @@ export const useFinanceCalculations = (
         manualBudgets,
         planningAnalysis,
         getDisplayRecords,
-        loadManualBudgets
+        loadManualBudgets,
+        filterConcept,
+        setFilterConcept,
+        filterExpenseType,
+        setFilterExpenseType
     };
 };

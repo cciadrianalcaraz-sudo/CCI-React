@@ -50,7 +50,11 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
         budgetData,
         planningAnalysis,
         getDisplayRecords,
-        loadManualBudgets
+        loadManualBudgets,
+        filterConcept,
+        setFilterConcept,
+        filterExpenseType,
+        setFilterExpenseType
     } = useFinanceCalculations(records, companyIds);
 
     const [isFormOpen, setIsFormOpen] = useState(false);
@@ -268,6 +272,11 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                 uniqueMonths={uniqueMonths}
                 searchTerm={searchTerm}
                 setSearchTerm={setSearchTerm}
+                filterConcept={filterConcept}
+                setFilterConcept={setFilterConcept}
+                filterExpenseType={filterExpenseType}
+                setFilterExpenseType={setFilterExpenseType}
+                uniqueConcepts={uniqueConcepts}
                 isUploading={isUploading}
                 onImportExcel={() => fileInputRef.current?.click()}
                 onExportExcel={() => exportToExcel(displayRecords, selectedMonth)}
@@ -395,8 +404,10 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                     <SavingsSimulatorView 
                         records={records} 
                         goals={goals} 
+                        paymentMethods={savedPaymentMethods}
                         userId={user.id} 
                         onRefreshGoals={refreshGoals} 
+                        onRefreshRecords={loadRecords}
                     />
                 ) : null}
             </div>

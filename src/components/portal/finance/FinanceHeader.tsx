@@ -12,6 +12,11 @@ interface FinanceHeaderProps {
     uniqueMonths: {label: string, value: string, hasRecords?: boolean}[];
     searchTerm: string;
     setSearchTerm: (term: string) => void;
+    filterConcept?: string;
+    setFilterConcept?: (val: string) => void;
+    filterExpenseType?: string;
+    setFilterExpenseType?: (val: string) => void;
+    uniqueConcepts?: string[];
     isUploading: boolean;
     onImportExcel: () => void;
     onExportExcel: () => void;
@@ -31,6 +36,9 @@ const FinanceHeader: React.FC<FinanceHeaderProps> = ({
     viewMode, setViewMode,
     selectedMonth, setSelectedMonth, uniqueMonths,
     searchTerm, setSearchTerm,
+    filterConcept, setFilterConcept,
+    filterExpenseType, setFilterExpenseType,
+    uniqueConcepts,
     isUploading, onImportExcel, onExportExcel, onExportPDF,
     onShowSnapshot,
     onToggleForm, isFormOpen,
@@ -137,21 +145,47 @@ const FinanceHeader: React.FC<FinanceHeaderProps> = ({
                     
                     <div className="flex flex-col sm:flex-row items-center gap-4 w-full xl:w-auto px-4">
                         {viewMode === 'detailed' && (
-                            <div className="relative w-full sm:w-72 group">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-sky-500 transition-colors" size={16} strokeWidth={3} />
-                                <input 
-                                    type="text"
-                                    placeholder="FILTRAR REGISTROS..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full bg-slate-100 dark:bg-white/5 pl-11 pr-10 py-3 rounded-2xl text-[10px] font-black tracking-widest outline-none border border-transparent focus:border-sky-500/50 transition-all placeholder:text-slate-300"
-                                />
-                                {searchTerm && (
-                                    <button onClick={() => setSearchTerm('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-rose-500 transition-colors">
-                                        <X size={14} strokeWidth={3} />
-                                    </button>
-                                )}
-                            </div>
+                            <>
+                                <select
+                                    value={filterExpenseType || ''}
+                                    onChange={(e) => setFilterExpenseType?.(e.target.value)}
+                                    className="w-full sm:w-auto bg-slate-100 dark:bg-white/5 px-4 py-3 rounded-2xl text-[9px] font-black tracking-widest outline-none border border-transparent focus:border-sky-500/50 transition-all uppercase appearance-none cursor-pointer text-slate-500 dark:text-slate-400"
+                                >
+                                    <option value="" className="text-slate-900 bg-white">Todo el Gasto</option>
+                                    <option value="Variable" className="text-slate-900 bg-white">Variable</option>
+                                    <option value="Fijo" className="text-slate-900 bg-white">Fijo</option>
+                                    <option value="Ingreso" className="text-slate-900 bg-white">Ingreso</option>
+                                    <option value="Ahorro" className="text-slate-900 bg-white">Ahorro</option>
+                                    <option value="Deuda" className="text-slate-900 bg-white">Deuda</option>
+                                </select>
+
+                                <select
+                                    value={filterConcept || ''}
+                                    onChange={(e) => setFilterConcept?.(e.target.value)}
+                                    className="w-full sm:w-auto bg-slate-100 dark:bg-white/5 px-4 py-3 rounded-2xl text-[9px] font-black tracking-widest outline-none border border-transparent focus:border-sky-500/50 transition-all uppercase appearance-none cursor-pointer text-slate-500 dark:text-slate-400 max-w-[140px] truncate"
+                                >
+                                    <option value="" className="text-slate-900 bg-white">Todo Concepto</option>
+                                    {uniqueConcepts?.map(c => (
+                                        <option key={c} value={c} className="text-slate-900 bg-white">{c}</option>
+                                    ))}
+                                </select>
+
+                                <div className="relative w-full sm:w-64 group">
+                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-sky-500 transition-colors" size={16} strokeWidth={3} />
+                                    <input 
+                                        type="text"
+                                        placeholder="BUSCAR..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="w-full bg-slate-100 dark:bg-white/5 pl-11 pr-10 py-3 rounded-2xl text-[10px] font-black tracking-widest outline-none border border-transparent focus:border-sky-500/50 transition-all placeholder:text-slate-300"
+                                    />
+                                    {searchTerm && (
+                                        <button onClick={() => setSearchTerm('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-rose-500 transition-colors">
+                                            <X size={14} strokeWidth={3} />
+                                        </button>
+                                    )}
+                                </div>
+                            </>
                         )}
                         
                         <div className="relative w-full sm:w-auto">
