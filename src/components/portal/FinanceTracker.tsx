@@ -17,6 +17,7 @@ import BudgetTracker from './finance/BudgetTracker';
 import CreditsManager from './finance/CreditsManager';
 import BalancesManager from './finance/BalancesManager';
 import SnapshotModal from './finance/SnapshotModal';
+import SavingsSimulatorView from './finance/SavingsSimulatorView';
 
 import type { FinanceRecord } from '../../types/finance';
 
@@ -53,9 +54,9 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
 
     const [isFormOpen, setIsFormOpen] = useState(false);
     
-    const [viewMode, setViewMode] = useState<'detailed' | 'balances' | 'budget' | 'credits'>(() => {
+    const [viewMode, setViewMode] = useState<'detailed' | 'balances' | 'budget' | 'credits' | 'savings'>(() => {
         const saved = localStorage.getItem(`finance_view_mode_${user.id}`);
-        const validModes = ['detailed', 'balances', 'budget', 'credits'];
+        const validModes = ['detailed', 'balances', 'budget', 'credits', 'savings'];
         return (saved && validModes.includes(saved)) ? (saved as any) : 'detailed';
     });
 
@@ -389,6 +390,8 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                             }}
                         />
                     </div>
+                ) : viewMode === 'savings' ? (
+                    <SavingsSimulatorView records={records} />
                 ) : null}
             </div>
 

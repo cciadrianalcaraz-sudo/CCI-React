@@ -5,8 +5,8 @@ import {
 } from 'lucide-react';
 
 interface FinanceHeaderProps {
-    viewMode: 'detailed' | 'balances' | 'budget' | 'credits';
-    setViewMode: (mode: 'detailed' | 'balances' | 'budget' | 'credits') => void;
+    viewMode: 'detailed' | 'balances' | 'budget' | 'credits' | 'savings';
+    setViewMode: (mode: 'detailed' | 'balances' | 'budget' | 'credits' | 'savings') => void;
     selectedMonth: string;
     setSelectedMonth: (month: string) => void;
     uniqueMonths: {label: string, value: string, hasRecords?: boolean}[];
@@ -117,7 +117,7 @@ const FinanceHeader: React.FC<FinanceHeaderProps> = ({
             <div className="px-8 md:px-10 pb-6 border-b border-slate-200 dark:border-white/5">
                 <div className="flex flex-col xl:flex-row justify-between items-center gap-6 bg-white dark:bg-white/[0.03] p-2 rounded-[2.5rem] border border-slate-200 dark:border-white/10 shadow-sm backdrop-blur-xl">
                     <nav className="flex bg-slate-100 dark:bg-white/5 p-1.5 rounded-full w-full xl:w-auto overflow-x-auto no-scrollbar">
-                        {(['detailed', 'balances', 'budget', 'credits'] as const).map((mode) => (
+                        {(['detailed', 'balances', 'budget', 'credits', 'savings'] as const).map((mode) => (
                             <button 
                                 key={mode}
                                 onClick={() => setViewMode(mode)}
@@ -129,7 +129,8 @@ const FinanceHeader: React.FC<FinanceHeaderProps> = ({
                             >
                                 {mode === 'detailed' ? 'Movimientos' : 
                                  mode === 'balances' ? 'Cuentas' : 
-                                 mode === 'budget' ? 'Presupuesto' : 'Créditos'}
+                                 mode === 'budget' ? 'Presupuesto' :
+                                 mode === 'credits' ? 'Créditos' : 'Ahorro'}
                             </button>
                         ))}
                     </nav>
