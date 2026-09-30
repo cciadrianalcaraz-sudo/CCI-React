@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Search } from 'lucide-react';
+import { Search, AlertTriangle, X, RefreshCw } from 'lucide-react';
 
 import { toast } from '../../lib/toast';
 import { Toaster } from '../ui/Toaster';
 import { useConfirm } from '../../hooks/useConfirm';
 
-import { useFinance } from '../../hooks/useFinance';
+import { useFinance, getCompanyUserIds } from '../../hooks/useFinance';
 import { useFinanceCalculations } from '../../hooks/useFinanceCalculations';
 import { importFromExcel, exportToExcel, exportToPDF } from '../../utils/financeImportExport';
 
@@ -84,6 +84,29 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
     const [searchTerm, setSearchTerm] = useState('');
     const [showSnapshot, setShowSnapshot] = useState(false);
     const [isProcessingOCR, setIsProcessingOCR] = useState(false);
+    const [diagInfo, setDiagInfo] = useState<{ ids: string[], rawCount: number, error: string | null, dates: string[] } | null>(null);
+    const [showDiag, setShowDiag] = useState(false);
+
+    const runDiagnostic = useCallback(async () => {
+        try {
+            const ids = await getCompanyUserIds(user.id, (user as any).email);
+            const { data, error } = await supabase
+                .from('finance_records')
+                .select('id, date, concept, user_id')
+                .in('user_id', ids)
+                .order('date', { ascending: true });
+            setDiagInfo({
+                ids,
+                rawCount: data?.length ?? 0,
+                error: error ? error.message : null,
+                dates: (data || []).slice(0, 30).map(r => `${r.date} | ${(r.concept || '').substring(0, 30)}`)
+            });
+            setShowDiag(true);
+        } catch (e: any) {
+            setDiagInfo({ ids: [], rawCount: 0, error: e.message, dates: [] });
+            setShowDiag(true);
+        }
+    }, [user]);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { confirm, ConfirmModal } = useConfirm();
@@ -489,6 +512,87 @@ export default function FinanceTracker({ user, records: propsRecords, onRefresh 
                 className="hidden"
             />
             
+            {/* ─── DIAGNOSTIC BUTTON ─── */}
+            <div className="flex justify-center pb-6">
+                <button
+                    onClick={runDiagnostic}
+                    className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-neutral-400 hover:text-amber-500 transition-colors border border-neutral-200 dark:border-white/10 rounded-xl px-4 py-2 hover:border-amber-500/30"
+                >
+                    <RefreshCw size={12} />
+                    Diagnóstico de datos
+                </button>
+            </div>
+
+            {/* ─── DIAGNOSTIC MODAL ─── */}
+            {showDiag && diagInfo && (
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowDiag(false)} />
+                    <div className="relative bg-white dark:bg-slate-900 rounded-[2rem] border border-black/10 dark:border-white/10 shadow-2xl p-8 max-w-xl w-full z-10 max-h-[80vh] overflow-y-auto">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500">
+                                    <AlertTriangle size={18} />
+                                </div>
+                                <div>
+                                    <h3 className="font-black text-sm uppercase tracking-wider text-primary-dark dark:text-white">Diagnóstico de Datos</h3>
+                                    <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest">Consulta directa a Supabase</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setShowDiag(false)} className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                                <X size={16} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4 text-sm">
+                            {/* User ID */}
+                            <div className="p-4 bg-neutral-50 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">
+                                <p className="text-[9px] font-black uppercase tracking-widest text-neutral-400 mb-1">Tu User ID (sesión activa)</p>
+                                <p className="font-mono text-xs break-all text-primary-dark dark:text-white">{user.id}</p>
+                            </div>
+
+                            {/* Company IDs */}
+                            <div className="p-4 bg-neutral-50 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">
+                                <p className="text-[9px] font-black uppercase tracking-widest text-neutral-400 mb-2">IDs de empresa encontrados ({diagInfo.ids.length})</p>
+                                {diagInfo.ids.map((id, i) => (
+                                    <p key={i} className="font-mono text-xs break-all text-primary-dark dark:text-white">{id}</p>
+                                ))}
+                            </div>
+
+                            {/* Error */}
+                            {diagInfo.error && (
+                                <div className="p-4 bg-rose-50 dark:bg-rose-500/10 rounded-xl border border-rose-200 dark:border-rose-500/20">
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-rose-500 mb-1">⚠️ Error de Supabase</p>
+                                    <p className="font-mono text-xs text-rose-700 dark:text-rose-400 break-all">{diagInfo.error}</p>
+                                </div>
+                            )}
+
+                            {/* Record Count */}
+                            <div className={`p-4 rounded-xl border ${diagInfo.rawCount === 0 ? 'bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20' : 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20'}`}>
+                                <p className="text-[9px] font-black uppercase tracking-widest text-neutral-400 mb-1">Total de registros encontrados</p>
+                                <p className={`font-black text-3xl ${diagInfo.rawCount === 0 ? 'text-rose-500' : 'text-emerald-600 dark:text-emerald-400'}`}>{diagInfo.rawCount}</p>
+                                {diagInfo.rawCount === 0 && (
+                                    <p className="text-xs text-rose-600 dark:text-rose-400 mt-1 font-bold">
+                                        ❌ Supabase no devuelve registros para estos IDs. Posible problema de RLS o datos insertados con otro user_id.
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Dates */}
+                            {diagInfo.dates.length > 0 && (
+                                <div className="p-4 bg-neutral-50 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-neutral-400 mb-2">Primeros {diagInfo.dates.length} registros (fecha | concepto)</p>
+                                    <div className="space-y-1 max-h-40 overflow-y-auto custom-scrollbar">
+                                        {diagInfo.dates.map((d, i) => (
+                                            <p key={i} className="font-mono text-[10px] text-primary-dark dark:text-white/80">{i + 1}. {d}</p>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <Toaster />
             {ConfirmModal}
         </div>

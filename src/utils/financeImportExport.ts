@@ -75,10 +75,18 @@ export const importFromExcel = async (
             let dateStr = "";
 
             if (rawDate instanceof Date) {
-                dateStr = rawDate.toISOString().split('T')[0];
+                // Use local date parts to avoid UTC offset shifting the date
+                const y = rawDate.getFullYear();
+                const mo = String(rawDate.getMonth() + 1).padStart(2, '0');
+                const d = String(rawDate.getDate()).padStart(2, '0');
+                dateStr = `${y}-${mo}-${d}`;
             } else if (typeof rawDate === 'number') {
-                const jsDate = new Date((rawDate - 25569) * 86400 * 1000);
-                dateStr = jsDate.toISOString().split('T')[0];
+                // Excel serial date: convert using local time to avoid UTC shift
+                const jsDate = new Date(Math.round((rawDate - 25569) * 86400 * 1000));
+                const y = jsDate.getFullYear();
+                const mo = String(jsDate.getMonth() + 1).padStart(2, '0');
+                const d = String(jsDate.getDate()).padStart(2, '0');
+                dateStr = `${y}-${mo}-${d}`;
             } else if (rawDate) {
                 const sDate = String(rawDate).trim();
                 const parts = sDate.split(/[/.-]/);
