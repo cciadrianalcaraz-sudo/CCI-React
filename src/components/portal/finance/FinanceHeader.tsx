@@ -45,9 +45,10 @@ const FinanceHeader: React.FC<FinanceHeaderProps> = ({
     kpis
 }) => {
     const currentMonthPrefix = new Date().toISOString().substring(0, 7);
-    const displayMonths = viewMode === 'budget' 
-        ? uniqueMonths 
-        : uniqueMonths.filter(m => m.value === 'all' || m.hasRecords || m.value <= currentMonthPrefix);
+    // Mostrar: "Todos", cualquier mes pasado/actual (sin importar hasRecords), y meses futuros solo si tienen registros
+    const displayMonths = viewMode === 'budget'
+        ? uniqueMonths
+        : uniqueMonths.filter(m => m.value === 'all' || m.value <= currentMonthPrefix || m.hasRecords);
 
     return (
         <div className="bg-transparent">
