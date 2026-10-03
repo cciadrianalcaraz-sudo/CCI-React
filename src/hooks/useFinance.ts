@@ -75,16 +75,36 @@ export const useFinance = (user: { id: string; [key: string]: unknown }, propsRe
         try {
             setLoading(true);
             const ids = await getCompanyUserIds(user.id, userEmail);
-            
-            const { data, error } = await supabase
-                .from('finance_records')
-                .select('*')
-                .in('user_id', ids)
-                .order('date', { ascending: true })
-                .order('created_at', { ascending: true });
 
-            if (error) throw error;
-            if (data) setRecords(data as FinanceRecord[]);
+            // Supabase tiene un límite default de 1,000 filas por query.
+            // Paginamos en lotes de 1,000 hasta traer TODOS los registros.
+            const PAGE_SIZE = 1000;
+            let allData: FinanceRecord[] = [];
+            let from = 0;
+            let hasMore = true;
+
+            while (hasMore) {
+                const { data, error } = await supabase
+                    .from('finance_records')
+                    .select('*')
+                    .in('user_id', ids)
+                    .order('date', { ascending: true })
+                    .order('created_at', { ascending: true })
+                    .range(from, from + PAGE_SIZE - 1);
+
+                if (error) throw error;
+
+                const batch = (data as FinanceRecord[]) || [];
+                allData = [...allData, ...batch];
+
+                if (batch.length < PAGE_SIZE) {
+                    hasMore = false;
+                } else {
+                    from += PAGE_SIZE;
+                }
+            }
+
+            setRecords(allData);
         } catch (error) {
             console.error('Error loading finance records:', error);
         } finally {
