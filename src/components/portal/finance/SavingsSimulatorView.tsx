@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import type { FinanceRecord, FinanceGoal, PaymentMethod } from '../../../types/finance';
 import { supabase } from '../../../lib/supabase';
-import { Target, Plus, Vault, Sparkles, TrendingUp, X, List, ArrowDownToLine, Wallet } from 'lucide-react';
+import { Target, Plus, Vault, Sparkles, TrendingUp, X, List, ArrowDownToLine, Wallet, GripVertical, CheckCircle2 } from 'lucide-react';
 import { toast } from '../../../lib/toast';
 
 interface SavingsSimulatorViewProps {
@@ -49,34 +49,126 @@ export default function SavingsSimulatorView({ records, goals, paymentMethods, u
     const [isFundingGoal, setIsFundingGoal] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     
+    // Drag & Drop state
+    const [draggingRecordId, setDraggingRecordId] = useState<string | null>(null);
+    const [dragOverGoalId, setDragOverGoalId] = useState<string | null>(null);
+    const [assignedRecordIds, setAssignedRecordIds] = useState<Set<string>>(new Set());
+    const [droppingGoalId, setDroppingGoalId] = useState<string | null>(null);
+    const dragRecordRef = useRef<FinanceRecord | null>(null);
+
     // Formularios
     const [newGoalData, setNewGoalData] = useState({ name: '', target: '', color: 'emerald' });
     const [fundAmount, setFundAmount] = useState('');
     const [withdrawData, setWithdrawData] = useState({ amount: '', goalId: 'general', destinationMethod: '', notes: '' });
 
-    // Historial real filtrado
+    // Historial real filtrado (excluye ya asignados)
     const savingsRecords = useMemo(() => {
         return records.filter(r => {
+            if (assignedRecordIds.has(r.id)) return false;
             const type = (r.expense_type || '').toUpperCase();
             const concept = (r.concept || '').toUpperCase();
             return (type === 'AHORRO' || concept.includes('AHORRO') || type === 'RETIRO AHORRO' || concept.includes('RETIRO AHORRO'));
         }).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    }, [records]);
+    }, [records, assignedRecordIds]);
 
     // Cálculo puro 
     const totalSaved = useMemo(() => {
-        return savingsRecords.reduce((acc, r) => {
+        return records.filter(r => {
+            const type = (r.expense_type || '').toUpperCase();
+            const concept = (r.concept || '').toUpperCase();
+            return (type === 'AHORRO' || concept.includes('AHORRO') || type === 'RETIRO AHORRO' || concept.includes('RETIRO AHORRO'));
+        }).reduce((acc, r) => {
             const isRetiro = (r.concept || '').toUpperCase().includes('RETIRO') || (r.expense_type || '').toUpperCase().includes('RETIRO');
             const amount = Math.max(Number(r.income) || 0, Number(r.expense) || 0);
             return isRetiro ? acc - amount : acc + amount;
         }, 0);
-    }, [savingsRecords]);
+    }, [records]);
 
     const totalAllocated = useMemo(() => {
         return goals.reduce((acc, g) => acc + (Number(g.current_amount) || 0), 0);
     }, [goals]);
 
     const unallocated = Math.max(0, totalSaved - totalAllocated);
+
+    // === DRAG & DROP HANDLERS ===
+    const handleDragStart = useCallback((e: React.DragEvent, record: FinanceRecord) => {
+        setDraggingRecordId(record.id);
+        dragRecordRef.current = record;
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', record.id);
+        // Custom drag image
+        const el = e.currentTarget as HTMLElement;
+        e.dataTransfer.setDragImage(el, el.offsetWidth / 2, el.offsetHeight / 2);
+    }, []);
+
+    const handleDragEnd = useCallback(() => {
+        setDraggingRecordId(null);
+        setDragOverGoalId(null);
+        dragRecordRef.current = null;
+    }, []);
+
+    const handleGoalDragOver = useCallback((e: React.DragEvent, goalId: string) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        setDragOverGoalId(goalId);
+    }, []);
+
+    const handleGoalDragLeave = useCallback(() => {
+        setDragOverGoalId(null);
+    }, []);
+
+    const handleGoalDrop = useCallback(async (e: React.DragEvent, goal: FinanceGoal) => {
+        e.preventDefault();
+        setDragOverGoalId(null);
+        
+        const record = dragRecordRef.current;
+        if (!record) return;
+
+        const isRetiro = (record.concept || '').toUpperCase().includes('RETIRO') || (record.expense_type || '').toUpperCase().includes('RETIRO');
+        if (isRetiro) {
+            toast.error('No puedes asignar un retiro a una meta.');
+            setDraggingRecordId(null);
+            dragRecordRef.current = null;
+            return;
+        }
+
+        const amount = Math.max(Number(record.income) || 0, Number(record.expense) || 0);
+        if (amount <= 0) {
+            toast.error('Este movimiento no tiene monto válido.');
+            setDraggingRecordId(null);
+            dragRecordRef.current = null;
+            return;
+        }
+
+        // Optimistic UI: marcar como asignado
+        setAssignedRecordIds(prev => new Set([...prev, record.id]));
+        setDroppingGoalId(goal.id);
+        setDraggingRecordId(null);
+        dragRecordRef.current = null;
+
+        try {
+            const newAmount = Number(goal.current_amount) + amount;
+            const { error } = await supabase
+                .from('finance_goals')
+                .update({ current_amount: newAmount })
+                .eq('id', goal.id);
+
+            if (error) throw error;
+
+            toast.success(`+$${amount.toLocaleString()} asignado a "${goal.name}" ✓`);
+            if (onRefreshGoals) await onRefreshGoals();
+        } catch (err: any) {
+            // Revertir en caso de error
+            setAssignedRecordIds(prev => {
+                const next = new Set(prev);
+                next.delete(record.id);
+                return next;
+            });
+            toast.error(`Error al asignar: ${err.message}`);
+        } finally {
+            setTimeout(() => setDroppingGoalId(null), 600);
+        }
+    }, [goals, onRefreshGoals]);
 
     const handleCreateGoal = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -171,6 +263,8 @@ export default function SavingsSimulatorView({ records, goals, paymentMethods, u
         }
     };
 
+    const isDragging = draggingRecordId !== null;
+
     return (
         <div className="p-8 md:p-10 space-y-12 animate-fade-in relative pb-48">
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-500/10 blur-[120px] rounded-full pointer-events-none" />
@@ -209,6 +303,16 @@ export default function SavingsSimulatorView({ records, goals, paymentMethods, u
                 </div>
             </div>
 
+            {/* Drag hint banner */}
+            {savingsRecords.length > 0 && goals.length > 0 && !isCreatingGoal && !isWithdrawing && (
+                <div className="relative z-10 flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl px-6 py-3 animate-fade-in">
+                    <GripVertical size={16} className="text-emerald-500 flex-shrink-0" />
+                    <p className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
+                        <span className="font-black">¡Tip!</span> Arrastra cualquier movimiento consolidador directamente hacia la meta de ahorro para asignarlo automáticamente.
+                    </p>
+                </div>
+            )}
+
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 relative z-10">
                 {/* Saldo Global e Historial (Izquierda) */}
                 <div className="lg:col-span-5 space-y-6">
@@ -235,28 +339,66 @@ export default function SavingsSimulatorView({ records, goals, paymentMethods, u
                         </div>
                     </div>
 
+                    {/* Movimientos Consolidadores - Draggable */}
                     <div className="bg-white/50 dark:bg-white/5 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-[3rem] p-8 shadow-sm">
-                        <h3 className="text-[10px] font-black text-slate-800 dark:text-white uppercase tracking-widest flex items-center gap-2 mb-6">
+                        <h3 className="text-[10px] font-black text-slate-800 dark:text-white uppercase tracking-widest flex items-center gap-2 mb-2">
                             <List size={14} className="text-emerald-500" /> Movimientos Consolidadores
                         </h3>
+                        {goals.length > 0 && savingsRecords.length > 0 && (
+                            <p className="text-[9px] text-slate-400 font-bold mb-4 flex items-center gap-1.5">
+                                <GripVertical size={11} className="text-emerald-400" />
+                                Arrastra hacia una meta para asignar
+                            </p>
+                        )}
                         {savingsRecords.length === 0 ? (
-                            <p className="text-xs text-slate-400 italic text-center py-4">No hay movimientos de ahorro registrados.</p>
+                            <p className="text-xs text-slate-400 italic text-center py-4">
+                                {records.filter(r => {
+                                    const type = (r.expense_type || '').toUpperCase();
+                                    const concept = (r.concept || '').toUpperCase();
+                                    return (type === 'AHORRO' || concept.includes('AHORRO'));
+                                }).length > 0
+                                    ? '✓ Todos los movimientos han sido asignados a metas.'
+                                    : 'No hay movimientos de ahorro registrados.'
+                                }
+                            </p>
                         ) : (
                             <div className="max-h-[350px] overflow-y-auto custom-scrollbar space-y-2 pr-2">
                                 {savingsRecords.map(r => {
                                     const isRetiro = (r.concept || '').toUpperCase().includes('RETIRO') || (r.expense_type || '').toUpperCase().includes('RETIRO');
                                     const amount = Math.max(Number(r.income) || 0, Number(r.expense) || 0);
+                                    const isBeingDragged = draggingRecordId === r.id;
+                                    const canDrag = !isRetiro && goals.length > 0;
+
                                     return (
-                                        <div key={r.id} className="flex justify-between items-center bg-white/50 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 p-4 py-3 rounded-2xl group hover:shadow-sm transition-all">
+                                        <div
+                                            key={r.id}
+                                            draggable={canDrag}
+                                            onDragStart={canDrag ? (e) => handleDragStart(e, r) : undefined}
+                                            onDragEnd={handleDragEnd}
+                                            className={`
+                                                flex justify-between items-center border p-4 py-3 rounded-2xl
+                                                transition-all duration-200 select-none
+                                                ${canDrag ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}
+                                                ${isBeingDragged
+                                                    ? 'opacity-30 scale-95 border-emerald-400/50 bg-emerald-50 dark:bg-emerald-900/20'
+                                                    : 'bg-white/50 dark:bg-white/5 border-slate-200/50 dark:border-white/5 hover:shadow-md hover:border-emerald-300/50 dark:hover:border-emerald-400/30 hover:-translate-y-0.5 group'
+                                                }
+                                            `}
+                                        >
+                                            {canDrag && (
+                                                <div className="mr-2 text-slate-300 dark:text-white/20 group-hover:text-emerald-400 transition-colors flex-shrink-0">
+                                                    <GripVertical size={14} />
+                                                </div>
+                                            )}
                                             <div className="truncate pr-4 flex-1">
                                                 <div className="text-[11px] font-black text-slate-900 dark:text-white truncate">{r.concept || 'Sin Concepto'}</div>
                                                 <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">{r.date.split('T')[0]} • {r.payment_method}</div>
                                             </div>
-                                            <div className={`font-mono font-black tabular-nums text-right text-sm ${isRetiro ? 'text-rose-500' : 'text-emerald-500'}`}>
+                                            <div className={`font-mono font-black tabular-nums text-right text-sm flex-shrink-0 ${isRetiro ? 'text-rose-500' : 'text-emerald-500'}`}>
                                                 {isRetiro ? '-' : '+'}${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                             </div>
                                         </div>
-                                    )
+                                    );
                                 })}
                             </div>
                         )}
@@ -349,10 +491,43 @@ export default function SavingsSimulatorView({ records, goals, paymentMethods, u
                                 goals.map(goal => {
                                     const percent = goal.target_amount > 0 ? Math.min(100, Math.max(0, (goal.current_amount / goal.target_amount) * 100)) : 0;
                                     const isComplete = percent >= 100;
+                                    const isDropTarget = dragOverGoalId === goal.id;
+                                    const isFreshDrop = droppingGoalId === goal.id;
 
                                     return (
-                                        <div key={goal.id} className="bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-slate-200 dark:border-white/10 p-6 rounded-[2rem] shadow-sm hover:shadow-xl transition-all group relative overflow-hidden flex flex-col min-h-[300px]">
+                                        <div
+                                            key={goal.id}
+                                            onDragOver={isDragging ? (e) => handleGoalDragOver(e, goal.id) : undefined}
+                                            onDragLeave={isDragging ? handleGoalDragLeave : undefined}
+                                            onDrop={isDragging ? (e) => handleGoalDrop(e, goal) : undefined}
+                                            className={`
+                                                backdrop-blur-xl border p-6 rounded-[2rem] shadow-sm transition-all duration-200 group relative overflow-hidden flex flex-col min-h-[300px]
+                                                ${isDropTarget
+                                                    ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 shadow-2xl shadow-emerald-500/20 scale-[1.03] ring-2 ring-emerald-400/50'
+                                                    : isFreshDrop
+                                                    ? 'border-emerald-400 bg-emerald-50/50 dark:bg-emerald-900/10'
+                                                    : isDragging
+                                                    ? 'border-dashed border-emerald-300/60 dark:border-emerald-400/30 bg-emerald-50/30 dark:bg-emerald-900/5 hover:border-emerald-400 hover:scale-[1.02]'
+                                                    : 'bg-white/60 dark:bg-white/5 border-slate-200 dark:border-white/10 hover:shadow-xl'
+                                                }
+                                            `}
+                                        >
                                             {isComplete && <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/20 blur-[40px] pointer-events-none rounded-full" />}
+                                            
+                                            {/* Drop overlay label */}
+                                            {isDropTarget && (
+                                                <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none animate-fade-in">
+                                                    <div className="bg-emerald-500 text-white px-6 py-3 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl flex items-center gap-2">
+                                                        <CheckCircle2 size={18} />
+                                                        Soltar aquí
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Drag indicator glow */}
+                                            {isDragging && !isDropTarget && (
+                                                <div className="absolute inset-0 border-2 border-dashed border-emerald-400/40 rounded-[2rem] pointer-events-none animate-pulse" />
+                                            )}
                                             
                                             <div className="flex justify-between items-start mb-6 z-10 w-full relative">
                                                 <div className="truncate w-full pr-4">
@@ -366,7 +541,7 @@ export default function SavingsSimulatorView({ records, goals, paymentMethods, u
                                             <div className="flex-1 flex flex-col items-center justify-center z-10">
                                                 <CircularProgress value={percent} label={isComplete ? "Logrado" : "Progreso"} color={isComplete ? 'emerald' : goal.color || 'sky'} />
                                                 <div className="mt-4 text-center">
-                                                    <div className="text-xl font-black text-slate-900 dark:text-white tabular-nums tracking-tighter">
+                                                    <div className={`text-xl font-black tabular-nums tracking-tighter transition-all duration-500 ${isFreshDrop ? 'text-emerald-500 scale-110' : 'text-slate-900 dark:text-white'}`}>
                                                         ${Number(goal.current_amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                                     </div>
                                                 </div>
@@ -402,6 +577,17 @@ export default function SavingsSimulatorView({ records, goals, paymentMethods, u
                     )}
                 </div>
             </div>
+
+            {/* Inline CSS for drag animations */}
+            <style>{`
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: scale(0.95); }
+                    to { opacity: 1; transform: scale(1); }
+                }
+                .animate-fade-in {
+                    animation: fadeIn 0.2s ease-out forwards;
+                }
+            `}</style>
         </div>
     );
 }
