@@ -71,9 +71,9 @@ export default function SavingsSimulatorView({ records, goals, paymentMethods, u
         }).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }, [records, assignedRecordIds]);
 
-    // Cálculo puro 
+    // Cálculo puro con redondeo preciso para evitar imprecisiones de punto flotante
     const totalSaved = useMemo(() => {
-        return records.filter(r => {
+        const sum = records.filter(r => {
             const type = (r.expense_type || '').toUpperCase();
             const concept = (r.concept || '').toUpperCase();
             return (type === 'AHORRO' || concept.includes('AHORRO') || type === 'RETIRO AHORRO' || concept.includes('RETIRO AHORRO'));
@@ -82,13 +82,18 @@ export default function SavingsSimulatorView({ records, goals, paymentMethods, u
             const amount = Math.max(Number(r.income) || 0, Number(r.expense) || 0);
             return isRetiro ? acc - amount : acc + amount;
         }, 0);
+        return Math.round((sum + Number.EPSILON) * 100) / 100;
     }, [records]);
 
     const totalAllocated = useMemo(() => {
-        return goals.reduce((acc, g) => acc + (Number(g.current_amount) || 0), 0);
+        const sum = goals.reduce((acc, g) => acc + (Number(g.current_amount) || 0), 0);
+        return Math.round((sum + Number.EPSILON) * 100) / 100;
     }, [goals]);
 
-    const unallocated = Math.max(0, totalSaved - totalAllocated);
+    const unallocated = useMemo(() => {
+        const diff = totalSaved - totalAllocated;
+        return diff <= 0.009 ? 0 : Math.round((diff + Number.EPSILON) * 100) / 100;
+    }, [totalSaved, totalAllocated]);
 
     // === DRAG & DROP HANDLERS ===
     const handleDragStart = useCallback((e: React.DragEvent, record: FinanceRecord) => {
@@ -303,8 +308,8 @@ export default function SavingsSimulatorView({ records, goals, paymentMethods, u
                 </div>
             </div>
 
-            {/* Drag hint banner */}
-            {savingsRecords.length > 0 && goals.length > 0 && !isCreatingGoal && !isWithdrawing && (
+            {/* Drag hint banner — only show when there IS balance to assign */}
+            {savingsRecords.length > 0 && goals.length > 0 && unallocated > 0 && !isCreatingGoal && !isWithdrawing && (
                 <div className="relative z-10 flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl px-6 py-3 animate-fade-in">
                     <GripVertical size={16} className="text-emerald-500 flex-shrink-0" />
                     <p className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
@@ -344,30 +349,34 @@ export default function SavingsSimulatorView({ records, goals, paymentMethods, u
                         <h3 className="text-[10px] font-black text-slate-800 dark:text-white uppercase tracking-widest flex items-center gap-2 mb-2">
                             <List size={14} className="text-emerald-500" /> Movimientos Consolidadores
                         </h3>
-                        {goals.length > 0 && savingsRecords.length > 0 && (
+
+                        {/* When no unallocated balance: show fully-allocated state */}
+                        {unallocated <= 0 ? (
+                            <div className="flex flex-col items-center justify-center py-8 text-center gap-3">
+                                <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                                    <CheckCircle2 size={24} className="text-emerald-500" />
+                                </div>
+                                <p className="text-xs font-black text-emerald-600 dark:text-emerald-400">Fondos 100% asignados</p>
+                                <p className="text-[10px] text-slate-400 font-bold max-w-[200px] leading-relaxed">
+                                    Todos tus ahorros están distribuidos en tus metas. ¡Excelente trabajo!
+                                </p>
+                            </div>
+                        ) : savingsRecords.length === 0 ? (
+                            <p className="text-xs text-slate-400 italic text-center py-4">
+                                No hay movimientos de ahorro registrados.
+                            </p>
+                        ) : (
+                            <>
                             <p className="text-[9px] text-slate-400 font-bold mb-4 flex items-center gap-1.5">
                                 <GripVertical size={11} className="text-emerald-400" />
                                 Arrastra hacia una meta para asignar
                             </p>
-                        )}
-                        {savingsRecords.length === 0 ? (
-                            <p className="text-xs text-slate-400 italic text-center py-4">
-                                {records.filter(r => {
-                                    const type = (r.expense_type || '').toUpperCase();
-                                    const concept = (r.concept || '').toUpperCase();
-                                    return (type === 'AHORRO' || concept.includes('AHORRO'));
-                                }).length > 0
-                                    ? '✓ Todos los movimientos han sido asignados a metas.'
-                                    : 'No hay movimientos de ahorro registrados.'
-                                }
-                            </p>
-                        ) : (
                             <div className="max-h-[350px] overflow-y-auto custom-scrollbar space-y-2 pr-2">
                                 {savingsRecords.map(r => {
                                     const isRetiro = (r.concept || '').toUpperCase().includes('RETIRO') || (r.expense_type || '').toUpperCase().includes('RETIRO');
                                     const amount = Math.max(Number(r.income) || 0, Number(r.expense) || 0);
                                     const isBeingDragged = draggingRecordId === r.id;
-                                    const canDrag = !isRetiro && goals.length > 0;
+                                    const canDrag = !isRetiro && goals.length > 0 && unallocated > 0;
 
                                     return (
                                         <div
